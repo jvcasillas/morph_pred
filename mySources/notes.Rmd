@@ -1,0 +1,114 @@
+
+# To set up markers and extract data
+
+1. insert usb
+2. open data viewer
+3. import participant data files
+	- file > import data > multiple eyelink data files
+4. Regroup to remove practice trials
+	- right click main folder, select 'trial regrouping'
+	- select 'exp', regroup
+	- delete 'ps', 'pl', 'pd'
+	- RUN EVERYTHING FOR EACH EXPERIMENT
+		- duration (get sample report with specific interest periods)
+5. make marker/time period (to limit output)
+	- sliding menu thing, click 'edit'
+	- click new interest period icon
+	- make a message event, then click 'details'
+	- Duration
+		- Start Time Message text = 'word4_C1V1'
+		- Start time offset = 0
+		- End time message text = 'end_sentence'
+		- end time offset = 200
+	- Lexical
+		- Start Time Message text = 'word2_C1V1'
+		- Start time offset = 0
+		- End time message text = 'end_sentence'
+		- end time offset = 200
+	- Stress
+		- Start Time Message text = 'word2_c1v1' (changed to 1st lm before target word)
+		- Start time offset = 0
+		- End time message text = 'word5'
+		- end time offset = 200
+5. make report
+	- analysis > report > sample 
+	- this will make 'file.txt'
+6. run python script (VisualWorld.py)
+	- open terminal
+	- cd to location of 'VisualWorld.py' and 'file.txt'
+	- run: 'python VisualWorld.py'
+	- select file: 'file.txt'
+7. DF
+	- RIGHT_0_P = elsewhere
+	- RIGHT_1_C = target
+	- RIGHT_2_C = distractor
+
+
+
+
+
+# Experiment details
+
+STRESS:
+1) estadística comparando monolingües, late beginners, late advanced (para LSRL)
+2) estadística comparando monolingües, early advanced (heritage), late advanced (si sale algo, para enviar en abril a HLS)
+
+
+
+DURATION:
+1) estadística comparando monolingües, late beginners, late advanced (si sale, para enviar en mayo a SLRF)
+2) estadística comparando monolingües, early advanced (heritage), late advanced (si sale algo, para enviar en abril a HLS)
+3) estadística comparando monolingües, advanced late, advanced late interpreters (para QP Cristina, a defender en mayo, y ISB a presentar en junio).
+
+
+Para cristina
+
+- la, ss, int (duration and stress)
+
+
+
+
+
+
+
+
+
+# Changing interest areas
+
+change grouping from grp to trialside (edit > trial grouping)
+
+
+select 'left'
+create new area (save as target on left, distractor on right)
+set ID as 1 for target, 2 for distractor
+
+save entire new IA (save to disk > targetLeft)
+do the same for right side
+
+0, 0, 960, 1080
+
+960 0 1920 1080
+
+repeat for every experiment
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
