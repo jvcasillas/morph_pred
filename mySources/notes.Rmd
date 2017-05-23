@@ -47,55 +47,76 @@
 
 
 
-# Experiment details
-
-STRESS:
-1) estadística comparando monolingües, late beginners, late advanced (para LSRL)
-2) estadística comparando monolingües, early advanced (heritage), late advanced (si sale algo, para enviar en abril a HLS)
-
-
-
-DURATION:
-1) estadística comparando monolingües, late beginners, late advanced (si sale, para enviar en mayo a SLRF)
-2) estadística comparando monolingües, early advanced (heritage), late advanced (si sale algo, para enviar en abril a HLS)
-3) estadística comparando monolingües, advanced late, advanced late interpreters (para QP Cristina, a defender en mayo, y ISB a presentar en junio).
-
-
-Para cristina
-
-- la, ss, int (duration and stress)
-
-
-
-
-
-
 
 
 
 # Changing interest areas
 
-change grouping from grp to trialside (edit > trial grouping)
+- change grouping from grp to trialside (edit > trial grouping)
+- select 'left'
+- create new area (delete old ones)
+- set ID as 1 for target, 2 for distractor (save as target on left, distractor on right)
+- Set IA: 
+	- rt side: 0, 0, 960, 1080
+	- lt side: 960 0 1920 1080
+- save entire new IA (save to disk > targetLeft)
+- do the same for right side
+- repeat for every experiment
 
 
-select 'left'
-create new area (save as target on left, distractor on right)
-set ID as 1 for target, 2 for distractor
+# Create binned output
 
-save entire new IA (save to disk > targetLeft)
-do the same for right side
+- Open data w/ dataviewer .6 or higher
+- Select "Time Course (binned) Analysis report"
+- We are using 10ms bins
 
-0, 0, 960, 1080
+# colNames
 
-960 0 1920 1080
-
-repeat for every experiment
-
-
-
-
-
-
+RECORDING_SESSION_LABEL
+TRIAL_LABEL
+BIN_INDEX
+exp
+id
+identifier
+sentence
+verb
+sentencewav
+startsentence
+word1
+word2_c1v1
+word2_20msafterv1
+word2_c2
+word2_c3
+word2_v2
+word3_20msafterv1
+word3_c1v1
+word3_c2
+word3_c3
+word3_suffix
+word4_c1v1
+word4_20msafterv1
+word4_c1
+word4_suffix
+word5
+word6
+word7
+end_sentence
+target
+targetside
+BIN_DURATION
+BIN_END_TIME
+BIN_SAMPLE_COUNT
+BIN_START_TIME
+EYE_TRACKED
+IA_1_ID
+IA_2_ID
+IA_0_ID
+RIGHT_IA_1_SAMPLE_COUNT
+RIGHT_IA_2_SAMPLE_COUNT
+RIGHT_IA_0_SAMPLE_COUNT
+RIGHT_IA_1_SAMPLE_COUNT_%
+RIGHT_IA_2_SAMPLE_COUNT_%
+RIGHT_IA_0_SAMPLE_COUNT_%
 
 
 
