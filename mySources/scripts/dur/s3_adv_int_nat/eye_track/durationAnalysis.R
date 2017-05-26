@@ -496,7 +496,7 @@ gc_mod_full    <- readRDS('./mySources/models/dur/s3_adv_int_nat/eye_track/gc_mo
 
 
 # Base model 
-if(T){
+if(F){
   gc_mod_base <- lmer(targetProp ~ (ot1+ot2) + 
                  ((ot1+ot2) | participant) + 
                  ((ot1+ot2) | target),
@@ -507,7 +507,7 @@ if(T){
 
 
 # Add group effect on intercept 
-if(T){
+if(F){
   gc_mod_group_0 <- lmer(targetProp ~ (ot1+ot2) + group + 
                     ((ot1+ot2) | participant) + 
                     ((ot1+ot2) | target), 
@@ -517,7 +517,7 @@ if(T){
 }
 
 # Add group effect on slope
-if(T){
+if(F){
  gc_mod_group_1 <- lmer(targetProp ~ (ot1+ot2) + group + 
                    ot1:group + 
                    ((ot1+ot2) | participant) + 
@@ -528,7 +528,7 @@ if(T){
 }
 
 # Add group effect on quadratic poly 
-if(T){
+if(F){
   gc_mod_group_2 <- lmer(targetProp ~ (ot1+ot2) + group + 
                     ot1:group + ot2:group + 
                     ((ot1+ot2) | participant) + 
@@ -540,7 +540,7 @@ if(T){
 
 
 # Add condition effect on intercept 
-if(T){
+if(F){
   gc_mod_cond_0 <- lmer(targetProp ~ (ot1+ot2) * group + condition + 
                    ((ot1+ot2) | participant) + 
                    ((ot1+ot2) | target),
@@ -550,7 +550,7 @@ if(T){
 }
 
 # Add condition effect on slope 
-if(T){
+if(F){
   gc_mod_cond_1 <- lmer(targetProp ~ (ot1+ot2) * group + condition + 
                    ot1:condition + 
                    ((ot1+ot2) | participant) + 
@@ -561,7 +561,7 @@ if(T){
 }
 
 # Add condition effect on quadratic poly 
-if(T){
+if(F){
   gc_mod_cond_2 <- lmer(targetProp ~ (ot1+ot2) * group + condition + 
                    ot1:condition + ot2:condition + 
                    ((ot1+ot2) | participant) + 
@@ -573,7 +573,7 @@ if(T){
 
 
 # Include all interactions
-if(T){
+if(F){
 gc_mod_full <- lmer(targetProp ~ (ot1+ot2) * group * condition + 
                ((ot1+ot2) | participant) + 
                ((ot1+ot2) | target),
