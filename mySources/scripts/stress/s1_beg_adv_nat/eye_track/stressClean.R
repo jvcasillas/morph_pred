@@ -25,8 +25,8 @@ library(lme4); library(lmerTest)
 
 
 # Rerun python scripts to make time course longer
-stress3 <- read_tsv("./mySources/data/stressBinOutput.txt")
-stress4 <- read_tsv("./mySources/data/stressBinOutput2.txt")
+stress3 <- read_tsv("./mySources/data/raw/stressBinOutput.txt")
+stress4 <- read_tsv("./mySources/data/raw/stressBinOutput2.txt")
 
 # Check structure of each data frame to make sure they 
 # can be combined 
@@ -429,6 +429,6 @@ df_adj <- as.data.frame(df_adj)
 glimpse(df_adj)
 
 # write table
-write.table(df_adj, "./mySources/data/stressBIN10Clean.csv", row.names = F, quote = F, sep = ",")
+write.table(df_adj, "./mySources/data/clean/stressBIN10Clean.csv", row.names = F, quote = F, sep = ",")
 
 

@@ -14,7 +14,7 @@ library(foreign)
 setwd("~/academia/research/in_progress/morph_pred")
 
 
-dataset <- read.spss('./mySources/data/gating.sav', to.data.frame=TRUE)
+dataset <- read.spss('./mySources/data/raw/gating.sav', to.data.frame=TRUE)
 
 str(dataset)
 

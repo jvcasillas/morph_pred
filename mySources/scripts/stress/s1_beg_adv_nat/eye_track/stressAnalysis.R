@@ -24,7 +24,7 @@ setwd("~/academia/research/in_progress/morph_pred")
 # df <- read.csv("./mySources/data/stressBIN5Clean.csv", header = TRUE, quote = "", sep = ',')
 # df_stress_temp <- read_csv("./mySources/data/stressBIN5Clean.csv")
 
-df_stress_temp <- read_csv("./mySources/data/stressBIN10Clean.csv")
+df_stress_temp <- read_csv("./mySources/data/clean/stressBIN10Clean.csv")
 
 
 ## @knitr stressSubsets

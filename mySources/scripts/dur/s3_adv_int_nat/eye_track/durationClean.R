@@ -15,102 +15,88 @@ rm(list = ls(all = TRUE))
 setwd("~/academia/research/in_progress/morph_pred")
 
 
-library(dplyr); library(tidyr); library(ggplot2); library(plotly)
-library(lme4); library(lmerTest)
+library(tidyverse); library(lme4); library(lmerTest)
 
 
 # Read data
-dur1 <- read.csv("./mySources/data/durationOutput_trialBIN5.csv", header = TRUE, quote = "", sep = '\t')
-dur2 <- read.csv("./mySources/data/durationOutput2_trialBIN5.csv", header = TRUE, quote = "", sep = '\t')
+dur1_temp <- read_tsv("./mySources/data/raw/durationBinOutput.txt")
+dur2_temp <- read_tsv("./mySources/data/raw/durationBinOutput2.txt")
 
 # Check structure of each data frame to make sure they 
 # can be combined 
-str(dur1); str(dur2)
+str(dur1_temp); str(dur2_temp)
+
+# dur2 doesn't have 'sentence', which we don't need, so we remove it
+
+dur1 <- dur1_temp[, -which(colnames(dur1_temp) == "sentence")]
 
 # They can, so we combine them 
-dur <- rbind(dur1, dur2)
+dur_temp <- rbind(dur1, dur2_temp)
 
 
 # rename variables
-names(dur)[names(dur)=="RECORDING_SESSION_LABEL"] <- "participant"
-names(dur)[names(dur)=="TRIAL_LABEL"] <- "trial"
-names(dur)[names(dur)=="TRIAL_CONDITION"] <- "condLabel"
-names(dur)[names(dur)=="CURRENT_BIN"] <- "bin"
-names(dur)[names(dur)=="RIGHT_0_C"] <- "lookElsewhere"
-names(dur)[names(dur)=="RIGHT_1_C"] <- "lookTarget"
-names(dur)[names(dur)=="RIGHT_2_C"] <- "lookDistractor"
+names(dur_temp)[names(dur_temp)=="RECORDING_SESSION_LABEL"] <- "participant"
+names(dur_temp)[names(dur_temp)=="TRIAL_LABEL"] <- "trial"
+names(dur_temp)[names(dur_temp)=="BIN_INDEX"] <- "bin"
+names(dur_temp)[names(dur_temp)=="id"] <- "wavID"
+names(dur_temp)[names(dur_temp)=="RIGHT_IA_1_SAMPLE_COUNT"] <- "targetCount"
+names(dur_temp)[names(dur_temp)=="RIGHT_IA_2_SAMPLE_COUNT"] <- "distractorCount"
+names(dur_temp)[names(dur_temp)=="RIGHT_IA_1_SAMPLE_COUNT_%"] <- "targetProp"
+names(dur_temp)[names(dur_temp)=="RIGHT_IA_2_SAMPLE_COUNT_%"] <- "distractorProp"
 
-# remove unwanted characters from column (accent marks)
-dur$condLabel <- gsub("\227", "o", paste(dur$condLabel))
-dur$condLabel <- as.factor(dur$condLabel)
+# remove unnecessary columns
+dur_temp <- select(dur_temp, 
+                   -trial, 
+                   -identifier, 
+                   -sentencewav, 
+                   -word1, 
+                   -word2_20msafterv1, 
+                   -word2_c2, 
+                   -word2_c3, 
+                   -word2_v2, 
+                   -word3_20msafterv1,
+                   -word3_c2, 
+                   -word3_c3, 
+                   -word3_suffix, 
+                   -word4_suffix, 
+                   -IA_3_ID,
+                   -IA_4_ID,
+                   -IA_0_ID,
+                   -RIGHT_IA_3_SAMPLE_COUNT,
+                   -RIGHT_IA_4_SAMPLE_COUNT,
+                   -RIGHT_IA_0_SAMPLE_COUNT,
+                   -`RIGHT_IA_3_SAMPLE_COUNT_%`,
+                   -`RIGHT_IA_4_SAMPLE_COUNT_%`,
+                   -`RIGHT_IA_0_SAMPLE_COUNT_%`)
 
+# Create condition variable (monosyllabic or bisyllabic)
+dur_temp$target <- as.factor(dur_temp$target)
 
-# remove distractors 
-durTargets <- c('col', 'coles', 'chal', 'chales', 'gel', 'geles', 'sol', 'soles', 'tul', 'tules', 'mes', 'meses', 'rol', 'roles', 'miel', 'mieles')
-dur <- dur[dur$condLabel %in% durTargets, ]
-# Check to see if it worked
-summary(dur$condLabel)
+dur_bi_syl <- c('coles', 'chales', 'geles', 'soles', 'tules', 'meses', 'roles', 'mieles')
+dur_temp$condition <- 'monosyllabic'
+dur_temp[dur_temp$target %in% dur_bi_syl, 'condition'] <- 'bisyllabic'
 
-
-
-
-# Set condition variable (monosyllabic or disyllabic?)
-dur$condition <- 'disyllabic'
-dur[dur$condLabel == 'col' | 
-    dur$condLabel == 'chal' | 
-    dur$condLabel == 'gel' | 
-    dur$condLabel == 'sol' | 
-    dur$condLabel == 'tul' | 
-    dur$condLabel == 'mes' | 
-    dur$condLabel == 'rol' | 
-    dur$condLabel == 'miel', 'condition'] <- 'monosyllabic'
-dur$condition <- as.factor(dur$condition)
 
 
 # check number of bins for each participant
 # so we can remove fluff
-dur %>%
+dur_temp %>%
   select(., participant, bin) %>%
   aggregate(bin ~ participant, FUN = max, data = .) %>% 
   arrange(., bin)
+# Everything looks fine
 
-# Participants 'l14' and 'test' have no data so we remove them 
-dur <- filter(dur, bin != 0)
-
-# The minimum bin = 425
-
-
-
-# Calculate proportions
-durReduced <- dur %>%
-  select(., participant, trial, condLabel, IA_LABEL_2, TRIAL_START_TIME, 
-            BIN_START_TIME, BIN_END_TIME, verb, condition, bin, lookTarget, 
-            lookDistractor, lookElsewhere, word3_c1v1:word7) %>%
-  group_by(., participant, trial, condLabel, bin) %>% 
-  mutate(., word3_c1v1 = as.numeric(word3_c1v1), 
-            word4_c1v1 = as.numeric(word4_c1v1),
-            word4_v1_20ms = as.numeric(word4_c1) + 20,
-            word4_c1 = as.numeric(word4_c1), 
-            word4_suffix = as.numeric(word4_suffix), 
-            word5 = as.numeric(word5),
-            word6 = as.numeric(word6),
-            word7 = as.numeric(word7),
-            binSize = 5,
-            propT = (lookTarget / binSize), 
-            propD = (lookDistractor / binSize), 
-            propE = (lookElsewhere / binSize)) 
-
-# check number of bins for each participant
-durReduced %>%
-  select(., participant, bin) %>%
-  aggregate(bin ~ participant, FUN = max, data = .) %>% 
-  arrange(., bin)
 
 
 # Create grouping variable 
-durReduced %>%
+# we use the 'participant' column. All the ids have 2 numbers, but they dont 
+# all have 2 letters, so we count from the right
+durReduced <- dur_temp %>%
   separate(., col = participant, into = c('group', 'id'), sep = -3, remove = FALSE) %>% 
-  select(., -id) -> durReduced
+  select(., -id)
+
+
+
 
 # Some levels are erroneously labelled 's' or 'l'
 durReduced[durReduced$group == 'l', 'group'] <- 'lb'
@@ -126,7 +112,76 @@ summary(durReduced$group)
 glimpse(durReduced)
 
 
+durReduced$condToken <- 1
+durReduced[durReduced$target == "chal" & durReduced$verb == "regalar", 'condToken'] <- 2
+durReduced[durReduced$target == "chales" & durReduced$verb == "regalar", 'condToken'] <- 2
+durReduced[durReduced$target == "col" & durReduced$verb == "escoger", 'condToken'] <- 2
+durReduced[durReduced$target == "coles" & durReduced$verb == "escoger", 'condToken'] <- 2
+durReduced[durReduced$target == "gel" & durReduced$verb == "usar", 'condToken'] <- 2
+durReduced[durReduced$target == "geles" & durReduced$verb == "usar", 'condToken'] <- 2
+durReduced[durReduced$target == "mes" & durReduced$verb == "conseguir", 'condToken'] <- 2
+durReduced[durReduced$target == "meses" & durReduced$verb == "conseguir", 'condToken'] <- 2
+durReduced[durReduced$target == "miel" & durReduced$verb == "transportar", 'condToken'] <- 2
+durReduced[durReduced$target == "mieles" & durReduced$verb == "transportar", 'condToken'] <- 2
+durReduced[durReduced$target == "rol" & durReduced$verb == "aceptar", 'condToken'] <- 2
+durReduced[durReduced$target == "roles" & durReduced$verb == "aceptar", 'condToken'] <- 2
+durReduced[durReduced$target == "sol" & durReduced$verb == "escribir", 'condToken'] <- 2
+durReduced[durReduced$target == "soles" & durReduced$verb == "escribir", 'condToken'] <- 2
+durReduced[durReduced$target == "tul" & durReduced$verb == "pedir", 'condToken'] <- 2
+durReduced[durReduced$target == "tules" & durReduced$verb == "pedir", 'condToken'] <- 2
 
+
+
+# - for the monosyllabic targets, the end of the word/coda/first syllable is: word5
+# - for bisyllabic targets, the end of the first consonant of the second syllable is: not available 
+# - we have to get the time point of the end of the first consonant in the second syllable
+#   in praat, by hand. 
+# - We save these values to one of two named vectors (1 for each verb)
+# - we add a new column called 'targetOffset' 
+# - initialy it is just a copy of 'word5'
+# - then we add the vectors of hand calculated times
+
+durReduced$targetOffset <- durReduced$word5
+
+# condToken 1 times
+offset_cond1 <- c('coles'  = '2347', # escoger
+                  'chales' = '2213', # lucir
+                  'geles'  = '2188', # empacar
+                  'soles'  = '2131', # descubir
+                  'tules'  = '1862', # coser
+                  'meses'  = '2566', # exigir
+                  'roles'  = '2319', # aceptar
+                  'mieles' = '2121'  # hacer
+  )
+
+durReduced[durReduced$target == "coles"  & durReduced$verb == "escoger", 'targetOffset']  <- 2347
+durReduced[durReduced$target == "chales" & durReduced$verb == "lucir", 'targetOffset']    <- 2213
+durReduced[durReduced$target == "geles"  & durReduced$verb == "empacar", 'targetOffset']  <- 2188
+durReduced[durReduced$target == "soles"  & durReduced$verb == "descubir", 'targetOffset'] <- 2131
+durReduced[durReduced$target == "tules"  & durReduced$verb == "coser", 'targetOffset']    <- 1862
+durReduced[durReduced$target == "meses"  & durReduced$verb == "exigir", 'targetOffset']   <- 2566
+durReduced[durReduced$target == "roles"  & durReduced$verb == "aceptar", 'targetOffset']  <- 2319
+durReduced[durReduced$target == "mieles" & durReduced$verb == "hacer", 'targetOffset']    <- 2121
+
+# condToken 2 times
+offset_cond2 <- c('coles'  = '2177', # cenar
+                  'chales' = '2289', # regalar
+                  'geles'  = '1960', # usar
+                  'soles'  = '2109', # escribir
+                  'tules'  = '1918', # pedir
+                  'meses'  = '2749', # conseguir
+                  'roles'  = '2116', # estrenar
+                  'mieles' = '2380'  # transportar
+  )
+
+durReduced[durReduced$target == "coles"  & durReduced$verb == "cenar", 'targetOffset']       <- 2177
+durReduced[durReduced$target == "chales" & durReduced$verb == "regalar", 'targetOffset']     <- 2289
+durReduced[durReduced$target == "geles"  & durReduced$verb == "usar", 'targetOffset']        <- 1960
+durReduced[durReduced$target == "soles"  & durReduced$verb == "escribir", 'targetOffset']    <- 2109
+durReduced[durReduced$target == "tules"  & durReduced$verb == "pedir", 'targetOffset']       <- 1918
+durReduced[durReduced$target == "meses"  & durReduced$verb == "conseguir", 'targetOffset']   <- 2749
+durReduced[durReduced$target == "roles"  & durReduced$verb == "estrenar", 'targetOffset']    <- 2116
+durReduced[durReduced$target == "mieles" & durReduced$verb == "transportar", 'targetOffset'] <- 2380
 
 
 df_dur <- durReduced
@@ -139,6 +194,9 @@ glimpse(df_dur)
 # Item-specific time normalization
 # - create subset of data based on item (for both monosyllabic and disyllabic)
 # - use item-specific target onset as 0 (in binN column)
+#    - this refers to the start of the word prior to the target for each item 
+#    - this 'length' is used to insure all of the target word 'info' is included 
+#      for analysis (as opposed to truncating some of the critical vowel)
 # - save item-specific bin min and max as variables 
 # - count forward from target onset to max 
 # - count backward from target onset to min
@@ -147,36 +205,40 @@ glimpse(df_dur)
 # - must distinguish between iterations of same words (different preceeding verb)
 
 
-xtabs(~ condLabel + verb, df_dur)
+xtabs(~ target + verb, df_dur)
 
 # chal : mono : lucir
-chalLucir <- filter(df_dur, condLabel == 'chal' & verb == 'lucir')
+chalLucir <- filter(df_dur, target == 'chal' & verb == 'lucir')
 chalLucir$binN <- 999
-tOSchalLucir <- round((unique(chalLucir$word4_v1_20ms) - unique(chalLucir$word4_c1v1)) / 5)
+# tOSchalLucir <- round(unique(chalLucir$targetOffset) / 20)
+tOSchalLucir <- round((unique(chalLucir$targetOffset) - unique(chalLucir$word3_c1v1)) / 20)
 chalLucir[chalLucir$bin == tOSchalLucir, 'binN'] <- 0
 chalLucir$binN <- chalLucir$bin - tOSchalLucir
 chalLucir$condToken <- 1
 
 # chal : mono : regalar
-chalRegalar <- filter(df_dur, condLabel == 'chal' & verb == 'regalar')
+chalRegalar <- filter(df_dur, target == 'chal' & verb == 'regalar')
 chalRegalar$binN <- 999
-tOSchalRegalar <- round((unique(chalRegalar$word4_v1_20ms) - unique(chalRegalar$word4_c1v1)) / 5)
+# tOSchalRegalar <- round(unique(chalRegalar$targetOffset) / 20)
+tOSchalRegalar <- round((unique(chalRegalar$targetOffset) - unique(chalRegalar$word3_c1v1)) / 20)
 chalRegalar[chalRegalar$bin == tOSchalRegalar, 'binN'] <- 0
 chalRegalar$binN <- chalRegalar$bin - tOSchalRegalar
 chalRegalar$condToken <- 2
 
 # chales : di : Lucir
-chalesLucir <- filter(df_dur, condLabel == 'chales' & verb == 'lucir')
+chalesLucir <- filter(df_dur, target == 'chales' & verb == 'lucir')
 chalesLucir$binN <- 999
-tOSchalesLucir <- round((unique(chalesLucir$word4_v1_20ms) - unique(chalesLucir$word4_c1v1)) / 5)
+# tOSchalesLucir <- round(unique(chalesLucir$targetOffset) / 20)
+tOSchalesLucir <- round((unique(chalesLucir$targetOffset) - unique(chalesLucir$word3_c1v1)) / 20)
 chalesLucir[chalesLucir$bin == tOSchalesLucir, 'binN'] <- 0
 chalesLucir$binN <- chalesLucir$bin - tOSchalesLucir
 chalesLucir$condToken <- 1
 
 # chales : di : Regalar
-chalesRegalar <- filter(df_dur, condLabel == 'chales' & verb == 'regalar')
+chalesRegalar <- filter(df_dur, target == 'chales' & verb == 'regalar')
 chalesRegalar$binN <- 999
-tOSchalesRegalar <- round((unique(chalesRegalar$word4_v1_20ms) - unique(chalesRegalar$word4_c1v1)) / 5)
+# tOSchalesRegalar <- round(unique(chalesRegalar$targetOffset) / 20)
+tOSchalesRegalar <- round((unique(chalesRegalar$targetOffset) - unique(chalesRegalar$word3_c1v1)) / 20)
 chalesRegalar[chalesRegalar$bin == tOSchalesRegalar, 'binN'] <- 0
 chalesRegalar$binN <- chalesRegalar$bin - tOSchalesRegalar
 chalesRegalar$condToken <- 2
@@ -185,33 +247,37 @@ chalesRegalar$condToken <- 2
 
 
 # col : mono : Cenar
-colCenar <- filter(df_dur, condLabel == 'col' & verb == 'cenar')
+colCenar <- filter(df_dur, target == 'col' & verb == 'cenar')
 colCenar$binN <- 999
-tOScolCenar <- round((unique(colCenar$word4_v1_20ms) - unique(colCenar$word4_c1v1)) / 5)
+# tOScolCenar <- round(unique(colCenar$targetOffset) / 20)
+tOScolCenar <- round((unique(colCenar$targetOffset) - unique(colCenar$word3_c1v1)) / 20)
 colCenar[colCenar$bin == tOScolCenar, 'binN'] <- 0
 colCenar$binN <- colCenar$bin - tOScolCenar
 colCenar$condToken <- 1
 
 # col : mono : Escoger
-colEscoger <- filter(df_dur, condLabel == 'col' & verb == 'escoger')
+colEscoger <- filter(df_dur, target == 'col' & verb == 'escoger')
 colEscoger$binN <- 999
-tOScolEscoger <- round((unique(colEscoger$word4_v1_20ms) - unique(colEscoger$word4_c1v1)) / 5)
+# tOScolEscoger <- round(unique(colEscoger$targetOffset) / 20)
+tOScolEscoger <- round((unique(colEscoger$targetOffset) - unique(colEscoger$word3_c1v1)) / 20)
 colEscoger[colEscoger$bin == tOScolEscoger, 'binN'] <- 0
 colEscoger$binN <- colEscoger$bin - tOScolEscoger
 colEscoger$condToken <- 2
 
 # coles : di : Cenar
-colesCenar <- filter(df_dur, condLabel == 'coles' & verb == 'cenar')
+colesCenar <- filter(df_dur, target == 'coles' & verb == 'cenar')
 colesCenar$binN <- 999
-tOScolesCenar <- round((unique(colesCenar$word4_v1_20ms) - unique(colesCenar$word4_c1v1)) / 5)
+# tOScolesCenar <- round(unique(colesCenar$targetOffset) / 20)
+tOScolesCenar <- round((unique(colesCenar$targetOffset) - unique(colesCenar$word3_c1v1)) / 20)
 colesCenar[colesCenar$bin == tOScolesCenar, 'binN'] <- 0
 colesCenar$binN <- colesCenar$bin - tOScolesCenar
 colesCenar$condToken <- 1
 
 # coles : di : Escoger
-colesEscoger <- filter(df_dur, condLabel == 'coles' & verb == 'escoger')
+colesEscoger <- filter(df_dur, target == 'coles' & verb == 'escoger')
 colesEscoger$binN <- 999
-tOScolesEscoger <- round((unique(colesEscoger$word4_v1_20ms) - unique(colesEscoger$word4_c1v1)) / 5)
+# tOScolesEscoger <- round(unique(colesEscoger$targetOffset) / 20)
+tOScolesEscoger <- round((unique(colesEscoger$targetOffset) - unique(colesEscoger$word3_c1v1)) / 20)
 colesEscoger[colesEscoger$bin == tOScolesEscoger, 'binN'] <- 0
 colesEscoger$binN <- colesEscoger$bin - tOScolesEscoger
 colesEscoger$condToken <- 2
@@ -219,33 +285,37 @@ colesEscoger$condToken <- 2
 
 
 # gel : mono : Empacar
-gelEmpacar <- filter(df_dur, condLabel == 'gel' & verb == 'empacar')
+gelEmpacar <- filter(df_dur, target == 'gel' & verb == 'empacar')
 gelEmpacar$binN <- 999
-tOSgelEmpacar <- round((unique(gelEmpacar$word4_v1_20ms) - unique(gelEmpacar$word4_c1v1)) / 5)
+# tOSgelEmpacar <- round(unique(gelEmpacar$targetOffset) / 20)
+tOSgelEmpacar <- round((unique(gelEmpacar$targetOffset) - unique(gelEmpacar$word3_c1v1)) / 20)
 gelEmpacar[gelEmpacar$bin == tOSgelEmpacar, 'binN'] <- 0
 gelEmpacar$binN <- gelEmpacar$bin - tOSgelEmpacar
 gelEmpacar$condToken <- 1
 
 # gel : mono : Usar
-gelUsar <- filter(df_dur, condLabel == 'gel' & verb == 'usar')
+gelUsar <- filter(df_dur, target == 'gel' & verb == 'usar')
 gelUsar$binN <- 999
-tOSgelUsar <- round((unique(gelUsar$word4_v1_20ms) - unique(gelUsar$word4_c1v1)) / 5)
+# tOSgelUsar <- round(unique(gelUsar$targetOffset) / 20)
+tOSgelUsar <- round((unique(gelUsar$targetOffset) - unique(gelUsar$word3_c1v1)) / 20)
 gelUsar[gelUsar$bin == tOSgelUsar, 'binN'] <- 0
 gelUsar$binN <- gelUsar$bin - tOSgelUsar
 gelUsar$condToken <- 2
 
 # geles : di : Empacar
-gelesEmpacar <- filter(df_dur, condLabel == 'geles' & verb == 'empacar')
+gelesEmpacar <- filter(df_dur, target == 'geles' & verb == 'empacar')
 gelesEmpacar$binN <- 999
-tOSgelesEmpacar <- round((unique(gelesEmpacar$word4_v1_20ms) - unique(gelesEmpacar$word4_c1v1)) / 5)
+# tOSgelesEmpacar <- round(unique(gelesEmpacar$targetOffset) / 20)
+tOSgelesEmpacar <- round((unique(gelesEmpacar$targetOffset) - unique(gelesEmpacar$word3_c1v1)) / 20)
 gelesEmpacar[gelesEmpacar$bin == tOSgelesEmpacar, 'binN'] <- 0
 gelesEmpacar$binN <- gelesEmpacar$bin - tOSgelesEmpacar
 gelesEmpacar$condToken <- 1
 
 # geles : di : Usar
-gelesUsar <- filter(df_dur, condLabel == 'geles' & verb == 'usar')
+gelesUsar <- filter(df_dur, target == 'geles' & verb == 'usar')
 gelesUsar$binN <- 999
-tOSgelesUsar <- round((unique(gelesUsar$word4_v1_20ms) - unique(gelesUsar$word4_c1v1)) / 5)
+# tOSgelesUsar <- round(unique(gelesUsar$targetOffset) / 20)
+tOSgelesUsar <- round((unique(gelesUsar$targetOffset) - unique(gelesUsar$word3_c1v1)) / 20)
 gelesUsar[gelesUsar$bin == tOSgelesUsar, 'binN'] <- 0
 gelesUsar$binN <- gelesUsar$bin - tOSgelesUsar
 gelesUsar$condToken <- 2
@@ -253,66 +323,74 @@ gelesUsar$condToken <- 2
 
 
 # mes : mono : Exigir
-mesExigir <- filter(df_dur, condLabel == 'mes' & verb == 'exigir')
+mesExigir <- filter(df_dur, target == 'mes' & verb == 'exigir')
 mesExigir$binN <- 999
-tOSmesExigir <- round((unique(mesExigir$word4_v1_20ms) - unique(mesExigir$word4_c1v1)) / 5)
+# tOSmesExigir <- round(unique(mesExigir$targetOffset) / 20)
+tOSmesExigir <- round((unique(mesExigir$targetOffset) - unique(mesExigir$word3_c1v1)) / 20)
 mesExigir[mesExigir$bin == tOSmesExigir, 'binN'] <- 0
 mesExigir$binN <- mesExigir$bin - tOSmesExigir
 mesExigir$condToken <- 1
 
 # mes : mono : Conseguir
-mesConseguir <- filter(df_dur, condLabel == 'mes' & verb == 'conseguir')
+mesConseguir <- filter(df_dur, target == 'mes' & verb == 'conseguir')
 mesConseguir$binN <- 999
-tOSmesConseguir <- round((unique(mesConseguir$word4_v1_20ms) - unique(mesConseguir$word4_c1v1)) / 5)
+# tOSmesConseguir <- round(unique(mesConseguir$targetOffset) / 20)
+tOSmesConseguir <- round((unique(mesConseguir$targetOffset) - unique(mesConseguir$word3_c1v1)) / 20)
 mesConseguir[mesConseguir$bin == tOSmesConseguir, 'binN'] <- 0
 mesConseguir$binN <- mesConseguir$bin - tOSmesConseguir
 mesConseguir$condToken <- 2
 
 # meses : di : Exigir
-mesesExigir <- filter(df_dur, condLabel == 'meses' & verb == 'exigir')
+mesesExigir <- filter(df_dur, target == 'meses' & verb == 'exigir')
 mesesExigir$binN <- 999
-tOSmesesExigir <- round((unique(mesesExigir$word4_v1_20ms) - unique(mesesExigir$word4_c1v1)) / 5)
+# tOSmesesExigir <- round(unique(mesesExigir$targetOffset) / 20)
+tOSmesesExigir <- round((unique(mesesExigir$targetOffset) - unique(mesesExigir$word3_c1v1)) / 20)
 mesesExigir[mesesExigir$bin == tOSmesesExigir, 'binN'] <- 0
 mesesExigir$binN <- mesesExigir$bin - tOSmesesExigir
 mesesExigir$condToken <- 1
 
 # meses : di : Conseguir
-mesesConseguir <- filter(df_dur, condLabel == 'meses' & verb == 'conseguir')
+mesesConseguir <- filter(df_dur, target == 'meses' & verb == 'conseguir')
 mesesConseguir$binN <- 999
-tOSmesesConseguir <- round((unique(mesesConseguir$word4_v1_20ms) - unique(mesesConseguir$word4_c1v1)) / 5)
+# tOSmesesConseguir <- round(unique(mesesConseguir$targetOffset) / 20)
+tOSmesesConseguir <- round((unique(mesesConseguir$targetOffset) - unique(mesesConseguir$word3_c1v1)) / 20)
 mesesConseguir[mesesConseguir$bin == tOSmesesConseguir, 'binN'] <- 0
 mesesConseguir$binN <- mesesConseguir$bin - tOSmesesConseguir
 mesesConseguir$condToken <- 2
 
 
 # miel : mono : Hacer
-mielHacer <- filter(df_dur, condLabel == 'miel' & verb == 'hacer')
+mielHacer <- filter(df_dur, target == 'miel' & verb == 'hacer')
 mielHacer$binN <- 999
-tOSmielHacer <- round((unique(mielHacer$word4_v1_20ms) - unique(mielHacer$word4_c1v1)) / 5)
+# tOSmielHacer <- round(unique(mielHacer$targetOffset) / 20)
+tOSmielHacer <- round((unique(mielHacer$targetOffset) - unique(mielHacer$word3_c1v1)) / 20)
 mielHacer[mielHacer$bin == tOSmielHacer, 'binN'] <- 0
 mielHacer$binN <- mielHacer$bin - tOSmielHacer
 mielHacer$condToken <- 1
 
 # miel : mono : Transportar
-mielTransportar <- filter(df_dur, condLabel == 'miel' & verb == 'transportar')
+mielTransportar <- filter(df_dur, target == 'miel' & verb == 'transportar')
 mielTransportar$binN <- 999
-tOSmielTransportar <- round((unique(mielTransportar$word4_v1_20ms) - unique(mielTransportar$word4_c1v1)) / 5)
+# tOSmielTransportar <- round(unique(mielTransportar$targetOffset) / 20)
+tOSmielTransportar <- round((unique(mielTransportar$targetOffset) - unique(mielTransportar$word3_c1v1)) / 20)
 mielTransportar[mielTransportar$bin == tOSmielTransportar, 'binN'] <- 0
 mielTransportar$binN <- mielTransportar$bin - tOSmielTransportar
 mielTransportar$condToken <- 2
 
 # mieles : di : Hacer
-mielesHacer <- filter(df_dur, condLabel == 'mieles' & verb == 'hacer')
+mielesHacer <- filter(df_dur, target == 'mieles' & verb == 'hacer')
 mielesHacer$binN <- 999
-tOSmielesHacer <- round((unique(mielesHacer$word4_v1_20ms) - unique(mielesHacer$word4_c1v1)) / 5)
+# tOSmielesHacer <- round(unique(mielesHacer$targetOffset) / 20)
+tOSmielesHacer <- round((unique(mielesHacer$targetOffset) - unique(mielesHacer$word3_c1v1)) / 20)
 mielesHacer[mielesHacer$bin == tOSmielesHacer, 'binN'] <- 0
 mielesHacer$binN <- mielesHacer$bin - tOSmielesHacer
 mielesHacer$condToken <- 1
 
 # mieles : di : Transportar
-mielesTransportar <- filter(df_dur, condLabel == 'mieles' & verb == 'transportar')
+mielesTransportar <- filter(df_dur, target == 'mieles' & verb == 'transportar')
 mielesTransportar$binN <- 999
-tOSmielesTransportar <- round((unique(mielesTransportar$word4_v1_20ms) - unique(mielesTransportar$word4_c1v1)) / 5)
+# tOSmielesTransportar <- round(unique(mielesTransportar$targetOffset) / 20)
+tOSmielesTransportar <- round((unique(mielesTransportar$targetOffset) - unique(mielesTransportar$word3_c1v1)) / 20)
 mielesTransportar[mielesTransportar$bin == tOSmielesTransportar, 'binN'] <- 0
 mielesTransportar$binN <- mielesTransportar$bin - tOSmielesTransportar
 mielesTransportar$condToken <- 2
@@ -320,33 +398,37 @@ mielesTransportar$condToken <- 2
 
 
 # rol : mono : Estrenar
-rolEstrenar <- filter(df_dur, condLabel == 'rol' & verb == 'estrenar')
+rolEstrenar <- filter(df_dur, target == 'rol' & verb == 'estrenar')
 rolEstrenar$binN <- 999
-tOSrolEstrenar <- round((unique(rolEstrenar$word4_v1_20ms) - unique(rolEstrenar$word4_c1v1)) / 5)
+# tOSrolEstrenar <- round(unique(rolEstrenar$targetOffset) / 20)
+tOSrolEstrenar <- round((unique(rolEstrenar$targetOffset) - unique(rolEstrenar$word3_c1v1)) / 20)
 rolEstrenar[rolEstrenar$bin == tOSrolEstrenar, 'binN'] <- 0
 rolEstrenar$binN <- rolEstrenar$bin - tOSrolEstrenar
 rolEstrenar$condToken <- 1
 
 # rol : mono : Aceptar
-rolAceptar <- filter(df_dur, condLabel == 'rol' & verb == 'aceptar')
+rolAceptar <- filter(df_dur, target == 'rol' & verb == 'aceptar')
 rolAceptar$binN <- 999
-tOSrolAceptar <- round((unique(rolAceptar$word4_v1_20ms) - unique(rolAceptar$word4_c1v1)) / 5)
+# tOSrolAceptar <- round(unique(rolAceptar$targetOffset) / 20)
+tOSrolAceptar <- round((unique(rolAceptar$targetOffset) - unique(rolAceptar$word3_c1v1)) / 20)
 rolAceptar[rolAceptar$bin == tOSrolAceptar, 'binN'] <- 0
 rolAceptar$binN <- rolAceptar$bin - tOSrolAceptar
 rolAceptar$condToken <- 2
 
 # roles : di : Estrenar
-rolesEstrenar <- filter(df_dur, condLabel == 'roles' & verb == 'estrenar')
+rolesEstrenar <- filter(df_dur, target == 'roles' & verb == 'estrenar')
 rolesEstrenar$binN <- 999
-tOSrolesEstrenar <- round((unique(rolesEstrenar$word4_v1_20ms) - unique(rolesEstrenar$word4_c1v1)) / 5)
+# tOSrolesEstrenar <- round(unique(rolesEstrenar$targetOffset) / 20)
+tOSrolesEstrenar <- round((unique(rolesEstrenar$targetOffset) - unique(rolEstrenar$word3_c1v1)) / 20)
 rolesEstrenar[rolesEstrenar$bin == tOSrolesEstrenar, 'binN'] <- 0
 rolesEstrenar$binN <- rolesEstrenar$bin - tOSrolesEstrenar
 rolesEstrenar$condToken <- 1
 
 # roles : di : Aceptar
-rolesAceptar <- filter(df_dur, condLabel == 'roles' & verb == 'aceptar')
+rolesAceptar <- filter(df_dur, target == 'roles' & verb == 'aceptar')
 rolesAceptar$binN <- 999
-tOSrolesAceptar <- round((unique(rolesAceptar$word4_v1_20ms) - unique(rolesAceptar$word4_c1v1)) / 5)
+# tOSrolesAceptar <- round(unique(rolesAceptar$targetOffset) / 20)
+tOSrolesAceptar <- round((unique(rolesAceptar$targetOffset) - unique(rolesAceptar$word3_c1v1)) / 20)
 rolesAceptar[rolesAceptar$bin == tOSrolesAceptar, 'binN'] <- 0
 rolesAceptar$binN <- rolesAceptar$bin - tOSrolesAceptar
 rolesAceptar$condToken <- 2
@@ -354,33 +436,37 @@ rolesAceptar$condToken <- 2
 
 
 # sol : mono : Descubrir
-solDescubrir <- filter(df_dur, condLabel == 'sol' & verb == 'descubrir')
+solDescubrir <- filter(df_dur, target == 'sol' & verb == 'descubrir')
 solDescubrir$binN <- 999
-tOSsolDescubrir <- round((unique(solDescubrir$word4_v1_20ms) - unique(solDescubrir$word4_c1v1)) / 5)
+# tOSsolDescubrir <- round(unique(solDescubrir$targetOffset) / 20)
+tOSsolDescubrir <- round((unique(solDescubrir$targetOffset) - unique(solDescubrir$word3_c1v1)) / 20)
 solDescubrir[solDescubrir$bin == tOSsolDescubrir, 'binN'] <- 0
 solDescubrir$binN <- solDescubrir$bin - tOSsolDescubrir
 solDescubrir$condToken <- 1
 
 # sol : mono : Escribir
-solEscribir <- filter(df_dur, condLabel == 'sol' & verb == 'escribir')
+solEscribir <- filter(df_dur, target == 'sol' & verb == 'escribir')
 solEscribir$binN <- 999
-tOSsolEscribir <- round((unique(solEscribir$word4_v1_20ms) - unique(solEscribir$word4_c1v1)) / 5)
+# tOSsolEscribir <- round(unique(solEscribir$targetOffset) / 20)
+tOSsolEscribir <- round((unique(solEscribir$targetOffset) - unique(solEscribir$word3_c1v1)) / 20)
 solEscribir[solEscribir$bin == tOSsolEscribir, 'binN'] <- 0
 solEscribir$binN <- solEscribir$bin - tOSsolEscribir
 solEscribir$condToken <- 2
 
 # soles : di : Descubrir
-solesDescubrir <- filter(df_dur, condLabel == 'soles' & verb == 'descubrir')
+solesDescubrir <- filter(df_dur, target == 'soles' & verb == 'descubrir')
 solesDescubrir$binN <- 999
-tOSsolesDescubrir <- round((unique(solesDescubrir$word4_v1_20ms) - unique(solesDescubrir$word4_c1v1)) / 5)
+# tOSsolesDescubrir <- round(unique(solesDescubrir$targetOffset) / 20)
+tOSsolesDescubrir <- round((unique(solesDescubrir$targetOffset) - unique(solesDescubrir$word3_c1v1)) / 20)
 solesDescubrir[solesDescubrir$bin == tOSsolesDescubrir, 'binN'] <- 0
 solesDescubrir$binN <- solesDescubrir$bin - tOSsolesDescubrir
 solesDescubrir$condToken <- 1
 
 # soles : di : Escribir
-solesEscribir <- filter(df_dur, condLabel == 'soles' & verb == 'escribir')
+solesEscribir <- filter(df_dur, target == 'soles' & verb == 'escribir')
 solesEscribir$binN <- 999
-tOSsolesEscribir <- round((unique(solesEscribir$word4_v1_20ms) - unique(solesEscribir$word4_c1v1)) / 5)
+# tOSsolesEscribir <- round(unique(solesEscribir$targetOffset) / 20)
+tOSsolesEscribir <- round((unique(solesEscribir$targetOffset) - unique(solesEscribir$word3_c1v1)) / 20)
 solesEscribir[solesEscribir$bin == tOSsolesEscribir, 'binN'] <- 0
 solesEscribir$binN <- solesEscribir$bin - tOSsolesEscribir
 solesEscribir$condToken <- 2
@@ -388,33 +474,37 @@ solesEscribir$condToken <- 2
 
 
 # tul : mono : Coser
-tulCoser <- filter(df_dur, condLabel == 'tul' & verb == 'coser')
+tulCoser <- filter(df_dur, target == 'tul' & verb == 'coser')
 tulCoser$binN <- 999
-tOStulCoser <- round((unique(tulCoser$word4_v1_20ms) - unique(tulCoser$word4_c1v1)) / 5)
+# tOStulCoser <- round(unique(tulCoser$targetOffset) / 20)
+tOStulCoser <- round((unique(tulCoser$targetOffset) - unique(tulCoser$word3_c1v1)) / 20)
 tulCoser[tulCoser$bin == tOStulCoser, 'binN'] <- 0
 tulCoser$binN <- tulCoser$bin - tOStulCoser
 tulCoser$condToken <- 1
 
 # tul : mono : Pedir
-tulPedir <- filter(df_dur, condLabel == 'tul' & verb == 'pedir')
+tulPedir <- filter(df_dur, target == 'tul' & verb == 'pedir')
 tulPedir$binN <- 999
-tOStulPedir <- round((unique(tulPedir$word4_v1_20ms) - unique(tulPedir$word4_c1v1)) / 5)
+# tOStulPedir <- round(unique(tulPedir$targetOffset) / 20)
+tOStulPedir <- round((unique(tulPedir$targetOffset) - unique(tulPedir$word3_c1v1)) / 20)
 tulPedir[tulPedir$bin == tOStulPedir, 'binN'] <- 0
 tulPedir$binN <- tulPedir$bin - tOStulPedir
 tulPedir$condToken <- 2
 
 # tules : di : Coser
-tulesCoser <- filter(df_dur, condLabel == 'tules' & verb == 'coser')
+tulesCoser <- filter(df_dur, target == 'tules' & verb == 'coser')
 tulesCoser$binN <- 999
-tOStulesCoser <- round((unique(tulesCoser$word4_v1_20ms) - unique(tulesCoser$word4_c1v1)) / 5)
+# tOStulesCoser <- round(unique(tulesCoser$targetOffset) / 20)
+tOStulesCoser <- round((unique(tulesCoser$targetOffset) - unique(tulesCoser$word3_c1v1)) / 20)
 tulesCoser[tulesCoser$bin == tOStulesCoser, 'binN'] <- 0
 tulesCoser$binN <- tulesCoser$bin - tOStulesCoser
 tulesCoser$condToken <- 1
 
 # tules : di : Pedir
-tulesPedir <- filter(df_dur, condLabel == 'tules' & verb == 'pedir')
+tulesPedir <- filter(df_dur, target == 'tules' & verb == 'pedir')
 tulesPedir$binN <- 999
-tOStulesPedir <- round((unique(tulesPedir$word4_v1_20ms) - unique(tulesPedir$word4_c1v1)) / 5)
+# tOStulesPedir <- round(unique(tulesPedir$targetOffset) / 20)
+tOStulesPedir <- round((unique(tulesPedir$targetOffset) - unique(tulesPedir$word3_c1v1)) / 20)
 tulesPedir[tulesPedir$bin == tOStulesPedir, 'binN'] <- 0
 tulesPedir$binN <- tulesPedir$bin - tOStulesPedir
 tulesPedir$condToken <- 2
@@ -456,7 +546,7 @@ df_adj <- do.call("rbind", list(chalLucir,
                                 tulesPedir))
 
 # 200ms bin adjustment for VWP
-df_adj$binAdj <- df_adj$binN - 20
+df_adj$binAdj <- df_adj$binN - 10
 df_adj <- as.data.frame(df_adj)
 
 
@@ -465,5 +555,5 @@ df_adj <- as.data.frame(df_adj)
 glimpse(df_adj)
 
 # write table
-write.table(df_adj, "./mySources/data/durationBIN5Clean.csv", row.names = F, quote = F, sep = ",")
+write.table(df_adj, "./mySources/data/clean/durationBIN10Clean.csv", row.names = F, quote = T, sep = ",")
 

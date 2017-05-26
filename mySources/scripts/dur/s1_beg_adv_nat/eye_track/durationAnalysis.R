@@ -16,7 +16,7 @@ library(lme4); library(lmerTest); library(gridExtra); library(cowplot)
 library(broom)
 
 # read data
-df_dur <- read.csv("./mySources/data/durationBIN5Clean.csv", header = TRUE, quote = "", sep = ',')
+df_dur <- read.csv("./mySources/data/clean/durationBIN5Clean.csv", header = TRUE, quote = "", sep = ',')
 
 # Convert condToken variable to factor
 df_dur$condToken <- as.factor(df_dur$condToken)

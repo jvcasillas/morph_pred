@@ -19,8 +19,8 @@ library(lme4); library(lmerTest)
 
 
 # Read data
-dur1 <- read.csv("./mySources/data/durationOutput_trialBIN5.csv", header = TRUE, quote = "", sep = '\t')
-dur2 <- read.csv("./mySources/data/durationOutput2_trialBIN5.csv", header = TRUE, quote = "", sep = '\t')
+dur1 <- read.csv("./mySources/data/raw/durationOutput_trialBIN5.csv", header = TRUE, quote = "", sep = '\t')
+dur2 <- read.csv("./mySources/data/raw/durationOutput2_trialBIN5.csv", header = TRUE, quote = "", sep = '\t')
 
 # Check structure of each data frame to make sure they 
 # can be combined 
@@ -464,5 +464,5 @@ df_adj <- as.data.frame(df_adj)
 glimpse(df_adj)
 
 # write table
-write.table(df_adj, "./mySources/data/durationBIN5Clean.csv", row.names = F, quote = F, sep = ",")
+write.table(df_adj, "./mySources/data/clean/durationBIN5Clean.csv", row.names = F, quote = F, sep = ",")
 
