@@ -18,7 +18,7 @@ library(gridExtra); library(cowplot); library(broom)
 
 # read data
 # df_dur <- read_csv("./mySources/data/clean/durationBIN10Clean.csv")
-df_dur <- read_csv("./mySources/data/clean/durationBIN10CleanNEW.csv")
+df_dur <- read_csv("./mySources/data/clean/durationBIN20Clean.csv")
 
 # temp1 <- arrange(df_dur, participant, group, bin, exp, wavID, verb, startsentence, word2_c1v1, word3_c1v1, word4_20msafterv1, word4_c1, word4_c1v1, word5, word6, word7, end_sentence, target, targetside, BIN_DURATION, BIN_END_TIME, BIN_SAMPLE_COUNT, BIN_START_TIME, EYE_TRACKED, IA_1_ID, IA_2_ID, targetCount, distractorCount, targetProp, distractorProp, condition, condToken, targetOffset, binN, binAdj)
 # temp2 <- arrange(df_dur2, participant, group, bin, exp, wavID, verb, startsentence, word2_c1v1, word3_c1v1, word4_20msafterv1, word4_c1, word4_c1v1, word5, word6, word7, end_sentence, target, targetside, BIN_DURATION, BIN_END_TIME, BIN_SAMPLE_COUNT, BIN_START_TIME, EYE_TRACKED, IA_1_ID, IA_2_ID, targetCount, distractorCount, targetProp, distractorProp, condition, condToken, targetOffset, binN, binAdj)
@@ -45,7 +45,7 @@ df_dur %>%
   as.data.frame(.)
 # So we can use meses/conseguir:3011 as the cutoff point. 
 # What is the bin number corresponding to 3011
-high_w6_bin <- round(3011 / 10) + 1
+high_w6_bin <- round(3011 / 20) + 1
 
 
 df_dur <- df_dur %>%
@@ -106,26 +106,22 @@ glimpse(dur_short)
 # prior to target word)? 
 offsets <- dur_short %>%
   group_by(., target, verb, condToken) %>%
-  summarize(., offset = unique(targetOffset) / 10) %>%
-  # summarize(., offset = (unique(targetOffset) - unique(word3_c1v1)) / 10) %>%
+  summarize(., offset = unique(targetOffset) / 20) %>%
   mutate(., condToken = as.factor(condToken)) %>%
   as.data.frame(.)
 
 # Center time course so that offset = 0
 offsetAdj <- dur_short %>%
   group_by(., target, verb, condToken) %>%
-  summarize(., offset = (unique(targetOffset) / 10) - 
-                        (unique(targetOffset) / 10)) %>%
-  # summarize(., offset = ((unique(targetOffset) - unique(word3_c1v1)) / 10) - 
-                        # (unique(targetOffset) - unique(word3_c1v1)) / 10) %>%
+  summarize(., offset = (unique(targetOffset) / 20) - 
+                        (unique(targetOffset) / 20)) %>%
   mutate(., condToken = as.factor(condToken)) %>%
   as.data.frame(.)
 
 # Where does the target word begin in the time course?
 twOnsets <- dur_short %>%
   group_by(., target, verb, condToken) %>%
-  summarize(., twOnset = unique(word4_c1v1) / 10) %>%
-  # summarize(., twOnset = (unique(word4_c1v1) - unique(word3_c1v1)) / 10) %>%
+  summarize(., twOnset = unique(word4_c1v1) / 20) %>%
   mutate(., condToken = as.factor(condToken)) %>%
   as.data.frame(.)
 
@@ -180,7 +176,7 @@ colSeq   <- c("el", "cocinero", "escogio", "c", "o", "l", "para", "el")
 # add labels as names arg for vector colTimes
 names(colTimes) <- colSeq
 # adjust bins 
-colAdj <- (colTimes / 10) - (colTimes[6] / 10)
+colAdj <- (colTimes / 20) - (colTimes[6] / 20)
 # turn in into a dataframe 
 col_df_temp <- data.frame(group = rep(c("int", "la", "ss"), each = 8), 
                           step  = 1:8, 
@@ -197,7 +193,7 @@ colesSeq   <- c("el", "cocinero", "escogio", "c", "o", "l", "e", "s")
 # add labels as names arg for vector cantaTimes
 names(colesTimes) <- colesSeq
 # adjust bins 
-colesAdj <- (colesTimes / 10) - (colesTimes[6] / 10)
+colesAdj <- (colesTimes / 20) - (colesTimes[6] / 20)
 # turn in into a dataframe 
 coles_df_temp <- data.frame(group = rep(c("int", "la", "ss"), each = 8), 
                             step  = 1:8, 
@@ -223,27 +219,34 @@ dur_short_subset$condition <- factor(dur_short_subset$condition, levels = c("mon
 dur_short_subset$group <- factor(dur_short_subset$group, levels = c("la", "int", "ss"))
 
 
-dur_short_subset %>%
+dur_timecourse_p1 <- dur_short_subset %>%
   na.omit(.) %>% 
-  filter(., target %in% c('mes', 'meses', 'sol', 'soles')) %>%
+  filter(., !(target %in% c('mes', 'meses', 'sol', 'soles')), 
+             binAdj <= 80 & binAdj >= -100) %>%
   group_by(., participant, binAdj, group, target) %>%
   summarize(., targetProp = mean(targetProp)) %>%
   ggplot(., aes(x = binAdj, y = targetProp)) + 
   facet_grid(group ~ condition, labeller = as_labeller(condition_names)) + 
   geom_vline(xintercept = 0, color = 'grey60') + 
   geom_hline(yintercept = 0.5, color = 'grey60') + 
-  stat_summary(fun.data = mean_cl_normal, geom = 'errorbar', width = 0, size = 0.1,
-               show.legend = FALSE, color = 'darkgrey') +
-  stat_summary(fun.y = mean, geom = 'point', size = 0.2, color = 'darkgreen') + 
-  stat_summary(data = na.omit(dur_short_subset), aes(x = binAdj, y = distractorProp), fun.data = mean_cl_normal, geom = 'errorbar', width = 0, size = 0.1, color = 'darkgrey') + 
-  stat_summary(data = na.omit(dur_short_subset), aes(x = binAdj, y = distractorProp), fun.y = mean, geom = 'point', size = 0.2, color = 'red') + 
+  stat_summary(fun.data = mean_cl_normal, geom = 'errorbar', width = 0, 
+               size = 0.1, show.legend = FALSE, color = 'darkgrey') +
+  stat_summary(fun.y = mean, size = 0.5, geom = 'point', color = 'blue') + 
+  stat_summary(data = na.omit(dur_short_subset[dur_short_subset$binAdj <= 80 & 
+                                               dur_short_subset$binAdj >= -100, ]), aes(x = binAdj, y = distractorProp), 
+               fun.data = mean_cl_normal, geom = 'errorbar', width = 0, 
+               size = 0.1, color = 'darkgrey') + 
+  stat_summary(data = na.omit(dur_short_subset[dur_short_subset$binAdj <= 80 & 
+                                               dur_short_subset$binAdj >= -100, ]), aes(x = binAdj, y = distractorProp), 
+               fun.y = mean, geom = 'point', size = 0.5, color = 'darkred') + 
   ylab('Proportion of fixations') + 
   xlab('Adjusted time course') + 
-  #ylim(0, 1) + 
-  geom_text(data = colesEx[colesEx$step >= 3 & colesEx$step <= 9, ], aes(label = text), color = 'blue') + 
+  coord_cartesian(ylim = c(0, 1)) + 
+  geom_text(data = colesEx[colesEx$step >= 3 & colesEx$step <= 9, ], 
+            aes(label = text), color = 'black') + 
   theme_bw(base_size = 16, base_family = "Times") 
 
-
+# ggsave('dur_timecourse_p1.png', plot = dur_timecourse_p1, dpi = 600, device = "png", path = "./mySources/figs/dur/s3_adv_int_nat/eye_track", width = 10, height = 7, units = "in")
 
 
 
@@ -284,7 +287,7 @@ dur_0 <- dur_short_subset %>% filter(., binAdj == 0)
 dur_0 %>%
   na.omit() %>%
   filter(., (!target %in% c('mes', 'meses', 'sol', 'soles'))) %>%
-  group_by(., group, condition, target) %>%
+  group_by(., group, condition) %>%
   summarise(., meanFix = mean(targetProp), sdFix = sd(targetProp)) 
 
 # We will test this for each group in each condition (mono, di)
@@ -310,14 +313,13 @@ dur_ttest[dur_ttest$p.value <= 0.05, 'sig'] <- "*"
 # Print results
 print(as.data.frame(dur_ttest[, c(1:7, 11)]))
 
-#  group    condition  estimate  statistic     p.value parameter  conf.low  sig
-#     la monosyllabic 0.5358871  0.9760986 0.168410683        30 0.4734859 N.S.
-#     la   bisyllabic 0.5950269  2.3238657 0.013547005        30 0.5256230    *
-#    int monosyllabic 0.5425000  1.1401097 0.141836092         9 0.4741668 N.S.
-#    int   bisyllabic 0.6250000  1.9364917 0.042392606         9 0.5066731    *
-#     ss monosyllabic 0.4419255 -1.3173692 0.899364486        22 0.3662274 N.S.
-#     ss   bisyllabic 0.6206522  2.9504785 0.003697319        22 0.5504340    *
-
+# group    condition  estimate  statistic     p.value parameter  conf.low  sig
+#    la monosyllabic 0.5163978  0.3829793 0.352217712        30 0.4437270 N.S.
+#    la   bisyllabic 0.5962366  2.0264360 0.025845343        30 0.5156327    *
+#   int monosyllabic 0.6091667  2.1323141 0.030894311         9 0.5153180    *
+#   int   bisyllabic 0.7441667  3.9741222 0.001617207         9 0.6315418    *
+#    ss monosyllabic 0.4250000 -1.4497002 0.919375441        22 0.3361638 N.S.
+#    ss   bisyllabic 0.5760870  1.3789877 0.090879214        22 0.4813419 N.S.
 
 
 
@@ -345,10 +347,10 @@ ggplot(dur_ttest, aes(x = group, y = estimate, color = condition,
     ggtitle('Mean target fixations and lower-bound 95% confidence interval') + 
     scale_color_brewer(palette = "Set1", name = '', labels = c('Monosyllabic', 'Bisyllabic')) + 
     scale_x_discrete(labels = c('LA', 'INT', 'SS')) + 
-    theme_bw(base_size = 16, base_family = 'Times') -> durTargetFixMODP3
+    theme_bw(base_size = 16, base_family = 'Times') -> durTargetFixP2
 
 # Looks good, save as .png file. 
-# ggsave('durTargetFixMODP3.png', plot = durTargetFixMODP3, dpi = 300, device = "png", path = "./mySources/figs/dur/general")
+# ggsave('durTargetFixP2.png', plot = durTargetFixP2, dpi = 600, device = "png", path = "./mySources/figs/dur/s3_adv_int_nat/eye_track", height = 5, width = 9, unit = "in")
 
 
 
@@ -385,21 +387,20 @@ prop_0_mod_full <- lmer(meanFix ~ 1 + group * condition +
 
 anova(prop_0_mod_0, prop_0_mod_group, prop_0_mod_cond, prop_0_mod_full, test = "Chisq")
 
-#        Df    AIC    BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)   
-# object  3 19.292 27.848 -6.6458  13.2917                            
-# ..1     5 16.890 31.150 -3.4450   6.8900 6.4017      2   0.040728 * 
-# ..2     6 11.165 28.277  0.4176  -0.8352 7.7252      1   0.005446 **
-# ..3     8 14.267 37.083  0.8666  -1.7332 0.8980      2   0.638254   
+#        Df     AIC    BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)   
+# object  3 16.8573 25.413 -5.4286  10.8573                            
+# ..1     5 13.8834 28.144 -1.9417   3.8834 6.9739      2   0.030594 * 
+# ..2     6  8.7924 25.905  1.6038  -3.2076 7.0910      1   0.007747 **
+# ..3     8 12.1584 34.975  1.9208  -3.8416 0.6340      2   0.728341   
 
 summary(prop_0_mod_cond)
 
-#                               Estimate Std. Error        df t value Pr(>|t|)
-# (Intercept)                    0.71042    0.03460 124.18000  20.535   <2e-16
-# groupint                      -0.04167    0.06919 124.18000  -0.602    0.548
-# groupss                        0.05519    0.05252 124.18000   1.051    0.295
-# conditionbisyllabic            0.04486    0.04587  63.00000   0.978    0.332
-# groupint:conditionbisyllabic   0.13264    0.09174  63.00000   1.446    0.153
-# groupss:conditionbisyllabic   -0.08710    0.06963  63.00000  -1.251    0.216
+# Fixed effects:
+#                      Estimate Std. Error        df t value Pr(>|t|)    
+# (Intercept)           0.49929    0.03697 128.00000  13.504  < 2e-16 ***
+# groupint              0.12035    0.06145 128.00000   1.959  0.05234 .  
+# groupss              -0.05577    0.04650 128.00000  -1.199  0.23258    
+# conditionbisyllabic   0.11406    0.04224 128.00000   2.700  0.00787 ** 
 
 # Calculate mean target fixation as a function of group, condition, 
 # for each participant. We will plot the mean and calculate the 
@@ -419,8 +420,9 @@ dur_0_prop %>%
     scale_x_discrete(labels = c('LA', 'IN', 'SS')) + 
     ggtitle('Mean target fixations as a function of group and target type') + 
     scale_color_brewer(palette = "Set1", name = '', labels = c('Monosyllabic', 'Bisyllabic')) + 
-    theme_bw(base_size = 16, base_family = 'Times') -> stressTargetFixLSRLp2
+    theme_bw(base_size = 16, base_family = 'Times') -> durTargetFixP3
 
+# ggsave('durTargetFixP3.png', plot = durTargetFixP3, dpi = 600, device = "png", path = "./mySources/figs/dur/s3_adv_int_nat/eye_track", height = 5, width = 9, unit = "in")
 
 
 
