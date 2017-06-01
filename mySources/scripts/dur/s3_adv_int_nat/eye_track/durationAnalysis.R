@@ -634,14 +634,14 @@ anova(gc_mod_base,
       gc_mod_full, test = 'Chisq')
 
 #        Df    AIC    BIC logLik deviance   Chisq Chi Df Pr(>Chisq)    
-# object 16 107161 107310 -53564   107129                               # base model 
-# ..1    18 107159 107327 -53562   107123  5.6071      2    0.06060 .   # add group effect on intercept 
-# ..2    20 107161 107347 -53560   107121  2.1749      2    0.33708     # add group effect on slope
-# ..3    22 107161 107367 -53559   107117  3.6218      2    0.16350     # add group effect on quadratic poly 
-# ..4    23 107162 107376 -53558   107116  1.5912      1    0.20715     # add cond effect on intercept
-# ..5    24 107164 107388 -53558   107116  0.0091      1    0.92386     # add cond effect on slope 
-# ..6    25 107160 107393 -53555   107110  5.6306      1    0.01765 *   # add cond effect on quadratic poly
-# ..7    31 107090 107379 -53514   107028 82.4257      6  1.126e-15 *** # full model 
+# object 16 117775 117925 -58871   117743                               # base model 
+# ..1    18 117773 117943 -58869   117737  5.4043      2    0.06706 .   # add group effect on intercept 
+# ..2    20 117774 117963 -58867   117734  2.9591      2    0.22774     # add group effect on slope
+# ..3    22 117775 117983 -58866   117731  2.9042      2    0.23408     # add group effect on quadratic poly 
+# ..4    23 117775 117991 -58864   117729  2.7054      1    0.10001     # add cond effect on intercept
+# ..5    24 117777 118003 -58864   117729  0.0000      1    0.99527     # add cond effect on slope 
+# ..6    25 117774 118010 -58862   117724  4.3255      1    0.03754 *   # add cond effect on quadratic poly
+# ..7    31 117712 118004 -58825   117650 74.4951      6  4.876e-14 *** # full model 
 
 
 
@@ -687,13 +687,13 @@ data.comp %>%
   ggplot(., aes(x = binGC, y = targetProp, color = group)) + 
   facet_grid(. ~ condition, labeller = as_labeller(condition_namesMod)) + 
   geom_area(data = suffix_area, aes(x = x, y = y), inherit = FALSE, alpha = 0.3, fill = 'lightcyan2') +
-  stat_summary(fun.data = mean_se, geom = 'errorbar', 
-               show.legend = FALSE, size = 0.1) +
-  stat_summary(fun.y = mean, geom = 'point', size = 0.2) + 
+#  stat_summary(fun.data = mean_se, geom = 'errorbar', 
+#               show.legend = FALSE, size = 0.1) +
+#  stat_summary(fun.y = mean, geom = 'point', size = 0.2) + 
   stat_summary(aes(y = GCA_Full, color = group), fun.y = mean, geom = 'line', size = 0.4) + 
   xlab("Adjusted time course") +
   ylab("Target fixations") +
-  coord_cartesian(ylim = c(0.0, 1.0)) + 
+#  coord_cartesian(ylim = c(0.0, 1.0)) + 
   scale_x_continuous(breaks = c(1, 121), labels = c("Approx.\ntarget\nonset", "Target\nsyllable\noffset")) + 
   scale_color_brewer(palette = "Set1", name = "", labels = c("SS", "LA", "IN")) + 
   theme_bw(base_size = 16, base_family = "Times New Roman") -> durGCAfullMod

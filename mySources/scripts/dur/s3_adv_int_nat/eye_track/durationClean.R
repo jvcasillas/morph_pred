@@ -565,7 +565,7 @@ glimpse(df_dur)
 
 
 # 200ms bin adjustment for VWP
-df_adj$binAdj <- df_adj$binN - 110
+df_adj$binAdj <- df_adj$binN - 10
 df_adj <- as.data.frame(df_adj)
 
 
