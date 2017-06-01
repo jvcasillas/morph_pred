@@ -63,9 +63,6 @@ df <- filter(df, !participant %in% remove)
 
 
 
-
-
-
 # Quick and dirty mean of target fixations as a function of 
 # group and condition (stressed, unstressed *1st syllable*)
 df %>% 

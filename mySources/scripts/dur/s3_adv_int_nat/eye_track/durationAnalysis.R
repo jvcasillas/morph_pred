@@ -13,26 +13,49 @@ rm(list = ls(all = TRUE))
 # setwd("~/Desktop/morph_pred/")
 setwd("~/academia/research/in_progress/morph_pred")
 
-library(dplyr); library(tidyr); library(ggplot2); library(plotly)
-library(lme4); library(lmerTest); library(gridExtra); library(cowplot)
-library(broom)
+library(tidyverse); library(lme4); library(lmerTest); 
+library(gridExtra); library(cowplot); library(broom)
 
 # read data
-df_dur <- read_csv("./mySources/data/clean/durationBIN10Clean.csv")
+# df_dur <- read_csv("./mySources/data/clean/durationBIN10Clean.csv")
+df_dur <- read_csv("./mySources/data/clean/durationBIN10CleanNEW.csv")
 
+# temp1 <- arrange(df_dur, participant, group, bin, exp, wavID, verb, startsentence, word2_c1v1, word3_c1v1, word4_20msafterv1, word4_c1, word4_c1v1, word5, word6, word7, end_sentence, target, targetside, BIN_DURATION, BIN_END_TIME, BIN_SAMPLE_COUNT, BIN_START_TIME, EYE_TRACKED, IA_1_ID, IA_2_ID, targetCount, distractorCount, targetProp, distractorProp, condition, condToken, targetOffset, binN, binAdj)
+# temp2 <- arrange(df_dur2, participant, group, bin, exp, wavID, verb, startsentence, word2_c1v1, word3_c1v1, word4_20msafterv1, word4_c1, word4_c1v1, word5, word6, word7, end_sentence, target, targetside, BIN_DURATION, BIN_END_TIME, BIN_SAMPLE_COUNT, BIN_START_TIME, EYE_TRACKED, IA_1_ID, IA_2_ID, targetCount, distractorCount, targetProp, distractorProp, condition, condToken, targetOffset, binN, binAdj)
+
+# identical(temp1, temp2[,-33])
+# all.equal(temp1, temp2[,-33], ignore.row.order = TRUE)
 
 # set variables and check it again
 df_dur$targetProp <- gsub(",", ".", paste(df_dur$targetProp))
 df_dur$distractorProp <- gsub(",", ".", paste(df_dur$distractorProp))
 
+
+# there target word is word 4, so we can cut all data from word 6 on
+# What is the highest target offset? (mes/conseguir = 2786)
+df_dur %>%
+  group_by(target, verb) %>%
+  summarise(., offsets = unique(targetOffset)) %>%
+  as.data.frame(.)
+
+# what is the highest w6 start? (meses/conseguir: 3011)
+df_dur %>%
+  group_by(target, verb) %>%
+  summarise(., w6start = unique(word6)) %>%
+  as.data.frame(.)
+# So we can use meses/conseguir:3011 as the cutoff point. 
+# What is the bin number corresponding to 3011
+high_w6_bin <- round(3011 / 10) + 1
+
+
 df_dur <- df_dur %>%
+  # filter(., bin <= high_w6_bin) %>%
   mutate(., 
          targetProp = as.numeric(targetProp), 
          distractorProp = as.numeric(distractorProp))
 
 # Glimpse of data structure
 glimpse(df_dur)
-
 
 
 
@@ -61,7 +84,7 @@ binAdjMinMax <- max(mins$min)
 
 # subset data based on new ranges 
 # dur_short <- df_dur
-dur_short <- df_dur %>% filter(., binAdj <= binAdjMaxMin & binAdj >= binAdjMinMax)
+dur_short <- df_dur %>% filter(., binAdj <= 100 & binAdj >= binAdjMinMax)
 
 # create new adjusted variable that ranges from 1 to max
 dur_short$binREadj <- (dur_short$binAdj - binAdjMinMax) + 1
@@ -83,7 +106,7 @@ glimpse(dur_short)
 # prior to target word)? 
 offsets <- dur_short %>%
   group_by(., target, verb, condToken) %>%
-  summarize(., offset = unique(targetOffset) / 20) %>%
+  summarize(., offset = unique(targetOffset) / 10) %>%
   # summarize(., offset = (unique(targetOffset) - unique(word3_c1v1)) / 10) %>%
   mutate(., condToken = as.factor(condToken)) %>%
   as.data.frame(.)
@@ -91,8 +114,8 @@ offsets <- dur_short %>%
 # Center time course so that offset = 0
 offsetAdj <- dur_short %>%
   group_by(., target, verb, condToken) %>%
-  summarize(., offset = (unique(targetOffset) / 20) - 
-                        (unique(targetOffset) / 20)) %>%
+  summarize(., offset = (unique(targetOffset) / 10) - 
+                        (unique(targetOffset) / 10)) %>%
   # summarize(., offset = ((unique(targetOffset) - unique(word3_c1v1)) / 10) - 
                         # (unique(targetOffset) - unique(word3_c1v1)) / 10) %>%
   mutate(., condToken = as.factor(condToken)) %>%
@@ -101,7 +124,7 @@ offsetAdj <- dur_short %>%
 # Where does the target word begin in the time course?
 twOnsets <- dur_short %>%
   group_by(., target, verb, condToken) %>%
-  summarize(., twOnset = unique(word4_c1v1) / 20) %>%
+  summarize(., twOnset = unique(word4_c1v1) / 10) %>%
   # summarize(., twOnset = (unique(word4_c1v1) - unique(word3_c1v1)) / 10) %>%
   mutate(., condToken = as.factor(condToken)) %>%
   as.data.frame(.)
@@ -151,16 +174,16 @@ durBinPlots <- plot_grid(onsetP, onsetAdjP, ncol = 2)
 # Time sequence for plots 
 
 # Create vector of times for canta 
-colTimes <- c(100, 296, 1178, 1890, 2030, 2333, 2457, 2767, 2946, 3471)
+colTimes <- c(100, 296, 1178, 1890, 2030, 2333, 2557, 2850)
 # Create vector of labels 
-colSeq   <- c("el", "cocinero", "escogio", "c", "o", "l", " para", "el", " menu", "end")
+colSeq   <- c("el", "cocinero", "escogio", "c", "o", "l", "para", "el")
 # add labels as names arg for vector colTimes
 names(colTimes) <- colSeq
 # adjust bins 
-colAdj <- (colTimes / 20) - (colTimes[6] / 20)
+colAdj <- (colTimes / 10) - (colTimes[6] / 10)
 # turn in into a dataframe 
-col_df_temp <- data.frame(group = rep(c("int", "la", "ss"), each = 10), 
-                          step  = 1:10, 
+col_df_temp <- data.frame(group = rep(c("int", "la", "ss"), each = 8), 
+                          step  = 1:8, 
                           condition = "monosyllabic", 
                           binAdj     = colAdj, 
                           binN     = colAdj, 
@@ -168,16 +191,16 @@ col_df_temp <- data.frame(group = rep(c("int", "la", "ss"), each = 10),
                           text  = names(colAdj))
 
 
-colesTimes <- c(100, 309, 1270, 1987, 2117, 2347, 2467, 2559, 2639, 3579)
+colesTimes <- c(100, 309, 1270, 1987, 2117, 2347, 2467, 2559)
 # Create vector of labels 
-colesSeq   <- c("el", "cocinero", "escogio", "c", "o", "l", "e", "s", "  para", "end")
+colesSeq   <- c("el", "cocinero", "escogio", "c", "o", "l", "e", "s")
 # add labels as names arg for vector cantaTimes
 names(colesTimes) <- colesSeq
 # adjust bins 
-colesAdj <- (colesTimes / 20) - (colesTimes[6] / 20)
+colesAdj <- (colesTimes / 10) - (colesTimes[6] / 10)
 # turn in into a dataframe 
-coles_df_temp <- data.frame(group = rep(c("int", "la", "ss"), each = 10), 
-                            step  = 1:10, 
+coles_df_temp <- data.frame(group = rep(c("int", "la", "ss"), each = 8), 
+                            step  = 1:8, 
                             condition = "bisyllabic", 
                             binAdj     = colesAdj, 
                             binN     = colesAdj, 
@@ -202,21 +225,22 @@ dur_short_subset$group <- factor(dur_short_subset$group, levels = c("la", "int",
 
 dur_short_subset %>%
   na.omit(.) %>% 
-  group_by(., participant, binAdj, group, target, verb) %>%
+  filter(., target %in% c('mes', 'meses', 'sol', 'soles')) %>%
+  group_by(., participant, binAdj, group, target) %>%
   summarize(., targetProp = mean(targetProp)) %>%
   ggplot(., aes(x = binAdj, y = targetProp)) + 
   facet_grid(group ~ condition, labeller = as_labeller(condition_names)) + 
   geom_vline(xintercept = 0, color = 'grey60') + 
   geom_hline(yintercept = 0.5, color = 'grey60') + 
-  stat_summary(fun.data = mean_cl_boot, geom = 'errorbar', width = 0, size = 0.1,
+  stat_summary(fun.data = mean_cl_normal, geom = 'errorbar', width = 0, size = 0.1,
                show.legend = FALSE, color = 'darkgrey') +
   stat_summary(fun.y = mean, geom = 'point', size = 0.2, color = 'darkgreen') + 
-  stat_summary(data = na.omit(dur_short_subset), aes(x = binAdj, y = distractorProp), fun.data = mean_cl_boot, geom = 'errorbar', width = 0, size = 0.1, color = 'darkgrey') + 
+  stat_summary(data = na.omit(dur_short_subset), aes(x = binAdj, y = distractorProp), fun.data = mean_cl_normal, geom = 'errorbar', width = 0, size = 0.1, color = 'darkgrey') + 
   stat_summary(data = na.omit(dur_short_subset), aes(x = binAdj, y = distractorProp), fun.y = mean, geom = 'point', size = 0.2, color = 'red') + 
   ylab('Proportion of fixations') + 
   xlab('Adjusted time course') + 
-  ylim(0, 1) + 
-  geom_text(data = colesEx[colesEx$step >= 3 & colesEx$step <= 9, ], aes(label = text), color = 'blue', hjust = "left") + 
+  #ylim(0, 1) + 
+  geom_text(data = colesEx[colesEx$step >= 3 & colesEx$step <= 9, ], aes(label = text), color = 'blue') + 
   theme_bw(base_size = 16, base_family = "Times") 
 
 
@@ -259,8 +283,9 @@ dur_0 <- dur_short_subset %>% filter(., binAdj == 0)
 
 dur_0 %>%
   na.omit() %>%
-  group_by(., group, condition) %>%
-  summarise(., meanFix = mean(targetProp))
+  filter(., (!target %in% c('mes', 'meses', 'sol', 'soles'))) %>%
+  group_by(., group, condition, target) %>%
+  summarise(., meanFix = mean(targetProp), sdFix = sd(targetProp)) 
 
 # We will test this for each group in each condition (mono, di)
 # using a one-sided t-test. Specifically, we are testing the 
@@ -272,6 +297,7 @@ dur_0 %>%
 
 dur_ttest <- dur_0 %>%
   na.omit() %>%
+  filter(., (!target %in% c('mes', 'meses', 'sol', 'soles'))) %>%
   group_by(., group, condition, participant) %>%
   summarise(., meanFix = mean(targetProp)) %>% 
   do(tidy(t.test(.$meanFix, alternative = "greater", mu = 0.50, conf.level = 0.95)))
@@ -284,13 +310,20 @@ dur_ttest[dur_ttest$p.value <= 0.05, 'sig'] <- "*"
 # Print results
 print(as.data.frame(dur_ttest[, c(1:7, 11)]))
 
-# group    condition  estimate statistic          p.value parameter  conf.low
-#    la monosyllabic 0.7104167  4.675311 0.00003124772865        29 0.6339459
-#    la   bisyllabic 0.7552778  7.626087 0.00000001040995        29 0.6984007
-#   int monosyllabic 0.6687500  2.510497 0.01664180953451         9 0.5455322
-#   int   bisyllabic 0.8462500  9.556776 0.00000260585647         9 0.7798348
-#    ss monosyllabic 0.7656056  7.777062 0.00000004703496        22 0.7069609
-#    ss   bisyllabic 0.7233696  6.129489 0.00000180339132        22 0.6607937
+#  group    condition  estimate  statistic     p.value parameter  conf.low  sig
+#     la monosyllabic 0.5358871  0.9760986 0.168410683        30 0.4734859 N.S.
+#     la   bisyllabic 0.5950269  2.3238657 0.013547005        30 0.5256230    *
+#    int monosyllabic 0.5425000  1.1401097 0.141836092         9 0.4741668 N.S.
+#    int   bisyllabic 0.6250000  1.9364917 0.042392606         9 0.5066731    *
+#     ss monosyllabic 0.4419255 -1.3173692 0.899364486        22 0.3662274 N.S.
+#     ss   bisyllabic 0.6206522  2.9504785 0.003697319        22 0.5504340    *
+
+
+
+
+
+
+
 
 
 # We will plot the models 
@@ -323,11 +356,14 @@ ggplot(dur_ttest, aes(x = group, y = estimate, color = condition,
 
 dur_0_prop <- dur_0 %>%
   na.omit() %>%
+  filter(., (!target %in% c('mes', 'meses', 'sol', 'soles'))) %>%
   group_by(., group, condition, participant) %>%
   summarise(., meanFix = mean(targetProp))  
 
 # Add working memory covariate
 # NEED DATA FOR INT
+# read data
+my_wm <- read.csv("./mySources/data/raw/my_wm.csv", header = TRUE, quote = "")
 
 
 
@@ -349,13 +385,13 @@ prop_0_mod_full <- lmer(meanFix ~ 1 + group * condition +
 
 anova(prop_0_mod_0, prop_0_mod_group, prop_0_mod_cond, prop_0_mod_full, test = "Chisq")
 
-#        Df     AIC     BIC logLik deviance  Chisq Chi Df Pr(>Chisq)  
-# object  3 -50.021 -41.512 28.011  -56.021                           
-# ..1     5 -46.269 -32.087 28.134  -56.269 0.2478      2    0.88348  
-# ..2     6 -45.329 -28.312 28.665  -57.329 1.0605      1    0.30310  
-# ..3     8 -46.544 -23.853 31.272  -62.544 5.2142      2    0.07375 .
+#        Df    AIC    BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)   
+# object  3 19.292 27.848 -6.6458  13.2917                            
+# ..1     5 16.890 31.150 -3.4450   6.8900 6.4017      2   0.040728 * 
+# ..2     6 11.165 28.277  0.4176  -0.8352 7.7252      1   0.005446 **
+# ..3     8 14.267 37.083  0.8666  -1.7332 0.8980      2   0.638254   
 
-summary(prop_0_mod_full)
+summary(prop_0_mod_cond)
 
 #                               Estimate Std. Error        df t value Pr(>|t|)
 # (Intercept)                    0.71042    0.03460 124.18000  20.535   <2e-16
@@ -430,11 +466,11 @@ dur_0_prop %>%
 # print(twOnsetAdj)
 # min(twOnsetAdj$twOnsetAdj)
 
-#    - the lowest target word onset is: 'firma' @ -33.75
-#    - thus we can use -35 binAdj as the starting point 
+#    - the lowest target word onset is: 'soles/descubrir' @ -67.5
+#    - thus we can use -70 binAdj as the starting point 
 #      and be sure we are including the entire target word
 #    - we can also do a little higher to lighten the models (-30)
-dur_gc_subset <- filter(dur_short_subset, binAdj >= -35 & binAdj <= 5)
+dur_gc_subset <- filter(dur_short_subset, binAdj >= -70 & binAdj <= 50, (!target %in% c('mes', 'meses', 'sol', 'soles')))
 
 
 # - Readjust time course 
@@ -442,7 +478,7 @@ dur_gc_subset <- filter(dur_short_subset, binAdj >= -35 & binAdj <= 5)
 #    - to do this we will add the lowest 'binAdj' value to each 
 #      bin, plus 1 (to avoid starting at 0)
 
-dur_gc_subset$binGC <- dur_gc_subset$binAdj + 36
+dur_gc_subset$binGC <- dur_gc_subset$binAdj + 71
 
 
 # - Now we add higher order polynomials for analyses
@@ -496,7 +532,7 @@ gc_mod_full    <- readRDS('./mySources/models/dur/s3_adv_int_nat/eye_track/gc_mo
 
 
 # Base model 
-if(F){
+if(T){
   gc_mod_base <- lmer(targetProp ~ (ot1+ot2) + 
                  ((ot1+ot2) | participant) + 
                  ((ot1+ot2) | target),
@@ -507,7 +543,7 @@ if(F){
 
 
 # Add group effect on intercept 
-if(F){
+if(T){
   gc_mod_group_0 <- lmer(targetProp ~ (ot1+ot2) + group + 
                     ((ot1+ot2) | participant) + 
                     ((ot1+ot2) | target), 
@@ -517,7 +553,7 @@ if(F){
 }
 
 # Add group effect on slope
-if(F){
+if(T){
  gc_mod_group_1 <- lmer(targetProp ~ (ot1+ot2) + group + 
                    ot1:group + 
                    ((ot1+ot2) | participant) + 
@@ -528,7 +564,7 @@ if(F){
 }
 
 # Add group effect on quadratic poly 
-if(F){
+if(T){
   gc_mod_group_2 <- lmer(targetProp ~ (ot1+ot2) + group + 
                     ot1:group + ot2:group + 
                     ((ot1+ot2) | participant) + 
@@ -540,7 +576,7 @@ if(F){
 
 
 # Add condition effect on intercept 
-if(F){
+if(T){
   gc_mod_cond_0 <- lmer(targetProp ~ (ot1+ot2) * group + condition + 
                    ((ot1+ot2) | participant) + 
                    ((ot1+ot2) | target),
@@ -550,7 +586,7 @@ if(F){
 }
 
 # Add condition effect on slope 
-if(F){
+if(T){
   gc_mod_cond_1 <- lmer(targetProp ~ (ot1+ot2) * group + condition + 
                    ot1:condition + 
                    ((ot1+ot2) | participant) + 
@@ -561,7 +597,7 @@ if(F){
 }
 
 # Add condition effect on quadratic poly 
-if(F){
+if(T){
   gc_mod_cond_2 <- lmer(targetProp ~ (ot1+ot2) * group + condition + 
                    ot1:condition + ot2:condition + 
                    ((ot1+ot2) | participant) + 
@@ -573,7 +609,7 @@ if(F){
 
 
 # Include all interactions
-if(F){
+if(T){
 gc_mod_full <- lmer(targetProp ~ (ot1+ot2) * group * condition + 
                ((ot1+ot2) | participant) + 
                ((ot1+ot2) | target),
@@ -597,40 +633,40 @@ anova(gc_mod_base,
       gc_mod_cond_2, 
       gc_mod_full, test = 'Chisq')
 
-#        Df   AIC   BIC logLik deviance    Chisq Chi Df Pr(>Chisq)    
-# object 16 57804 57944 -28886    57772                                # base model 
-# ..1    18 57802 57960 -28883    57766   5.7529      2   0.056335 .   # add group effect on intercept 
-# ..2    20 57804 57979 -28882    57764   2.6237      2   0.269326     # add group effect on slope
-# ..3    22 57806 58000 -28881    57762   1.1935      2   0.550610     # add group effect on quadratic poly 
-# ..4    23 57808 58010 -28881    57762   0.5912      1   0.441941     # add cond effect on intercept
-# ..5    24 57801 58012 -28877    57753   8.6536      1   0.003264 **  # add cond effect on slope 
-# ..6    25 57797 58017 -28874    57747   5.9869      1   0.014412 *   # add cond effect on quadratic poly
-# ..7    31 57647 57920 -28793    57585 161.7451      6  < 2.2e-16 *** # full model 
+#        Df    AIC    BIC logLik deviance   Chisq Chi Df Pr(>Chisq)    
+# object 16 107161 107310 -53564   107129                               # base model 
+# ..1    18 107159 107327 -53562   107123  5.6071      2    0.06060 .   # add group effect on intercept 
+# ..2    20 107161 107347 -53560   107121  2.1749      2    0.33708     # add group effect on slope
+# ..3    22 107161 107367 -53559   107117  3.6218      2    0.16350     # add group effect on quadratic poly 
+# ..4    23 107162 107376 -53558   107116  1.5912      1    0.20715     # add cond effect on intercept
+# ..5    24 107164 107388 -53558   107116  0.0091      1    0.92386     # add cond effect on slope 
+# ..6    25 107160 107393 -53555   107110  5.6306      1    0.01765 *   # add cond effect on quadratic poly
+# ..7    31 107090 107379 -53514   107028 82.4257      6  1.126e-15 *** # full model 
 
 
 
 # summary(gc_mod_full)
 
-#Fixed effects:
-#                                   Estimate Std. Error         df t value  Pr(>|t|)    
-#(Intercept)                       5.862e-01  3.437e-02  3.300e+01  17.055   < 2e-16 ***
-#ot1                               8.542e-01  1.101e-01  5.300e+01   7.762  2.62e-10 ***
-#ot2                               4.745e-02  5.393e-02  8.300e+01   0.880  0.381585    
-#groupla                           1.096e-02  2.621e-02  6.500e+01   0.418  0.677333    
-#groupint                          5.275e-03  3.591e-02  6.600e+01   0.147  0.883661    
-#conditionbisyllabic               1.095e-01  4.040e-02  1.700e+01   2.711  0.015040 *  
-#ot1:groupla                      -2.877e-01  1.074e-01  7.200e+01  -2.678  0.009178 ** 
-#ot1:groupint                     -5.303e-01  1.477e-01  7.400e+01  -3.589  0.000593 ***
-#ot2:groupla                       6.254e-02  6.281e-02  1.000e+02   0.996  0.321815    
-#ot2:groupint                      1.179e-01  8.758e-02  1.100e+02   1.346  0.181004    
-#ot1:conditionbisyllabic          -6.864e-01  1.143e-01  2.000e+01  -6.003  7.27e-06 ***
-#ot2:conditionbisyllabic          -9.336e-02  5.698e-02  5.000e+01  -1.639  0.107591    
-#groupla:conditionbisyllabic      -2.226e-03  8.931e-03  4.790e+04  -0.249  0.803149    
-#groupint:conditionbisyllabic      1.120e-01  1.294e-02  4.790e+04   8.653   < 2e-16 ***
-#ot1:groupla:conditionbisyllabic   3.242e-01  5.719e-02  4.790e+04   5.668  1.45e-08 ***
-#ot1:groupint:conditionbisyllabic  6.195e-01  8.289e-02  4.790e+04   7.474  7.90e-14 ***
-#ot2:groupla:conditionbisyllabic  -2.783e-03  5.718e-02  4.792e+04  -0.049  0.961186    
-#ot2:groupint:conditionbisyllabic -1.477e-01  8.289e-02  4.790e+04  -1.781  0.074848 .  
+# Fixed effects:                                                             
+#                                    Estimate Std. Error         df t value  Pr(>|t|)    
+# (Intercept)                       5.645e-01  3.153e-02  2.900e+01  17.902   < 2e-16 ***
+# ot1                               6.315e-01  1.854e-01  4.500e+01   3.407   0.00139 ** 
+# ot2                               7.529e-01  1.563e-01  3.700e+01   4.818  2.44e-05 ***
+# groupla                           9.209e-03  2.601e-02  6.500e+01   0.354   0.72447    
+# groupint                          7.145e-02  3.578e-02  6.500e+01   1.997   0.05004 .  
+# conditionbisyllabic               6.156e-02  3.521e-02  1.200e+01   1.748   0.10532    
+# ot1:groupla                       1.908e-01  1.834e-01  7.000e+01   1.041   0.30153    
+# ot1:groupint                     -3.216e-02  2.520e-01  6.900e+01  -0.128   0.89885    
+# ot2:groupla                      -3.724e-01  1.457e-01  7.300e+01  -2.556   0.01266 *  
+# ot2:groupint                     -3.488e-01  2.001e-01  7.200e+01  -1.743   0.08562 .  
+# ot1:conditionbisyllabic          -1.887e-01  1.823e-01  1.300e+01  -1.035   0.31890    
+# ot2:conditionbisyllabic          -5.675e-01  1.661e-01  1.400e+01  -3.416   0.00429 ** 
+# groupla:conditionbisyllabic      -2.260e-02  6.978e-03  8.314e+04  -3.239   0.00120 ** 
+# groupint:conditionbisyllabic      1.620e-02  9.507e-03  8.314e+04   1.703   0.08850 .  
+# ot1:groupla:conditionbisyllabic   6.608e-02  7.351e-02  8.314e+04   0.899   0.36873    
+# ot1:groupint:conditionbisyllabic  6.789e-01  1.002e-01  8.314e+04   6.777  1.23e-11 ***
+# ot2:groupla:conditionbisyllabic   2.370e-01  7.351e-02  8.314e+04   3.224   0.00126 ** 
+# ot2:groupint:conditionbisyllabic  1.580e-01  1.002e-01  8.314e+04   1.577   0.11471    
 
 
 # create new df including the fitted model 
@@ -640,28 +676,73 @@ data.comp <- data.frame(na.omit(dur_gc_subset),
 
 
 # I dont remember how I determined this
-suffix_area <- data.frame(x = 36:41, y = Inf)
+suffix_area <- data.frame(x = 71:121, y = Inf)
 
-condition_namesModLSRL <- c(
-                    `ss` = "SS", 
-                    `la` = "LA", 
-                    `int` = "IN" 
+condition_namesMod <- c(
+                    `monosyllabic` = "Monosyllabic", 
+                    `bisyllabic` = "Bisyllabic" 
                     )
 
 data.comp %>% 
-  ggplot(., aes(x = binGC, y = targetProp, color = condition)) + 
-  facet_grid(. ~ group, labeller = as_labeller(condition_namesModLSRL)) + 
+  ggplot(., aes(x = binGC, y = targetProp, color = group)) + 
+  facet_grid(. ~ condition, labeller = as_labeller(condition_namesMod)) + 
   geom_area(data = suffix_area, aes(x = x, y = y), inherit = FALSE, alpha = 0.3, fill = 'lightcyan2') +
   stat_summary(fun.data = mean_se, geom = 'errorbar', 
                show.legend = FALSE, size = 0.1) +
   stat_summary(fun.y = mean, geom = 'point', size = 0.2) + 
-  stat_summary(aes(y = GCA_Full, color = condition), fun.y = mean, geom = 'line', size = 0.4) + 
+  stat_summary(aes(y = GCA_Full, color = group), fun.y = mean, geom = 'line', size = 0.4) + 
   xlab("Adjusted time course") +
   ylab("Target fixations") +
   coord_cartesian(ylim = c(0.0, 1.0)) + 
-  scale_x_continuous(breaks = c(1, 36), labels = c("Approx.\ntarget\nonset", "Target\nsyllable\noffset")) + 
-  scale_color_brewer(palette = "Set1", name = "", labels = c("Monosyllabic", "Bisyllabic")) + 
+  scale_x_continuous(breaks = c(1, 121), labels = c("Approx.\ntarget\nonset", "Target\nsyllable\noffset")) + 
+  scale_color_brewer(palette = "Set1", name = "", labels = c("SS", "LA", "IN")) + 
   theme_bw(base_size = 16, base_family = "Times New Roman") -> durGCAfullMod
 
 # ggsave('stressGCAfullMod.png', plot = stressGCAfullMod, dpi = 600, device = "png", path = "./mySources/figs/stress/s1_beg_adv_nat/eye_track")
 
+
+
+
+
+
+
+
+
+
+time_mat <- poly(sort(unique(data.comp$binGC)), 2) %>%
+  polypoly::poly_rescale(1) %>%
+  cbind(constant = 1, .)
+round(time_mat, 2)
+
+mono_coefs <- fixef(gc_mod_full)[1:3]
+bisl_coefs <- mono_coefs + fixef(gc_mod_full)[c(6, 11, 12)]
+bisl_coefs
+
+set_colnames <- `colnames<-`
+
+m_mono <- time_mat %*% diag(mono_coefs) %>%
+  set_colnames(c("constant", "ot1", "ot2")) 
+
+m_bisl <- time_mat %*% diag(bisl_coefs) %>%
+  set_colnames(c("constant", "ot1", "ot2")) 
+
+# Convince ourselves with an example
+round(m_bisl, 2)
+
+
+df_mono <- m_mono %>%
+  polypoly::poly_melt() %>%
+  tibble::add_column(Condition = "mono")
+
+df_bisl <- m_bisl %>% 
+  polypoly::poly_melt() %>%
+  tibble::add_column(Condition = "bisl")
+
+df_both <- bind_rows(df_bisl, df_mono) %>% 
+  mutate(Condition = factor(Condition, c("mono", "bisl")))
+
+ggplot(df_both) +
+  aes(x = observation, y = value, color = Condition) +
+  geom_line() + 
+  facet_wrap("degree") + 
+  theme_bw()

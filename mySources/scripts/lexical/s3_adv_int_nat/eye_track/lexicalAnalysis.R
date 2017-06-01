@@ -18,7 +18,8 @@ library(lme4); library(lmerTest); library(gridExtra); library(cowplot)
 library(broom)
 
 # read data
-df_lex <- read_csv("./mySources/data/clean/lexicalBIN10Clean.csv")
+# df_lex <- read_csv("./mySources/data/clean/lexicalBIN10Clean.csv")
+df_lex <- read_csv("./mySources/data/clean/lexicalBIN10CleanNEW.csv")
 
 
 # set variables and check it again
@@ -26,6 +27,7 @@ df_lex$targetProp <- gsub(",", ".", paste(df_lex$targetProp))
 df_lex$distractorProp <- gsub(",", ".", paste(df_lex$distractorProp))
 
 df_lex <- df_lex %>%
+  filter(., group %in% c('la', 'int', 'ss') & bin <= 131) %>%
   mutate(., 
          targetProp = as.numeric(targetProp), 
          distractorProp = as.numeric(distractorProp))
@@ -78,29 +80,28 @@ glimpse(lex_short)
 # - First we calculate the target onset for each item 
 # - Next we calculate the adjusted onset 
 
-# Where does target end in the shortened time course starts at word 
-# prior to target word)? 
+# Where does target suffix begin in the shortened time course 
 offsets <- lex_short %>%
   group_by(., target, verb, condToken) %>%
-  summarize(., offset = unique(targetOffset) / 20) %>%
-  # summarize(., offset = (unique(targetOffset) - unique(word3_c1v1)) / 10) %>%
+  summarize(., offset = unique(targetOffset) / 10) %>%
+#  summarize(., offset = (unique(targetOffset) - unique(word2_c1v1)) / 10) %>%
   mutate(., condToken = as.factor(condToken)) %>%
   as.data.frame(.)
 
 # Center time course so that offset = 0
 offsetAdj <- lex_short %>%
   group_by(., target, verb, condToken) %>%
-  summarize(., offset = (unique(targetOffset) / 20) - 
-                        (unique(targetOffset) / 20)) %>%
-  # summarize(., offset = ((unique(targetOffset) - unique(word3_c1v1)) / 10) - 
-                        # (unique(targetOffset) - unique(word3_c1v1)) / 10) %>%
+  summarize(., offset = (unique(targetOffset) / 10) - 
+                        (unique(targetOffset) / 10)) %>%
+#   summarize(., offset = ((unique(targetOffset) - unique(word2_c1v1)) / 10) - 
+#                         (unique(targetOffset) - unique(word2_c1v1)) / 10) %>%
   mutate(., condToken = as.factor(condToken)) %>%
   as.data.frame(.)
 
 # Where does the target word begin in the time course?
 twOnsets <- lex_short %>%
   group_by(., target, verb, condToken) %>%
-  summarize(., twOnset = unique(word2_c1v1) / 20) %>%
+  summarize(., twOnset = unique(word2_c1v1) / 10) %>%
   # summarize(., twOnset = (unique(word4_c1v1) - unique(word3_c1v1)) / 10) %>%
   mutate(., condToken = as.factor(condToken)) %>%
   as.data.frame(.)
@@ -156,7 +157,7 @@ colSeq   <- c("el", "cocinero", "escogio", "c", "o", "l", " para", "el", " menu"
 # add labels as names arg for vector colTimes
 names(colTimes) <- colSeq
 # adjust bins 
-colAdj <- (colTimes / 20) - (colTimes[6] / 20)
+colAdj <- (colTimes / 10) - (colTimes[6] / 10)
 # turn in into a dataframe 
 col_df_temp <- data.frame(group = rep(c("int", "la", "ss"), each = 10), 
                           step  = 1:10, 
@@ -173,7 +174,7 @@ colesSeq   <- c("el", "cocinero", "escogio", "c", "o", "l", "e", "s", "  para", 
 # add labels as names arg for vector cantaTimes
 names(colesTimes) <- colesSeq
 # adjust bins 
-colesAdj <- (colesTimes / 20) - (colesTimes[6] / 20)
+colesAdj <- (colesTimes / 10) - (colesTimes[6] / 10)
 # turn in into a dataframe 
 coles_df_temp <- data.frame(group = rep(c("int", "la", "ss"), each = 10), 
                             step  = 1:10, 
@@ -192,14 +193,13 @@ condition_names <- c(
                     `ss` = "SS" 
                     )
 
-lex_short_subset <- lex_short %>% filter(., group %in% c('la', 'int', 'ss'))
 
 # Relevel factor
-lex_short_subset$condition <- factor(lex_short_subset$condition, levels = c("monosyllabic", "bisyllabic"))
-lex_short_subset$group <- factor(lex_short_subset$group, levels = c("la", "int", "ss"))
+lex_short$condition <- factor(lex_short$condition, levels = c("monosyllabic", "bisyllabic"))
+lex_short$group <- factor(lex_short$group, levels = c("la", "int", "ss"))
 
 
-lex_short_subset %>%
+lex_short %>%
   na.omit(.) %>% 
   group_by(., participant, binAdj, group, target, verb) %>%
   summarize(., targetProp = mean(targetProp)) %>%
@@ -210,13 +210,14 @@ lex_short_subset %>%
   stat_summary(fun.data = mean_cl_boot, geom = 'errorbar', width = 0, size = 0.1,
                show.legend = FALSE, color = 'darkgrey') +
   stat_summary(fun.y = mean, geom = 'point', size = 0.2, color = 'darkgreen') + 
-  stat_summary(data = na.omit(lex_short_subset), aes(x = binAdj, y = distractorProp), fun.data = mean_cl_boot, geom = 'errorbar', width = 0, size = 0.1, color = 'darkgrey') + 
-  stat_summary(data = na.omit(lex_short_subset), aes(x = binAdj, y = distractorProp), fun.y = mean, geom = 'point', size = 0.2, color = 'red') + 
+  stat_summary(data = na.omit(lex_short), aes(x = binAdj, y = distractorProp), fun.data = mean_cl_boot, geom = 'errorbar', width = 0, size = 0.1, color = 'darkgrey') + 
+  stat_summary(data = na.omit(lex_short), aes(x = binAdj, y = distractorProp), fun.y = mean, geom = 'point', size = 0.2, color = 'red') + 
   ylab('Proportion of fixations') + 
   xlab('Adjusted time course') + 
   ylim(0, 1) + 
-  # geom_text(data = colesEx[colesEx$step >= 3 & colesEx$step <= 9, ], aes(label = text), color = 'blue', hjust = "left") + 
+  #geom_text(data = colesEx[colesEx$step >= 3 & colesEx$step <= 9, ], aes(label = text), color = 'blue', hjust = "left") + 
   theme_bw(base_size = 16, base_family = "Times") 
+
 
 
 
