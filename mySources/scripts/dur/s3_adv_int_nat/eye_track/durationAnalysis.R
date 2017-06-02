@@ -18,7 +18,8 @@ library(gridExtra); library(cowplot); library(broom)
 
 # read data
 # df_dur <- read_csv("./mySources/data/clean/durationBIN10Clean.csv")
-df_dur <- read_csv("./mySources/data/clean/durationBIN20Clean.csv")
+# df_dur <- read_csv("./mySources/data/clean/durationBIN20Clean.csv")
+df_dur <- read_csv("./mySources/data/clean/durationBIN50Clean.csv")
 
 # temp1 <- arrange(df_dur, participant, group, bin, exp, wavID, verb, startsentence, word2_c1v1, word3_c1v1, word4_20msafterv1, word4_c1, word4_c1v1, word5, word6, word7, end_sentence, target, targetside, BIN_DURATION, BIN_END_TIME, BIN_SAMPLE_COUNT, BIN_START_TIME, EYE_TRACKED, IA_1_ID, IA_2_ID, targetCount, distractorCount, targetProp, distractorProp, condition, condToken, targetOffset, binN, binAdj)
 # temp2 <- arrange(df_dur2, participant, group, bin, exp, wavID, verb, startsentence, word2_c1v1, word3_c1v1, word4_20msafterv1, word4_c1, word4_c1v1, word5, word6, word7, end_sentence, target, targetside, BIN_DURATION, BIN_END_TIME, BIN_SAMPLE_COUNT, BIN_START_TIME, EYE_TRACKED, IA_1_ID, IA_2_ID, targetCount, distractorCount, targetProp, distractorProp, condition, condToken, targetOffset, binN, binAdj)
@@ -176,7 +177,7 @@ colSeq   <- c("el", "cocinero", "escogio", "c", "o", "l", "para", "el")
 # add labels as names arg for vector colTimes
 names(colTimes) <- colSeq
 # adjust bins 
-colAdj <- (colTimes / 20) - (colTimes[6] / 20)
+colAdj <- (colTimes / 50) - (colTimes[6] / 50)
 # turn in into a dataframe 
 col_df_temp <- data.frame(group = rep(c("int", "la", "ss"), each = 8), 
                           step  = 1:8, 
@@ -193,7 +194,7 @@ colesSeq   <- c("el", "cocinero", "escogio", "c", "o", "l", "e", "s")
 # add labels as names arg for vector cantaTimes
 names(colesTimes) <- colesSeq
 # adjust bins 
-colesAdj <- (colesTimes / 20) - (colesTimes[6] / 20)
+colesAdj <- (colesTimes / 50) - (colesTimes[6] / 50)
 # turn in into a dataframe 
 coles_df_temp <- data.frame(group = rep(c("int", "la", "ss"), each = 8), 
                             step  = 1:8, 
@@ -222,7 +223,7 @@ dur_short_subset$group <- factor(dur_short_subset$group, levels = c("la", "int",
 dur_timecourse_p1 <- dur_short_subset %>%
   na.omit(.) %>% 
   filter(., !(target %in% c('mes', 'meses', 'sol', 'soles')), 
-             binAdj <= 80 & binAdj >= -100) %>%
+             binAdj <= 30 & binAdj >= -30) %>%
   group_by(., participant, binAdj, group, target) %>%
   summarize(., targetProp = mean(targetProp)) %>%
   ggplot(., aes(x = binAdj, y = targetProp)) + 
@@ -232,12 +233,12 @@ dur_timecourse_p1 <- dur_short_subset %>%
   stat_summary(fun.data = mean_cl_normal, geom = 'errorbar', width = 0, 
                size = 0.1, show.legend = FALSE, color = 'darkgrey') +
   stat_summary(fun.y = mean, size = 0.5, geom = 'point', color = 'blue') + 
-  stat_summary(data = na.omit(dur_short_subset[dur_short_subset$binAdj <= 80 & 
-                                               dur_short_subset$binAdj >= -100, ]), aes(x = binAdj, y = distractorProp), 
+  stat_summary(data = na.omit(dur_short_subset[dur_short_subset$binAdj <= 30 & 
+                                               dur_short_subset$binAdj >= -30, ]), aes(x = binAdj, y = distractorProp), 
                fun.data = mean_cl_normal, geom = 'errorbar', width = 0, 
                size = 0.1, color = 'darkgrey') + 
-  stat_summary(data = na.omit(dur_short_subset[dur_short_subset$binAdj <= 80 & 
-                                               dur_short_subset$binAdj >= -100, ]), aes(x = binAdj, y = distractorProp), 
+  stat_summary(data = na.omit(dur_short_subset[dur_short_subset$binAdj <= 30 & 
+                                               dur_short_subset$binAdj >= -30, ]), aes(x = binAdj, y = distractorProp), 
                fun.y = mean, geom = 'point', size = 0.5, color = 'darkred') + 
   ylab('Proportion of fixations') + 
   xlab('Adjusted time course') + 
@@ -468,11 +469,11 @@ dur_0_prop %>%
 # print(twOnsetAdj)
 # min(twOnsetAdj$twOnsetAdj)
 
-#    - the lowest target word onset is: 'soles/descubrir' @ -67.5
-#    - thus we can use -70 binAdj as the starting point 
+#    - the lowest target word onset is: 'soles/descubrir' @ -35
+#    - thus we can use -35 binAdj as the starting point 
 #      and be sure we are including the entire target word
 #    - we can also do a little higher to lighten the models (-30)
-dur_gc_subset <- filter(dur_short_subset, binAdj >= -70 & binAdj <= 50, (!target %in% c('mes', 'meses', 'sol', 'soles')))
+dur_gc_subset <- filter(dur_short_subset, binAdj >= -30 & binAdj <= 30, (!target %in% c('mes', 'meses', 'sol', 'soles')))
 
 
 # - Readjust time course 
@@ -480,7 +481,7 @@ dur_gc_subset <- filter(dur_short_subset, binAdj >= -70 & binAdj <= 50, (!target
 #    - to do this we will add the lowest 'binAdj' value to each 
 #      bin, plus 1 (to avoid starting at 0)
 
-dur_gc_subset$binGC <- dur_gc_subset$binAdj + 71
+dur_gc_subset$binGC <- dur_gc_subset$binAdj + 31
 
 
 # - Now we add higher order polynomials for analyses
@@ -620,6 +621,15 @@ gc_mod_full <- lmer(targetProp ~ (ot1+ot2) * group * condition +
   saveRDS(gc_mod_full, file = "./mySources/models/dur/s3_adv_int_nat/eye_track/gc_mod_full.rds", compress = 'xz')
 }
 
+if(T){
+gc_mod_cube <- lmer(targetProp ~ (ot1+ot2+ot3) * group * condition + 
+               ((ot1+ot2+ot3) | participant) + 
+               ((ot1+ot2+ot3) | target),
+               control = lmerControl(optimizer = 'bobyqa'), 
+               data = dur_gc_subset, REML = F)
+  saveRDS(gc_mod_cube, file = "./mySources/models/dur/s3_adv_int_nat/eye_track/gc_mod_cube.rds", compress = 'xz')
+}
+
 # Model comparison 
 # - subsequent models test three time terms: 
 #    - the intercept (additive effects)
@@ -673,12 +683,12 @@ anova(gc_mod_base,
 
 # create new df including the fitted model 
 data.comp <- data.frame(na.omit(dur_gc_subset), 
-                        GCA_Full = fitted(gc_mod_full))
+                        GCA_Full = fitted(gc_mod_cube))
 # glimpse(data.comp)
 
 
 # I dont remember how I determined this
-suffix_area <- data.frame(x = 71:121, y = Inf)
+suffix_area <- data.frame(x = 31:61, y = Inf)
 
 condition_namesMod <- c(
                     `monosyllabic` = "Monosyllabic", 
@@ -686,21 +696,21 @@ condition_namesMod <- c(
                     )
 
 data.comp %>% 
-  ggplot(., aes(x = binGC, y = targetProp, color = group)) + 
+  ggplot(., aes(x = binGC, y = targetProp, color = group, fill = group)) + 
   facet_grid(. ~ condition, labeller = as_labeller(condition_namesMod)) + 
-  geom_area(data = suffix_area, aes(x = x, y = y), inherit = FALSE, alpha = 0.3, fill = 'lightcyan2') +
-#  stat_summary(fun.data = mean_se, geom = 'errorbar', 
-#               show.legend = FALSE, size = 0.1) +
-#  stat_summary(fun.y = mean, geom = 'point', size = 0.2) + 
+  #geom_area(data = suffix_area, aes(x = x, y = y), inherit = FALSE, alpha = 0.3, fill = 'lightcyan2') +
+  stat_summary(fun.data = mean_se, geom = 'ribbon', 
+               show.legend = FALSE, alpha = 0.2, color = NA) +
+  stat_summary(fun.y = mean, geom = 'point', size = 0.75) + 
   stat_summary(aes(y = GCA_Full, color = group), fun.y = mean, geom = 'line', size = 0.4) + 
   xlab("Adjusted time course") +
   ylab("Target fixations") +
-#  coord_cartesian(ylim = c(0.0, 1.0)) + 
-  scale_x_continuous(breaks = c(1, 121), labels = c("Approx.\ntarget\nonset", "Target\nsyllable\noffset")) + 
+  #coord_cartesian(ylim = c(0.0, 1.0)) + 
+  scale_x_continuous(breaks = c(1, 31), labels = c("Approx.\ntarget\nonset", "Target\nsyllable\noffset")) + 
   scale_color_brewer(palette = "Set1", name = "", labels = c("SS", "LA", "IN")) + 
   theme_bw(base_size = 16, base_family = "Times New Roman") -> durGCAfullMod
 
-# ggsave('stressGCAfullMod.png', plot = stressGCAfullMod, dpi = 600, device = "png", path = "./mySources/figs/stress/s1_beg_adv_nat/eye_track")
+# ggsave('.png', plot = , dpi = 600, device = "png", path = "./mySources/figs/dur/s3_int_adv_nat/eye_track")
 
 
 
