@@ -10,7 +10,7 @@ rm(list = ls(all = TRUE))
 
 ## @knitr stressLibs
 
-library(plotly); library(tidyverse); library(broom); library(sjPlot)
+library(tidyverse); library(broom); library(sjPlot)
 library(lme4); library(lmerTest); library(gridExtra); library(cowplot)
 
 ## @knitr ignore
@@ -21,41 +21,35 @@ setwd("~/academia/research/in_progress/morph_pred")
 
 
 # read data
-# df <- read.csv("./mySources/data/stressBIN5Clean.csv", header = TRUE, quote = "", sep = ',')
-# df_stress_temp <- read_csv("./mySources/data/stressBIN5Clean.csv")
+df_stress <- read_csv("./mySources/data/clean/stressBIN10Clean.csv") %>%
+  filter(., group %in% c('lb', 'la', 'ss'), 
+            !(participant %in% c('l01', 'l02', 'l03', 'l04', 'l05', 
+                                 'l06', 'l07', 'l08', 'l09', 'l10', 
+                                 'l15', 'l20', 'l21', 'l22', 'l23', 
+                                 'l26', 'l30', 'l31', 'l33', 'la04', 
+                                 'la06', 'la07', 'la14')))
 
-df_stress_temp <- read_csv("./mySources/data/clean/stressBIN10Clean.csv")
+#df_stress_temp <- read_csv("./mySources/data/clean/stressBIN20Clean.csv") %>%
+#  filter(., group %in% c('lb', 'la', 'ss'), 
+#            participant %in% c('l01', 'l02', 'l03', 'l04', 'l05', 
+#                               'l06', 'l07', 'l08', 'l09', 'l10', 
+#                               'l15', 'l20', 'l21', 'l22', 'l23', 
+#                               'l26', 'l30', 'l31', 'l33', 'la04', 
+#                               'la06', 'la07', 'la14'))
+
+#df_stress_temp <- read_csv("./mySources/data/clean/stressBIN50Clean.csv") %>%
+#  filter(., group %in% c('lb', 'la', 'ss'), 
+#            participant %in% c('l01', 'l02', 'l03', 'l04', 'l05', 
+#                               'l06', 'l07', 'l08', 'l09', 'l10', 
+#                               'l15', 'l20', 'l21', 'l22', 'l23', 
+#                               'l26', 'l30', 'l31', 'l33', 'la04', 
+#                               'la06', 'la07', 'la14'))
 
 
-## @knitr stressSubsets
-
-# Remove particpants (working memory)
-remove_partLB <- c('l01', 'l02', 'l03', 'l04', 'l05', 'l06', 'l07', 'l08', 'l09', 'l10', 'l15', 'l20', 'l21', 'l22', 'l23', 'l26', 'l30', 'l31', 'l33')
-remove_partLA <- c('la04', 'la06', 'la07', 'la14')
-
-# summary(as.factor(df_stress_temp$participant))
 
 
-# glimpse(df_stress_temp)
 
-df_stress_temp1 <- df_stress_temp[!(df_stress_temp$participant) %in% remove_partLB, ]
-df_stress <- df_stress_temp1[!(df_stress_temp1$participant) %in% remove_partLA, ]
 
-# summary(as.factor(df_stress$participant))
-
-# - for target words without codas the target syllable onset 
-#   is 'word3_c2'
-# - for words with codas the target syllable onset is 'word3_c3'
-# - we add a new column called 'targetSylOnset'
-# - initialy it is just a copy of 'word3_c3'
-# - we make a vector of words without coda and add the value from 'word3_c2' 
-#   to 'targetSylOnset'
-
-df_stress$targetSylOnset <- df_stress$word3_c3
-noCodas <- c('bebe', 'bebio', 'llena', 'lleno', 'sube', 'subio', 'come', 'comio', 'saca', 'saco', 'lava', 'lavo', 'graba', 'grabo')
-df_stress[df_stress$target %in% noCodas, 'targetSylOnset'] <- df_stress[df_stress$target %in% noCodas, 'word3_c2']
-
-# glimpse(df_stress)
 
 
 
@@ -92,21 +86,21 @@ df_short$binREadj <- (df_short$binAdj - binAdjMinMax) + 1
 
 # Bin adjustments 
 
-# Where does target suffic begin in time course
+# Where does target suffix begin in time course
 suffixOnsets <- df_stress %>%
   group_by(., target) %>%
-  summarize(., sufOnset = (unique(targetSylOnset) - unique(word2_c1v1)) / 10)
+  summarize(., sufOnset = unique(word3_suffix) / 10)
 
 # Center time course so that suffix onset = 0
 suffixOnsetAdj <- df_stress %>%
   group_by(., target) %>%
-  summarize(., sufOnsetAdj = ((unique(targetSylOnset) - unique(word2_c1v1)) / 10) - 
-                        (unique(targetSylOnset) - unique(word2_c1v1)) / 10)
+  summarize(., sufOnsetAdj = ((unique(word3_suffix) / 10) - 
+                              (unique(word3_suffix) / 10)))
 
 # Where does the target word begin in the time course?
 twOnsets <- df_stress %>%
   group_by(., target) %>%
-  summarize(., twOnset = (unique(word3_c1v1) - unique(word2_c1v1)) / 10)
+  summarize(., twOnset = unique(word3_c1v1) / 10)
 
 
 # Adjust to centered time course 
@@ -115,7 +109,7 @@ twOnsetAdj <- mutate(twOnsetAdj, diff = sufOnset - twOnset, twOnsetAdj = 0 - dif
 
 df_stress %>%
   ggplot(., aes(x = bin, y = target)) + 
-  geom_point(alpha = 0.2, size = 0.2) + 
+  geom_path(size = 1) + 
   geom_point(data = suffixOnsets, aes(x = sufOnset, y = target), color = 'red') + 
   geom_point(data = twOnsets, aes(x = twOnset, y = target), color = 'blue') + 
   xlab("Time course") + ylab("Items") + 
@@ -123,7 +117,7 @@ df_stress %>%
 
 df_stress %>%
   ggplot(., aes(x = binAdj, y = target)) + 
-  geom_point(alpha = 0.2, size = 0.2) +
+  geom_path(size = 1) +
   geom_point(data = suffixOnsetAdj, aes(x = sufOnsetAdj, y = target), color = 'red') + 
   geom_point(data = twOnsetAdj, aes(x = twOnsetAdj, y = target), color = 'blue') + 
   geom_vline(xintercept = binAdjMinMax, color = 'red') + 
@@ -134,7 +128,8 @@ df_stress %>%
 
 stressBinPlots <- plot_grid(onsetP, onsetAdjP, ncol = 2)
 
-# ggsave('stressBinPlots.png', plot = stressBinPlots, dpi = 600, device = "png", path = "./mySources/figs/stress/general")
+# ggsave('stressBinPlots.png', plot = stressBinPlots, dpi = 600, device = "png", 
+#          path = "./mySources/figs/stress/general", height = 6.5, width = 10, unit = "in")
 
 
 
@@ -143,7 +138,40 @@ stressBinPlots <- plot_grid(onsetP, onsetAdjP, ncol = 2)
 
 
 
-## @knitr stressPlotAlldata
+
+
+
+
+
+
+
+
+
+
+
+
+
+df_stress_50 <- read_csv("./mySources/data/clean/stressBIN50iaClean.csv") %>%
+  select(., participant, group, target, condition, coda, bin, binAdj, 
+            binTonsetAlign, binTsuffixAlign, targetCount, distractorCount, 
+            targetProp, distractorProp, eLog, wts, corr) %>%
+  mutate(., group = factor(group, levels = c("ss", "la", "lb"))) %>%
+  filter(., corr == 1,  
+            group %in% c('lb', 'la', 'ss'), 
+            !(participant %in% c('l01', 'l02', 'l03', 'l04', 'l05', 
+                                 'l06', 'l07', 'l08', 'l09', 'l10', 
+                                 'l15', 'l20', 'l21', 'l22', 'l23', 
+                                 'l26', 'l30', 'l31', 'l33', 'la04', 
+                                 'la06', 'la07', 'la14')), 
+            binTonsetAlign >= 4 & binTonsetAlign <= 45)
+
+
+
+
+
+
+
+
 
 # Time sequence for plots 
 
@@ -162,8 +190,6 @@ canta_df_temp <- data.frame(group = rep(c("lb", "la", "ss"), each = 10),
                             binAdj     = cantaAdj, 
                             targetProp = 0.05, 
                             text  = names(cantaAdj))
-
-
 
 
 
@@ -186,73 +212,28 @@ cantEx <- rbind(canta_df_temp, canto_df_temp)
 
 
 
-
-
-# Relevel factor
-df_short$group <- factor(df_short$group, levels = c("lb", "la", "hs", "ss", "int"))
-
 condition_names <- c(
                     `stressed` = "Paroxytone",
-                    `unstressed` = "Oxytone", 
-                    `lb` = "LB", 
-                    `la` = "LA", 
-                    `hs` = "HS", 
-                    `ss` = "SS", 
-                    `int` = "IN"
+                    `unstressed` = "Oxytone"
                     )
 
-df_short %>% 
+df_stress_50 %>%
   na.omit(.) %>% 
-  ggplot(., aes(x = binAdj, y = targetProp)) + 
-  facet_grid(group ~ condition, labeller = as_labeller(condition_names)) + 
-  geom_vline(xintercept = 0, color = 'grey60') + 
-  geom_hline(yintercept = 0.5, color = 'grey60') + 
-  stat_summary(fun.data = mean_se, geom = 'errorbar', width = 0.2, size = 0.1,
-               show.legend = FALSE) +
-  stat_summary(fun.y = mean, geom = 'point', size = 0.2, color = 'darkgreen') + 
-  stat_summary(data = na.omit(df_short), aes(x = binAdj, y = distractorProp), fun.data = mean_se, geom = 'errorbar', width = 0.2, size = 0.1) + 
-  stat_summary(data = na.omit(df_short), aes(x = binAdj, y = distractorProp), fun.y = mean, geom = 'point', size = 0.2, color = 'red') + 
-  ylab('Proportion of fixations') + 
-  xlab('Adjusted time course') + 
-  theme_bw(base_size = 16, base_family = "Times") -> stressPlotAll
+  # filter(., coda == 1) %>% 
+  ggplot(., aes(x = binTonsetAlign, y = eLog, color = group)) + 
+  facet_grid(. ~ condition, labeller = as_labeller(condition_names)) + 
+  # geom_hline(yintercept = 0.5, color = 'white', size = 2) + 
+  geom_vline(xintercept = 10, color = 'grey60', lty = 2) + 
+  geom_vline(xintercept = 20, color = 'grey60', lty = 2) + 
+  stat_summary(fun.data = mean_se, geom = 'pointrange', show.legend = TRUE, size = 0.15) +
+  scale_color_brewer(palette = 'Set1', name = "", labels = c("SS", "LA", "LB")) +
+  labs(y = 'Emp. logit of target fixations', 
+       x = 'Time after target onset (ms)', 
+       caption = "Mean +/- SE.") +
+  #coord_cartesian(ylim = c(0, 1)) + 
+  theme_grey(base_size = 12, base_family = "Times")
 
-
-
-
-
-
-## @knitr stressPlotLSRL
-
-# PLOT FOR LSRL
-
-condition_namesLSRL <- c(
-                    `stressed` = "Paroxytone",
-                    `unstressed` = "Oxytone", 
-                    `lb` = "LB", 
-                    `la` = "LA", 
-                    `ss` = "SS" 
-                    )
-
-lsrl_subset <- df_short %>% filter(., group %in% c('lb', 'la', 'ss'))
-
-lsrl_subset %>%
-  na.omit(.) %>% 
-  ggplot(., aes(x = binAdj, y = targetProp)) + 
-  facet_grid(group ~ condition, labeller = as_labeller(condition_namesLSRL)) + 
-  geom_vline(xintercept = 0, color = 'grey60') + 
-  geom_hline(yintercept = 0.5, color = 'grey60') + 
-  stat_summary(fun.data = mean_cl_boot, geom = 'errorbar', width = 0, size = 0.1,
-               show.legend = FALSE, color = 'darkgrey') +
-  stat_summary(fun.y = mean, geom = 'point', size = 0.2, color = 'darkgreen') + 
-  stat_summary(data = na.omit(lsrl_subset), aes(x = binAdj, y = distractorProp), fun.data = mean_cl_boot, geom = 'errorbar', width = 0, size = 0.1, color = 'darkgrey') + 
-  stat_summary(data = na.omit(lsrl_subset), aes(x = binAdj, y = distractorProp), fun.y = mean, geom = 'point', size = 0.2, color = 'red') + 
-  ylab('Proportion of fixations') + 
-  xlab('Adjusted time course') + 
-  ylim(0, 1) + 
-  geom_text(data = cantEx[cantEx$step >= 3 & cantEx$step < 8, ], aes(label = text), color = 'blue') + 
-  theme_bw(base_size = 16, base_family = "Times") -> stressLSRLp1
-
-# ggsave('stressLSRLp1.png', plot = stressLSRLp1, dpi = 600, device = "png", path = "./mySources/figs/stress/s1_beg_adv_nat/eye_track")
+# ggsave('.png', plot = stressP1, dpi = 600, device = "png", path = "./mySources/figs/stress/s1_beg_adv_nat/eye_track")
 
 
 

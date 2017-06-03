@@ -18,370 +18,479 @@ library(tidyverse); library(plotly)
 library(lme4); library(lmerTest)
 
 
-# Read data
-# It is labelled as .xls, but the format is comma separated
-# stress1 <- read_tsv("./mySources/data/stressOutput_trialBIN5.xls")
-# stress2 <- read_tsv("./mySources/data/stressOutput2_trialBIN5.xls")
+# Read data and set encoding 
+#stress10 <- read_tsv("./mySources/data/raw/allExpOutput.txt", 
+#                     locale = locale(encoding = "LATIN1")) %>%
+
+#stress20 <- read_tsv("./mySources/data/raw/allExpOutput20.txt", 
+#                     locale = locale(encoding = "LATIN1")) %>%
+
+#stress50 <- read_tsv("./mySources/data/raw/allExpOutput50.txt", 
+#                      locale = locale(encoding = "LATIN1")) %>%
+
+stress50ia <- read_tsv("./mySources/data/raw/allExpOutput50_ia.txt", 
+                      locale = locale(encoding = "LATIN1")) %>%
+
+  # Filter out unwanted experiments
+  filter(., exp == "stress") %>% 
+
+  # Remove unnecessary columns
+  select(., -TRIAL_LABEL,                 -TRIAL_INDEX,
+            -identifier,                  -sentencewav, 
+            -word1,                       -word2_20msafterv1, 
+            -word2_c2,                    -word2_c3, 
+            -word2_v2,                    -word2_c3, 
+            -word4_20msafterv1,           -word4_c1, 
+            -word4_suffix,                -word6, 
+            -word7,                       -EYE_TRACKED, 
+            -IA_0_ID,                     -IA_3_ID, 
+            -IA_4_ID,                     -RIGHT_IA_3_SAMPLE_COUNT, 
+            -RIGHT_IA_4_SAMPLE_COUNT,     -RIGHT_IA_0_SAMPLE_COUNT,
+            -`RIGHT_IA_0_SAMPLE_COUNT_%`, -`RIGHT_IA_3_SAMPLE_COUNT_%`, 
+            -`RIGHT_IA_4_SAMPLE_COUNT_%`) %>% 
+
+  # Rename some columns
+  rename(., participant = RECORDING_SESSION_LABEL, 
+            bin = BIN_INDEX, 
+            wavID = id, 
+            targetCount = RIGHT_IA_1_SAMPLE_COUNT, 
+            distractorCount = RIGHT_IA_2_SAMPLE_COUNT, 
+            targetProp = `RIGHT_IA_1_SAMPLE_COUNT_%`, 
+            distractorProp = `RIGHT_IA_2_SAMPLE_COUNT_%`) %>% 
+
+  # Remove weird chars from target list
+  # Create condition variable (unstressed/stressed)
+  # Create coda variable (0 = no coda, 1 = coda)
+  # Create corr variable (0 = incorrect, 1 = correct)
+  # Change ',' to '.' in proportion columns
+  # Create eLog variable and respective wts
+  mutate(., target = as.factor(target), 
+            target = gsub("\u0097", "o", paste(.$target)),
+            condition = ifelse(target %in%  
+              c('bebio', 'cambio', 'canto', 'comio', 'compro', 
+                'firmo', 'grabo', 'guardo', 'lanzo', 'lavo', 
+                'lleno', 'mando', 'pinto', 'rompio', 'saco', 
+                'subio', 'condition'), 
+                yes = "unstressed", no = "stressed"), 
+            coda = ifelse(target %in% 
+              c('bebe', 'bebio', 'llena', 'lleno', 'sube', 'subio', 
+                'come', 'comio', 'saca', 'saco', 'lava', 'lavo', 
+                'graba', 'grabo'), 
+                yes = 0, no = 1),
+            corr = ifelse(correctresponse == "Lshift" & KEY_PRESSED == "Lshift" | 
+                          correctresponse == "Rshift" & KEY_PRESSED == "Rshift", 
+                          yes = 1, no = 0),
+            targetProp = as.numeric(gsub(",", ".", paste(.$targetProp))), 
+            distractorProp = as.numeric(gsub(",", ".", paste(.$distractorProp))), 
+            eLog = log((targetCount + 0.5) / (50 - targetCount + 0.5)), 
+            wts = 1 / (targetCount + 0.5) + 1 / (50 - targetCount + 0.5)) %>% 
+
+  # Create 'group' column 
+  separate(., col = participant, into = c("group", "id"), sep = -3, remove = FALSE) %>%
+  select(., -id) %>% 
+
+  # Recode groups with random labels
+  # Realign bins to start from 1
+  mutate(., group = recode(group, l = 'lb', s = 'ss', `in` = 'int'), 
+            target = recode(target, gaba = 'graba'), 
+            bin = bin + 1)
 
 
-# Rerun python scripts to make time course longer
-stress3 <- read_tsv("./mySources/data/raw/stressBinOutput.txt")
-stress4 <- read_tsv("./mySources/data/raw/stressBinOutput2.txt")
 
-# Check structure of each data frame to make sure they 
-# can be combined 
-# str(stress1); str(stress2)
-str(stress3); str(stress4)
+#glimpse(stress10)
+#glimpse(stress20)
+glimpse(stress50ia)
 
 
-# They can, so we combine them 
-stress <- rbind(stress3, stress4)
 
 
-# rename variables
-names(stress)[names(stress)=="RECORDING_SESSION_LABEL"] <- "participant"
-names(stress)[names(stress)=="TRIAL_LABEL"] <- "trial"
-names(stress)[names(stress)=="BIN_INDEX"] <- "bin"
-names(stress)[names(stress)=="id"] <- "wavID"
-names(stress)[names(stress)=="RIGHT_IA_1_SAMPLE_COUNT"] <- "targetCount"
-names(stress)[names(stress)=="RIGHT_IA_2_SAMPLE_COUNT"] <- "distractorCount"
-names(stress)[names(stress)=="RIGHT_IA_1_SAMPLE_COUNT_%"] <- "targetProp"
-names(stress)[names(stress)=="RIGHT_IA_2_SAMPLE_COUNT_%"] <- "distractorProp"
-
-# remove unnecessary columns
-stress <- select(stress, 
-                 -trial, 
-                 -identifier, 
-                 -sentencewav, 
-                 -word1, 
-                 -word2_20msafterv1, 
-                 -word2_c2, 
-                 -word2_c3, 
-                 -word2_v2, 
-                 -word2_c3, 
-                 -word4_20msafterv1, 
-                 -word4_c1, 
-                 -word4_suffix, 
-                 -word6, 
-                 -word7
-                 -`RIGHT_IA_0_SAMPLE_COUNT_%`,
-                 -`RIGHT_IA_0_SAMPLE_COUNT_%`)
 
 
-stress$target <- as.factor(stress$target)
 
-# Set condition variable (1st syll stressed or unstressed)
-stress$condition <- 'stressed'
-stress[stress$target == 'bebio' | 
-       stress$target == 'cambio' | 
-       stress$target == 'canto' | 
-       stress$target == 'comio' | 
-       stress$target == 'compro' | 
-       stress$target == 'firmo' | 
-       stress$target == 'grabo' | 
-       stress$target == 'guardo' | 
-       stress$target == 'lanzo' | 
-       stress$target == 'lavo' | 
-       stress$target == 'lleno' | 
-       stress$target == 'mando' | 
-       stress$target == 'pinto' | 
-       stress$target == 'rompio' | 
-       stress$target == 'saco' | 
-       stress$target == 'subio', 'condition'] <- 'unstressed'
-stress$condition <- as.factor(stress$condition)
+
 
 # check number of bins for each participant
-stress %>%
-  select(., participant, bin) %>%
-  aggregate(bin ~ participant, FUN = max, data = .) %>% 
-  arrange(., bin)
-
-# The minimum bin = 621/373/186/
-
-# Convert proportions (this creates NAs)
-stress$targetProp <- gsub(",", ".", paste(stress$targetProp))
-stress$targetProp <- as.numeric(stress$targetProp)
-
-stress$distractorProp <- gsub(",", ".", paste(stress$distractorProp))
-stress$distractorProp <- as.numeric(stress$distractorProp)
+#stress20 %>%
+#  select(., participant, bin) %>%
+#  aggregate(bin ~ participant, FUN = max, data = .) %>% 
+#  arrange(., bin)
 
 
 
 
 
 
-# Create grouping variable 
-stress %>%
-  separate(., col = participant, into = c('group', 'id'), sep = -3, remove = FALSE) %>% 
-  select(., -id) -> stressReduced
-
-stressReduced[stressReduced$group == 'l', 'group'] <- 'lb'
-stressReduced[stressReduced$group == 's', 'group'] <- 'ss'
-
-# Change 'in' level of 'group' to 'int'
-# because 'in' is a function in R
-stressReduced[stressReduced$group == 'in', 'group'] <- 'int'
-
-stressReduced$group <- as.factor(stressReduced$group)
-
-
-glimpse(stressReduced)
-summary(stressReduced$group)
-
-# Add 1 to bin so it starts at 1
-df_stress <- stressReduced
-df_stress$bin <- df_stress$bin + 1
-
-
-# remove distractors 
-# stressTargets <- c('bebe', 'bebio', 'cambia', 'cambio', 'canta', 'canto', 'come', 'comio', 'compra', 'compro', 'firma', 'firmo', 'gaba', 'grabo', 'guarda', 'guardo', 'lanza', 'lanzo', 'lava', 'lavo', 'llena', 'lleno', 'manda', 'mando', 'pinta', 'pinto', 'rompe', 'rompio', 'saca', 'saco', 'sube', 'subio')
-# df_stress <- df_stress[df_stress$target %in% stressTargets, ]
-# df_stress <- droplevels(df_stress)
-
-
-glimpse(df_stress)
-summary(df_stress$group)
 
 
 # Item-specific time normalization
 # - create subset of data based on item (for both stressed and unstressed)
 # - use item-specific target onset as 0 (in binN column)
-#    - this refers to the start of the word prior to the target for each item 
+#    - this refers to the start of the target for each item 
 #    - this 'length' is used to insure all of the target word 'info' is included 
 #      for analysis (as opposed to truncating some of the critical vowel)
 # - save item-specific bin min and max as variables 
-# - count forward from target onset to max 
-# - count backward from target onset to min
-# - 'move' data 200ms for VWP (duplicate binN column + 20)
-# - find common min/max between all items (lowest max, highest min)
 
-summary(df_stress$target)
+
+# df_stress <- stress10
+# df_stress <- stress20
+# df_stress <- stress50
+ df_stress <- stress50ia
+
+summary(as.factor(df_stress$target))
 
 # bebe UNSTRESSED 
 bebe <- filter(df_stress, target == 'bebe')
-bebe$binN <- 999
-tOSbebe <- round((unique(bebe$word3_suffix) - unique(bebe$word2_c1v1)) / 10)
-bebe[bebe$bin == tOSbebe, 'binN'] <- 0
-bebe$binN <- bebe$bin - tOSbebe
+bebe$binTonsetAlign <- 999
+tOSbebe <- round(unique(bebe$word3_c1v1) / 50)
+bebe[bebe$bin == tOSbebe, 'binTonsetAlign'] <- 0
+bebe$binTonsetAlign <- bebe$bin - tOSbebe
+bebe$binTsuffixAlign <- 999
+tSSbebe <- round(unique(bebe$word3_suffix) / 50)
+bebe[bebe$bin == tSSbebe, 'binTsuffixAlign'] <- 0
+bebe$binTsuffixAlign <- bebe$bin - tSSbebe
 
 # bebio stressed
 bebio <- filter(df_stress, target == 'bebio')
-bebio$binN <- 999
-tOSbebio <- round((unique(bebio$word3_suffix) - unique(bebio$word2_c1v1)) / 10)
-bebio[bebio$bin == tOSbebio, 'binN'] <- 0
-bebio$binN <- bebio$bin - tOSbebio
+bebio$binTonsetAlign <- 999
+tOSbebio <- round(unique(bebio$word3_c1v1) / 50)
+bebio[bebio$bin == tOSbebio, 'binTonsetAlign'] <- 0
+bebio$binTonsetAlign <- bebio$bin - tOSbebio
+bebio$binTsuffixAlign <- 999
+tSSbebio <- round(unique(bebio$word3_suffix) / 50)
+bebio[bebio$bin == tSSbebio, 'binTsuffixAlign'] <- 0
+bebio$binTsuffixAlign <- bebio$bin - tSSbebio
 
 # cambia stressed 
 cambia <- filter(df_stress, target == 'cambia')
-cambia$binN <- 999
-tOScambia <- round((unique(cambia$word3_suffix) - unique(cambia$word2_c1v1)) / 10)
-cambia[cambia$bin == tOScambia, 'binN'] <- 0
-cambia$binN <- cambia$bin - tOScambia
+cambia$binTonsetAlign <- 999
+tOScambia <- round(unique(cambia$word3_c1v1) / 50)
+cambia[cambia$bin == tOScambia, 'binTonsetAlign'] <- 0
+cambia$binTonsetAlign <- cambia$bin - tOScambia
+cambia$binTsuffixAlign <- 999
+tSScambia <- round(unique(cambia$word3_suffix) / 50)
+cambia[cambia$bin == tSScambia, 'binTsuffixAlign'] <- 0
+cambia$binTsuffixAlign <- cambia$bin - tSScambia
 
 # cambio  
 cambio <- filter(df_stress, target == 'cambio')
-cambio$binN <- 999
-tOScambio <- round((unique(cambio$word3_suffix) - unique(cambio$word2_c1v1)) / 10)
-cambio[cambio$bin == tOScambio, 'binN'] <- 0
-cambio$binN <- cambio$bin - tOScambio
+cambio$binTonsetAlign <- 999
+tOScambio <- round(unique(cambio$word3_c1v1) / 50)
+cambio[cambio$bin == tOScambio, 'binTonsetAlign'] <- 0
+cambio$binTonsetAlign <- cambio$bin - tOScambio
+cambio$binTsuffixAlign <- 999
+tSScambio <- round(unique(cambio$word3_suffix) / 50)
+cambio[cambio$bin == tSScambio, 'binTsuffixAlign'] <- 0
+cambio$binTsuffixAlign <- cambio$bin - tSScambio
 
 # canta  
 canta <- filter(df_stress, target == 'canta')
-canta$binN <- 999
-tOScanta <- round((unique(canta$word3_suffix) - unique(canta$word2_c1v1)) / 10)
-canta[canta$bin == tOScanta, 'binN'] <- 0
-canta$binN <- canta$bin - tOScanta
+canta$binTonsetAlign <- 999
+tOScanta <- round(unique(canta$word3_c1v1) / 50)
+canta[canta$bin == tOScanta, 'binTonsetAlign'] <- 0
+canta$binTonsetAlign <- canta$bin - tOScanta
+canta$binTsuffixAlign <- 999
+tSScanta <- round(unique(canta$word3_suffix) / 50)
+canta[canta$bin == tSScanta, 'binTsuffixAlign'] <- 0
+canta$binTsuffixAlign <- canta$bin - tSScanta
 
 # canto   
 canto <- filter(df_stress, target == 'canto')
-canto$binN <- 999
-tOScanto <- round((unique(canto$word3_suffix) - unique(canto$word2_c1v1)) / 10)
-canto[canto$bin == tOScanto, 'binN'] <- 0
-canto$binN <- canto$bin - tOScanto
+canto$binTonsetAlign <- 999
+tOScanto <- round(unique(canto$word3_c1v1) / 50)
+canto[canto$bin == tOScanto, 'binTonsetAlign'] <- 0
+canto$binTonsetAlign <- canto$bin - tOScanto
+canto$binTsuffixAlign <- 999
+tSScanto <- round(unique(canto$word3_suffix) / 50)
+canto[canto$bin == tSScanto, 'binTsuffixAlign'] <- 0
+canto$binTsuffixAlign <- canto$bin - tSScanto
 
 # come  
 come <- filter(df_stress, target == 'come')
-come$binN <- 999
-tOScome <- round((unique(come$word3_suffix) - unique(come$word2_c1v1)) / 10)
-come[come$bin == tOScome, 'binN'] <- 0
-come$binN <- come$bin - tOScome
+come$binTonsetAlign <- 999
+tOScome <- round(unique(come$word3_c1v1) / 50)
+come[come$bin == tOScome, 'binTonsetAlign'] <- 0
+come$binTonsetAlign <- come$bin - tOScome
+come$binTsuffixAlign <- 999
+tSScome <- round(unique(come$word3_suffix) / 50)
+come[come$bin == tSScome, 'binTsuffixAlign'] <- 0
+come$binTsuffixAlign <- come$bin - tSScome
 
 # comio 
 comio <- filter(df_stress, target == 'comio')
-comio$binN <- 999
-tOScomio <- round((unique(comio$word3_suffix) - unique(comio$word2_c1v1)) / 10)
-comio[comio$bin == tOScomio, 'binN'] <- 0
-comio$binN <- comio$bin - tOScomio
+comio$binTonsetAlign <- 999
+tOScomio <- round(unique(comio$word3_c1v1) / 50)
+comio[comio$bin == tOScomio, 'binTonsetAlign'] <- 0
+comio$binTonsetAlign <- comio$bin - tOScomio
+comio$binTsuffixAlign <- 999
+tSScomio <- round(unique(comio$word3_suffix) / 50)
+comio[comio$bin == tSScomio, 'binTsuffixAlign'] <- 0
+comio$binTsuffixAlign <- comio$bin - tSScomio
 
 # compra 
 compra <- filter(df_stress, target == 'compra')
-compra$binN <- 999
-tOScompra <- round((unique(compra$word3_suffix) - unique(compra$word2_c1v1)) / 10)
-compra[compra$bin == tOScompra, 'binN'] <- 0
-compra$binN <- compra$bin - tOScompra
+compra$binTonsetAlign <- 999
+tOScompra <- round(unique(compra$word3_c1v1) / 50)
+compra[compra$bin == tOScompra, 'binTonsetAlign'] <- 0
+compra$binTonsetAlign <- compra$bin - tOScompra
+compra$binTsuffixAlign <- 999
+tSScompra <- round(unique(compra$word3_suffix) / 50)
+compra[compra$bin == tSScompra, 'binTsuffixAlign'] <- 0
+compra$binTsuffixAlign <- compra$bin - tSScompra
 
 # compro  
 compro <- filter(df_stress, target == 'compro')
-compro$binN <- 999
-tOScompro <- round((unique(compro$word3_suffix) - unique(compro$word2_c1v1)) / 10)
-compro[compro$bin == tOScompro, 'binN'] <- 0
-compro$binN <- compro$bin - tOScompro
+compro$binTonsetAlign <- 999
+tOScompro <- round(unique(compro$word3_c1v1) / 50)
+compro[compro$bin == tOScompro, 'binTonsetAlign'] <- 0
+compro$binTonsetAlign <- compro$bin - tOScompro
+compro$binTsuffixAlign <- 999
+tSScompro <- round(unique(compro$word3_suffix) / 50)
+compro[compro$bin == tSScompro, 'binTsuffixAlign'] <- 0
+compro$binTsuffixAlign <- compro$bin - tSScompro
 
 # firma 
 firma <- filter(df_stress, target == 'firma')
-firma$binN <- 999
-tOSfirma <- round((unique(firma$word3_suffix) - unique(firma$word2_c1v1)) / 10)
-firma[firma$bin == tOSfirma, 'binN'] <- 0
-firma$binN <- firma$bin - tOSfirma
+firma$binTonsetAlign <- 999
+tOSfirma <- round(unique(firma$word3_c1v1) / 50)
+firma[firma$bin == tOSfirma, 'binTonsetAlign'] <- 0
+firma$binTonsetAlign <- firma$bin - tOSfirma
+firma$binTsuffixAlign <- 999
+tSSfirma <- round(unique(firma$word3_suffix) / 50)
+firma[firma$bin == tSSfirma, 'binTsuffixAlign'] <- 0
+firma$binTsuffixAlign <- firma$bin - tSSfirma
 
 # firmo   
 firmo <- filter(df_stress, target == 'firmo')
-firmo$binN <- 999
-tOSfirmo <- round((unique(firmo$word3_suffix) - unique(firmo$word2_c1v1)) / 10)
-firmo[firmo$bin == tOSfirmo, 'binN'] <- 0
-firmo$binN <- firmo$bin - tOSfirmo
+firmo$binTonsetAlign <- 999
+tOSfirmo <- round(unique(firmo$word3_c1v1) / 50)
+firmo[firmo$bin == tOSfirmo, 'binTonsetAlign'] <- 0
+firmo$binTonsetAlign <- firmo$bin - tOSfirmo
+firmo$binTsuffixAlign <- 999
+tSSfirmo <- round(unique(firmo$word3_suffix) / 50)
+firmo[firmo$bin == tSSfirmo, 'binTsuffixAlign'] <- 0
+firmo$binTsuffixAlign <- firmo$bin - tSSfirmo
 
-# gaba  
-gaba <- filter(df_stress, target == 'gaba')
-gaba$binN <- 999
-tOSgaba <- round((unique(gaba$word3_suffix) - unique(gaba$word2_c1v1)) / 10)
-gaba[gaba$bin == tOSgaba, 'binN'] <- 0
-gaba$binN <- gaba$bin - tOSgaba
+# graba  
+graba <- filter(df_stress, target == 'graba')
+graba$binTonsetAlign <- 999
+tOSgraba <- round(unique(graba$word3_c1v1) / 50)
+graba[graba$bin == tOSgraba, 'binTonsetAlign'] <- 0
+graba$binTonsetAlign <- graba$bin - tOSgraba
+graba$binTsuffixAlign <- 999
+tSSgraba <- round(unique(graba$word3_suffix) / 50)
+graba[graba$bin == tSSgraba, 'binTsuffixAlign'] <- 0
+graba$binTsuffixAlign <- graba$bin - tSSgraba
 
 # grabo 
 grabo <- filter(df_stress, target == 'grabo')
-grabo$binN <- 999
-tOSgrabo <- round((unique(grabo$word3_suffix) - unique(grabo$word2_c1v1)) / 10)
-grabo[grabo$bin == tOSgrabo, 'binN'] <- 0
-grabo$binN <- grabo$bin - tOSgrabo
+grabo$binTonsetAlign <- 999
+tOSgrabo <- round(unique(grabo$word3_c1v1) / 50)
+grabo[grabo$bin == tOSgrabo, 'binTonsetAlign'] <- 0
+grabo$binTonsetAlign <- grabo$bin - tOSgrabo
+grabo$binTsuffixAlign <- 999
+tSSgrabo <- round(unique(grabo$word3_suffix) / 50)
+grabo[grabo$bin == tSSgrabo, 'binTsuffixAlign'] <- 0
+grabo$binTsuffixAlign <- grabo$bin - tSSgrabo
 
 # guarda 
 guarda <- filter(df_stress, target == 'guarda')
-guarda$binN <- 999
-tOSguarda <- round((unique(guarda$word3_suffix) - unique(guarda$word2_c1v1)) / 10)
-guarda[guarda$bin == tOSguarda, 'binN'] <- 0
-guarda$binN <- guarda$bin - tOSguarda
+guarda$binTonsetAlign <- 999
+tOSguarda <- round(unique(guarda$word3_c1v1) / 50)
+guarda[guarda$bin == tOSguarda, 'binTonsetAlign'] <- 0
+guarda$binTonsetAlign <- guarda$bin - tOSguarda
+guarda$binTsuffixAlign <- 999
+tSSguarda <- round(unique(guarda$word3_suffix) / 50)
+guarda[guarda$bin == tSSguarda, 'binTsuffixAlign'] <- 0
+guarda$binTsuffixAlign <- guarda$bin - tSSguarda
 
 # guardo  
 guardo <- filter(df_stress, target == 'guardo')
-guardo$binN <- 999
-tOSguardo <- round((unique(guardo$word3_suffix) - unique(guardo$word2_c1v1)) / 10)
-guardo[guardo$bin == tOSguardo, 'binN'] <- 0
-guardo$binN <- guardo$bin - tOSguardo
+guardo$binTonsetAlign <- 999
+tOSguardo <- round(unique(guardo$word3_c1v1) / 50)
+guardo[guardo$bin == tOSguardo, 'binTonsetAlign'] <- 0
+guardo$binTonsetAlign <- guardo$bin - tOSguardo
+guardo$binTsuffixAlign <- 999
+tSSguardo <- round(unique(guardo$word3_suffix) / 50)
+guardo[guardo$bin == tSSguardo, 'binTsuffixAlign'] <- 0
+guardo$binTsuffixAlign <- guardo$bin - tSSguardo
 
 # lanza  
 lanza <- filter(df_stress, target == 'lanza')
-lanza$binN <- 999
-tOSlanza <- round((unique(lanza$word3_suffix) - unique(lanza$word2_c1v1)) / 10)
-lanza[lanza$bin == tOSlanza, 'binN'] <- 0
-lanza$binN <- lanza$bin - tOSlanza
+lanza$binTonsetAlign <- 999
+tOSlanza <- round(unique(lanza$word3_c1v1) / 50)
+lanza[lanza$bin == tOSlanza, 'binTonsetAlign'] <- 0
+lanza$binTonsetAlign <- lanza$bin - tOSlanza
+lanza$binTsuffixAlign <- 999
+tSSlanza <- round(unique(lanza$word3_suffix) / 50)
+lanza[lanza$bin == tSSlanza, 'binTsuffixAlign'] <- 0
+lanza$binTsuffixAlign <- lanza$bin - tSSlanza
 
 # lanzo   
 lanzo <- filter(df_stress, target == 'lanzo')
-lanzo$binN <- 999
-tOSlanzo <- round((unique(lanzo$word3_suffix) - unique(lanzo$word2_c1v1)) / 10)
-lanzo[lanzo$bin == tOSlanzo, 'binN'] <- 0
-lanzo$binN <- lanzo$bin - tOSlanzo
+lanzo$binTonsetAlign <- 999
+tOSlanzo <- round(unique(lanzo$word3_c1v1) / 50)
+lanzo[lanzo$bin == tOSlanzo, 'binTonsetAlign'] <- 0
+lanzo$binTonsetAlign <- lanzo$bin - tOSlanzo
+lanzo$binTsuffixAlign <- 999
+tSSlanzo <- round(unique(lanzo$word3_suffix) / 50)
+lanzo[lanzo$bin == tSSlanzo, 'binTsuffixAlign'] <- 0
+lanzo$binTsuffixAlign <- lanzo$bin - tSSlanzo
 
 # lava   
 lava <- filter(df_stress, target == 'lava')
-lava$binN <- 999
-tOSlava <- round((unique(lava$word3_suffix) - unique(lava$word2_c1v1)) / 10)
-lava[lava$bin == tOSlava, 'binN'] <- 0
-lava$binN <- lava$bin - tOSlava
+lava$binTonsetAlign <- 999
+tOSlava <- round(unique(lava$word3_c1v1) / 50)
+lava[lava$bin == tOSlava, 'binTonsetAlign'] <- 0
+lava$binTonsetAlign <- lava$bin - tOSlava
+lava$binTsuffixAlign <- 999
+tSSlava <- round(unique(lava$word3_suffix) / 50)
+lava[lava$bin == tSSlava, 'binTsuffixAlign'] <- 0
+lava$binTsuffixAlign <- lava$bin - tSSlava
 
 # lavo  
 lavo <- filter(df_stress, target == 'lavo')
-lavo$binN <- 999
-tOSlavo <- round((unique(lavo$word3_suffix) - unique(lavo$word2_c1v1)) / 10)
-lavo[lavo$bin == tOSlavo, 'binN'] <- 0
-lavo$binN <- lavo$bin - tOSlavo
+lavo$binTonsetAlign <- 999
+tOSlavo <- round(unique(lavo$word3_c1v1) / 50)
+lavo[lavo$bin == tOSlavo, 'binTonsetAlign'] <- 0
+lavo$binTonsetAlign <- lavo$bin - tOSlavo
+lavo$binTsuffixAlign <- 999
+tSSlavo <- round(unique(lavo$word3_suffix) / 50)
+lavo[lavo$bin == tSSlavo, 'binTsuffixAlign'] <- 0
+lavo$binTsuffixAlign <- lavo$bin - tSSlavo
 
 # llena  
 llena <- filter(df_stress, target == 'llena')
-llena$binN <- 999
-tOSllena <- round((unique(llena$word3_suffix) - unique(llena$word2_c1v1)) / 10)
-llena[llena$bin == tOSllena, 'binN'] <- 0
-llena$binN <- llena$bin - tOSllena
+llena$binTonsetAlign <- 999
+tOSllena <- round(unique(llena$word3_c1v1) / 50)
+llena[llena$bin == tOSllena, 'binTonsetAlign'] <- 0
+llena$binTonsetAlign <- llena$bin - tOSllena
+llena$binTsuffixAlign <- 999
+tSSllena <- round(unique(llena$word3_suffix) / 50)
+llena[llena$bin == tSSllena, 'binTsuffixAlign'] <- 0
+llena$binTsuffixAlign <- llena$bin - tSSllena
 
 # lleno 
 lleno <- filter(df_stress, target == 'lleno')
-lleno$binN <- 999
-tOSlleno <- round((unique(lleno$word3_suffix) - unique(lleno$word2_c1v1)) / 10)
-lleno[lleno$bin == tOSlleno, 'binN'] <- 0
-lleno$binN <- lleno$bin - tOSlleno
+lleno$binTonsetAlign <- 999
+tOSlleno <- round(unique(lleno$word3_c1v1) / 50)
+lleno[lleno$bin == tOSlleno, 'binTonsetAlign'] <- 0
+lleno$binTonsetAlign <- lleno$bin - tOSlleno
+lleno$binTsuffixAlign <- 999
+tSSlleno <- round(unique(lleno$word3_suffix) / 50)
+lleno[lleno$bin == tSSlleno, 'binTsuffixAlign'] <- 0
+lleno$binTsuffixAlign <- lleno$bin - tSSlleno
 
 # manda  
 manda <- filter(df_stress, target == 'manda')
-manda$binN <- 999
-tOSmanda <- round((unique(manda$word3_suffix) - unique(manda$word2_c1v1)) / 10)
-manda[manda$bin == tOSmanda, 'binN'] <- 0
-manda$binN <- manda$bin - tOSmanda
+manda$binTonsetAlign <- 999
+tOSmanda <- round(unique(manda$word3_c1v1) / 50)
+manda[manda$bin == tOSmanda, 'binTonsetAlign'] <- 0
+manda$binTonsetAlign <- manda$bin - tOSmanda
+manda$binTsuffixAlign <- 999
+tSSmanda <- round(unique(manda$word3_suffix) / 50)
+manda[manda$bin == tSSmanda, 'binTsuffixAlign'] <- 0
+manda$binTsuffixAlign <- manda$bin - tSSmanda
 
 # mando  
 mando <- filter(df_stress, target == 'mando')
-mando$binN <- 999
-tOSmando <- round((unique(mando$word3_suffix) - unique(mando$word2_c1v1)) / 10)
-mando[mando$bin == tOSmando, 'binN'] <- 0
-mando$binN <- mando$bin - tOSmando
+mando$binTonsetAlign <- 999
+tOSmando <- round(unique(mando$word3_c1v1) / 50)
+mando[mando$bin == tOSmando, 'binTonsetAlign'] <- 0
+mando$binTonsetAlign <- mando$bin - tOSmando
+mando$binTsuffixAlign <- 999
+tSSmando <- round(unique(mando$word3_suffix) / 50)
+mando[mando$bin == tSSmando, 'binTsuffixAlign'] <- 0
+mando$binTsuffixAlign <- mando$bin - tSSmando
 
 # pinta  
 pinta <- filter(df_stress, target == 'pinta')
-pinta$binN <- 999
-tOSpinta <- round((unique(pinta$word3_suffix) - unique(pinta$word2_c1v1)) / 10)
-pinta[pinta$bin == tOSpinta, 'binN'] <- 0
-pinta$binN <- pinta$bin - tOSpinta
+pinta$binTonsetAlign <- 999
+tOSpinta <- round(unique(pinta$word3_c1v1) / 50)
+pinta[pinta$bin == tOSpinta, 'binTonsetAlign'] <- 0
+pinta$binTonsetAlign <- pinta$bin - tOSpinta
+pinta$binTsuffixAlign <- 999
+tSSpinta <- round(unique(pinta$word3_suffix) / 50)
+pinta[pinta$bin == tSSpinta, 'binTsuffixAlign'] <- 0
+pinta$binTsuffixAlign <- pinta$bin - tSSpinta
 
 # pinto  
 pinto <- filter(df_stress, target == 'pinto')
-pinto$binN <- 999
-tOSpinto <- round((unique(pinto$word3_suffix) - unique(pinto$word2_c1v1)) / 10)
-pinto[pinto$bin == tOSpinto, 'binN'] <- 0
-pinto$binN <- pinto$bin - tOSpinto
+pinto$binTonsetAlign <- 999
+tOSpinto <- round(unique(pinto$word3_c1v1) / 50)
+pinto[pinto$bin == tOSpinto, 'binTonsetAlign'] <- 0
+pinto$binTonsetAlign <- pinto$bin - tOSpinto
+pinto$binTsuffixAlign <- 999
+tSSpinto <- round(unique(pinto$word3_suffix) / 50)
+pinto[pinto$bin == tSSpinto, 'binTsuffixAlign'] <- 0
+pinto$binTsuffixAlign <- pinto$bin - tSSpinto
 
 # rompe 
 rompe <- filter(df_stress, target == 'rompe')
-rompe$binN <- 999
-tOSrompe <- round((unique(rompe$word3_suffix) - unique(rompe$word2_c1v1)) / 10)
-rompe[rompe$bin == tOSrompe, 'binN'] <- 0
-rompe$binN <- rompe$bin - tOSrompe
+rompe$binTonsetAlign <- 999
+tOSrompe <- round(unique(rompe$word3_c1v1) / 50)
+rompe[rompe$bin == tOSrompe, 'binTonsetAlign'] <- 0
+rompe$binTonsetAlign <- rompe$bin - tOSrompe
+rompe$binTsuffixAlign <- 999
+tSSrompe <- round(unique(rompe$word3_suffix) / 50)
+rompe[rompe$bin == tSSrompe, 'binTsuffixAlign'] <- 0
+rompe$binTsuffixAlign <- rompe$bin - tSSrompe
 
 # rompio 
 rompio <- filter(df_stress, target == 'rompio')
-rompio$binN <- 999
-tOSrompio <- round((unique(rompio$word3_suffix) - unique(rompio$word2_c1v1)) / 10)
-rompio[rompio$bin == tOSrompio, 'binN'] <- 0
-rompio$binN <- rompio$bin - tOSrompio
+rompio$binTonsetAlign <- 999
+tOSrompio <- round(unique(rompio$word3_c1v1) / 50)
+rompio[rompio$bin == tOSrompio, 'binTonsetAlign'] <- 0
+rompio$binTonsetAlign <- rompio$bin - tOSrompio
+rompio$binTsuffixAlign <- 999
+tSSrompio <- round(unique(rompio$word3_suffix) / 50)
+rompio[rompio$bin == tSSrompio, 'binTsuffixAlign'] <- 0
+rompio$binTsuffixAlign <- rompio$bin - tSSrompio
 
 # saca
 saca <- filter(df_stress, target == 'saca')
-saca$binN <- 999
-tOSsaca <- round((unique(saca$word3_suffix) - unique(saca$word2_c1v1)) / 10)
-saca[saca$bin == tOSsaca, 'binN'] <- 0
-saca$binN <- saca$bin - tOSsaca
+saca$binTonsetAlign <- 999
+tOSsaca <- round(unique(saca$word3_c1v1) / 50)
+saca[saca$bin == tOSsaca, 'binTonsetAlign'] <- 0
+saca$binTonsetAlign <- saca$bin - tOSsaca
+saca$binTsuffixAlign <- 999
+tSSsaca <- round(unique(saca$word3_suffix) / 50)
+saca[saca$bin == tSSsaca, 'binTsuffixAlign'] <- 0
+saca$binTsuffixAlign <- saca$bin - tSSsaca
 
 # saco
 saco <- filter(df_stress, target == 'saco')
-saco$binN <- 999
-tOSsaco <- round((unique(saco$word3_suffix) - unique(saco$word2_c1v1)) / 10)
-saco[saco$bin == tOSsaco, 'binN'] <- 0
-saco$binN <- saco$bin - tOSsaco
+saco$binTonsetAlign <- 999
+tOSsaco <- round(unique(saco$word3_c1v1) / 50)
+saco[saco$bin == tOSsaco, 'binTonsetAlign'] <- 0
+saco$binTonsetAlign <- saco$bin - tOSsaco
+saco$binTsuffixAlign <- 999
+tSSsaco <- round(unique(saco$word3_suffix) / 50)
+saco[saco$bin == tSSsaco, 'binTsuffixAlign'] <- 0
+saco$binTsuffixAlign <- saco$bin - tSSsaco
 
 # sube
 sube <- filter(df_stress, target == 'sube')
-sube$binN <- 999
-tOSsube <- round((unique(sube$word3_suffix) - unique(sube$word2_c1v1)) / 10)
-sube[sube$bin == tOSsube, 'binN'] <- 0
-sube$binN <- sube$bin - tOSsube
+sube$binTonsetAlign <- 999
+tOSsube <- round(unique(sube$word3_c1v1) / 50)
+sube[sube$bin == tOSsube, 'binTonsetAlign'] <- 0
+sube$binTonsetAlign <- sube$bin - tOSsube
+sube$binTsuffixAlign <- 999
+tSSsube <- round(unique(sube$word3_suffix) / 50)
+sube[sube$bin == tSSsube, 'binTsuffixAlign'] <- 0
+sube$binTsuffixAlign <- sube$bin - tSSsube
 
 # subio 
 subio <- filter(df_stress, target == 'subio')
-subio$binN <- 999
-tOSsubio <- round((unique(subio$word3_suffix) - unique(subio$word2_c1v1)) / 10)
-subio[subio$bin == tOSsubio, 'binN'] <- 0
-subio$binN <- subio$bin - tOSsubio
+subio$binTonsetAlign <- 999
+tOSsubio <- round(unique(subio$word3_c1v1) / 50)
+subio[subio$bin == tOSsubio, 'binTonsetAlign'] <- 0
+subio$binTonsetAlign <- subio$bin - tOSsubio
+subio$binTsuffixAlign <- 999
+tSSsubio <- round(unique(subio$word3_suffix) / 50)
+subio[subio$bin == tSSsubio, 'binTsuffixAlign'] <- 0
+subio$binTsuffixAlign <- subio$bin - tSSsubio
 
-df_adj <- do.call("rbind", list(bebe,
+df_stress_adj <- do.call("rbind", list(bebe,
                                 bebio,
                                 cambia,
                                 cambio,
@@ -393,7 +502,7 @@ df_adj <- do.call("rbind", list(bebe,
                                 compro,
                                 firma,
                                 firmo,
-                                gaba,
+                                graba,
                                 grabo,
                                 guarda,
                                 guardo,
@@ -414,21 +523,21 @@ df_adj <- do.call("rbind", list(bebe,
                                 sube,
                                 subio))
 
-levels(df_adj$target)[levels(df_adj$target) == "gaba"] <- "graba"
+#df_stress_adj$binAdj <- df_stress_adj$binTonsetAlign - 20
+#df_stress_adj$binAdj <- df_stress_adj$binTonsetAlign - 10
+df_stress_adj$binAdj <- df_stress_adj$binTonsetAlign - 4
 
-df_adj$binAdj <- df_adj$binN - 20
-df_adj <- as.data.frame(df_adj)
+df_stress_adj <- as.data.frame(df_stress_adj)
 
 
-# Add ot1 ot2 ot3 to df
-# source('./mySources/scripts/stressCreatePoly.R')
-# source('./mySources/scripts/stressCreatePoly5.R')
-# source('./mySources/scripts/stressCreatePoly10.R')
 
 # check it 
-glimpse(df_adj)
+glimpse(df_stress_adj)
 
 # write table
-write.table(df_adj, "./mySources/data/clean/stressBIN10Clean.csv", row.names = F, quote = F, sep = ",")
+# write.table(df_stress_adj, "./mySources/data/clean/stressBIN10Clean.csv", row.names = F, quote = F, sep = ",")
+# write.table(df_stress_adj, "./mySources/data/clean/stressBIN20Clean.csv", row.names = F, quote = F, sep = ",")
+# write.table(df_stress_adj, "./mySources/data/clean/stressBIN50Clean.csv", row.names = F, quote = F, sep = ",")
+ write.table(df_stress_adj, "./mySources/data/clean/stressBIN50iaClean.csv", row.names = F, quote = F, sep = ",")
 
 
