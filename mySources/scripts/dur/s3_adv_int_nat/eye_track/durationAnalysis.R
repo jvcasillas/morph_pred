@@ -366,6 +366,8 @@ dur_0_prop <- dur_0 %>%
   group_by(., group, condition, participant) %>%
   summarise(., meanFix = mean(targetProp))  
 
+unique(dur_0_prop$participant)
+
 # Add working memory covariate
 # NEED DATA FOR INT
 # read data
@@ -578,7 +580,7 @@ gc_mod_cube    <- readRDS('./mySources/models/dur/s3_adv_int_nat/eye_track/gc_mo
 if(T){
   gc_mod_base <- lmer(targetProp ~ (ot1+ot2) + 
                  ((ot1+ot2) | participant) + 
-                 ((ot1+ot2) | target),
+                 ((ot1+ot2) | participant:condition),
                  control = lmerControl(optimizer = 'bobyqa'), 
                  data = dur_gc_subset, REML = F)
   saveRDS(gc_mod_base, file = "./mySources/models/dur/s3_adv_int_nat/eye_track/gc_mod_base.rds", compress = 'xz')
@@ -589,7 +591,7 @@ if(T){
 if(T){
   gc_mod_group_0 <- lmer(targetProp ~ (ot1+ot2) + group + 
                     ((ot1+ot2) | participant) + 
-                    ((ot1+ot2) | target), 
+                    ((ot1+ot2) | participant:condition),
                     control = lmerControl(optimizer = 'bobyqa'), 
                     data = dur_gc_subset, REML = F)
   saveRDS(gc_mod_group_0, file = "./mySources/models/dur/s3_adv_int_nat/eye_track/gc_mod_group_0.rds", compress = 'xz')
@@ -600,7 +602,7 @@ if(T){
  gc_mod_group_1 <- lmer(targetProp ~ (ot1+ot2) + group + 
                    ot1:group + 
                    ((ot1+ot2) | participant) + 
-                   ((ot1+ot2) | target),
+                   ((ot1+ot2) | participant:condition),
                    control = lmerControl(optimizer = 'bobyqa'), 
                    data = dur_gc_subset, REML = F)
   saveRDS(gc_mod_group_1, file = "./mySources/models/dur/s3_adv_int_nat/eye_track/gc_mod_group_1.rds", compress = 'xz')
@@ -611,18 +613,28 @@ if(T){
   gc_mod_group_2 <- lmer(targetProp ~ (ot1+ot2) + group + 
                     ot1:group + ot2:group + 
                     ((ot1+ot2) | participant) + 
-                    ((ot1+ot2) | target),
+                    ((ot1+ot2) | participant:condition),
                     control = lmerControl(optimizer = 'bobyqa'), 
                     data = dur_gc_subset, REML = F)
   saveRDS(gc_mod_group_2, file = "./mySources/models/dur/s3_adv_int_nat/eye_track/gc_mod_group_2.rds", compress = 'xz')
 }
 
+# Add group effect on cubic poly 
+# if(T){
+#   gc_mod_group_3 <- lmer(targetProp ~ (ot1+ot2) + group + 
+#                     ot1:group + ot2:group + ot3:group + 
+#                     ((ot1+ot2) | participant) + 
+#                     ((ot1+ot2) | participant:condition), 
+#                     control = lmerControl(optimizer = 'bobyqa'), 
+#                     data = dur_gc_subset, REML = F)
+#   saveRDS(gc_mod_group_3, file = "./mySources/models/dur/s3_adv_int_nat/eye_track/gc_mod_group_3.rds", compress = 'xz')
+# }
 
 # Add condition effect on intercept 
 if(T){
   gc_mod_cond_0 <- lmer(targetProp ~ (ot1+ot2) * group + condition + 
                    ((ot1+ot2) | participant) + 
-                   ((ot1+ot2) | target),
+                   ((ot1+ot2) | participant:condition), 
                    control = lmerControl(optimizer = 'bobyqa'), 
                    data = dur_gc_subset, REML = F)
   saveRDS(gc_mod_cond_0, file = "./mySources/models/dur/s3_adv_int_nat/eye_track/gc_mod_cond_0.rds", compress = 'xz')
@@ -633,7 +645,7 @@ if(T){
   gc_mod_cond_1 <- lmer(targetProp ~ (ot1+ot2) * group + condition + 
                    ot1:condition + 
                    ((ot1+ot2) | participant) + 
-                   ((ot1+ot2) | target),
+                   ((ot1+ot2) | participant:condition), 
                    control = lmerControl(optimizer = 'bobyqa'), 
                    data = dur_gc_subset, REML = F)
   saveRDS(gc_mod_cond_1, file = "./mySources/models/dur/s3_adv_int_nat/eye_track/gc_mod_cond_1.rds", compress = 'xz')
@@ -644,28 +656,28 @@ if(T){
   gc_mod_cond_2 <- lmer(targetProp ~ (ot1+ot2) * group + condition + 
                    ot1:condition + ot2:condition + 
                    ((ot1+ot2) | participant) + 
-                   ((ot1+ot2) | target),
+                   ((ot1+ot2) | participant:condition), 
                    control = lmerControl(optimizer = 'bobyqa'), 
                    data = dur_gc_subset, REML = F)
   saveRDS(gc_mod_cond_2, file = "./mySources/models/dur/s3_adv_int_nat/eye_track/gc_mod_cond_2.rds", compress = 'xz')
 }
 
+# Add condition effect on cubic poly 
+# if(T){
+#   gc_mod_cond_3 <- lmer(targetProp ~ (ot1+ot2) * group + condition + 
+#                    ot1:condition + ot2:condition + ot3:condition + 
+#                    ((ot1+ot2) | participant) + 
+#                    ((ot1+ot2) | participant:condition), 
+#                    control = lmerControl(optimizer = 'bobyqa'), 
+#                    data = dur_gc_subset, REML = F)
+#   saveRDS(gc_mod_cond_3, file = "./mySources/models/dur/s3_adv_int_nat/eye_track/gc_mod_cond_3.rds", compress = 'xz')
+# }
 
 # Include all interactions
 if(T){
-gc_mod_full <- lmer(targetProp ~ (ot1+ot2) * group * condition + 
+gc_mod_cube <- lmer(targetProp ~ (ot1+ot2) * group * condition + 
                ((ot1+ot2) | participant) + 
-               ((ot1+ot2) | target),
-               control = lmerControl(optimizer = 'bobyqa'), 
-               data = dur_gc_subset, REML = F)
-  saveRDS(gc_mod_full, file = "./mySources/models/dur/s3_adv_int_nat/eye_track/gc_mod_full.rds", compress = 'xz')
-}
-
-if(T){
-gc_mod_cube <- lmer(targetProp ~ (ot1+ot2+ot3) * group * condition + 
-               ((ot1+ot2+ot3) | participant) + 
-               ((ot1+ot2+ot3) | participant:condition) + 
-               ((ot1+ot2+ot3) | target),
+               ((ot1+ot2) | participant:condition), 
                control = lmerControl(optimizer = 'bobyqa'), 
                data = dur_gc_subset, REML = F)
   saveRDS(gc_mod_cube, file = "./mySources/models/dur/s3_adv_int_nat/eye_track/gc_mod_cube.rds", compress = 'xz')
@@ -677,14 +689,16 @@ gc_mod_cube <- lmer(targetProp ~ (ot1+ot2+ot3) * group * condition +
 #    - the linear slope (ot1)
 #    - the steepness of the quadratic curvature (ot2)
 
-anova(gc_mod_base, 
+anova( 
       gc_mod_group_0, 
       gc_mod_group_1, 
       gc_mod_group_2, 
+      # gc_mod_group_3, 
       gc_mod_cond_0, 
       gc_mod_cond_1, 
       gc_mod_cond_2, 
-      gc_mod_full, test = 'Chisq')
+      # gc_mod_cond_3, 
+      gc_mod_cube, test = 'Chisq')
 
 #        Df    AIC    BIC logLik deviance   Chisq Chi Df Pr(>Chisq)    
 # object 16 117775 117925 -58871   117743                               # base model 
@@ -698,33 +712,26 @@ anova(gc_mod_base,
 
 
 
-# summary(gc_mod_full)
-
-# Fixed effects:                                                             
-#                                    Estimate Std. Error         df t value  Pr(>|t|)    
-# (Intercept)                       5.645e-01  3.153e-02  2.900e+01  17.902   < 2e-16 ***
-# ot1                               6.315e-01  1.854e-01  4.500e+01   3.407   0.00139 ** 
-# ot2                               7.529e-01  1.563e-01  3.700e+01   4.818  2.44e-05 ***
-# groupla                           9.209e-03  2.601e-02  6.500e+01   0.354   0.72447    
-# groupint                          7.145e-02  3.578e-02  6.500e+01   1.997   0.05004 .  
-# conditionbisyllabic               6.156e-02  3.521e-02  1.200e+01   1.748   0.10532    
-# ot1:groupla                       1.908e-01  1.834e-01  7.000e+01   1.041   0.30153    
-# ot1:groupint                     -3.216e-02  2.520e-01  6.900e+01  -0.128   0.89885    
-# ot2:groupla                      -3.724e-01  1.457e-01  7.300e+01  -2.556   0.01266 *  
-# ot2:groupint                     -3.488e-01  2.001e-01  7.200e+01  -1.743   0.08562 .  
-# ot1:conditionbisyllabic          -1.887e-01  1.823e-01  1.300e+01  -1.035   0.31890    
-# ot2:conditionbisyllabic          -5.675e-01  1.661e-01  1.400e+01  -3.416   0.00429 ** 
-# groupla:conditionbisyllabic      -2.260e-02  6.978e-03  8.314e+04  -3.239   0.00120 ** 
-# groupint:conditionbisyllabic      1.620e-02  9.507e-03  8.314e+04   1.703   0.08850 .  
-# ot1:groupla:conditionbisyllabic   6.608e-02  7.351e-02  8.314e+04   0.899   0.36873    
-# ot1:groupint:conditionbisyllabic  6.789e-01  1.002e-01  8.314e+04   6.777  1.23e-11 ***
-# ot2:groupla:conditionbisyllabic   2.370e-01  7.351e-02  8.314e+04   3.224   0.00126 ** 
-# ot2:groupint:conditionbisyllabic  1.580e-01  1.002e-01  8.314e+04   1.577   0.11471    
+# summary(gc_mod_cond_2)
+# Fixed effects:
+#                            Estimate Std. Error        df t value Pr(>|t|)    
+# (Intercept)                 0.62420    0.02251 102.98000  27.725  < 2e-16 ***
+# ot1                         0.93853    0.14707  91.30000   6.381 7.15e-09 ***
+# ot2                        -0.18720    0.09840 109.10000  -1.902  0.05976 .  
+# groupla                     0.02289    0.02653  81.71000   0.863  0.39068    
+# groupint                    0.06375    0.03649  81.54000   1.747  0.08441 .  
+# conditionmonosyllabic      -0.02180    0.02033 112.39000  -1.072  0.28604    
+# ot1:groupla                 0.18065    0.17774  70.81000   1.016  0.31289    
+# ot1:groupint                0.05195    0.24446  70.62000   0.213  0.83232    
+# ot2:groupla                 0.08938    0.11453  88.37000   0.780  0.43726    
+# ot2:groupint               -0.06104    0.15738  87.83000  -0.388  0.69906    
+# ot1:conditionmonosyllabic  -0.17154    0.11869  95.09000  -1.445  0.15165    
+# ot2:conditionmonosyllabic   0.26740    0.09332 110.70000   2.865  0.00498 ** 
 
 
 # create new df including the fitted model 
 data.comp <- data.frame(na.omit(dur_gc_subset), 
-                        GCA_Full = fitted(gc_mod_cube))
+                        GCA_Full = fitted(gc_mod_cond_2))
 # glimpse(data.comp)
 
 
@@ -746,20 +753,42 @@ data.comp %>%
   stat_summary(aes(y = GCA_Full, color = group), fun.y = mean, geom = 'line', size = 0.4) + 
   xlab("Adjusted time course") +
   ylab("Target fixations") +
-  #coord_cartesian(ylim = c(0.0, 1.0)) + 
+  coord_cartesian(ylim = c(0.0, 1.0)) + 
   scale_x_continuous(breaks = c(1, 31), labels = c("Approx.\ntarget\nonset", "Target\nsyllable\noffset")) + 
   scale_color_brewer(palette = "Set1", name = "", labels = c("SS", "LA", "IN")) + 
   theme_bw(base_size = 16, base_family = "Times New Roman") -> durGCAfullMod
 
 ggsave('durGCAfullMod.png', plot = durGCAfullMod, dpi = 600, device = "png", 
-         path = "./mySources/figs/dur/s3_int_adv_nat/eye_track", 
-         height = 3.25, width = 10.5, unit = "in")
-
-ggsave('durGCAfullMod.png', plot = durGCAfullMod, dpi = 600, device = "png", 
-         path = "./mySources/figs/dur/s3_int_adv_nat/eye_track")
+         path = "./mySources/figs/dur/s3_adv_int_nat/eye_track", 
+         height = 4, width = 8, unit = "in")
 
 
+condition_namesMod2 <- c(
+                    `ss` = "SS", 
+                    `int` = "IN", 
+                    `la` = "LA"
+                    )
 
+data.comp %>% 
+  mutate(., condition = factor(condition, levels = c("monosyllabic", "bisyllabic")), 
+            group = factor(group, levels = c("ss", "int", "la"))) %>%
+  ggplot(., aes(x = binGC, y = targetProp, color = condition, fill = condition)) + 
+  facet_grid(. ~ group, labeller = as_labeller(condition_namesMod2)) + 
+  #geom_area(data = suffix_area, aes(x = x, y = y), inherit = FALSE, alpha = 0.3, fill = 'lightcyan2') +
+  #stat_summary(fun.data = mean_se, geom = 'ribbon', 
+  #             show.legend = FALSE, alpha = 0.2, color = NA) +
+  #stat_summary(fun.y = mean, geom = 'point', size = 0.75) + 
+  stat_summary(aes(y = GCA_Full, color = condition), fun.y = mean, geom = 'line', size = 0.4) + 
+  xlab("Adjusted time course") +
+  ylab("Target fixations") +
+  coord_cartesian(ylim = c(0.0, 1.0)) + 
+  scale_x_continuous(breaks = c(1, 31), labels = c("Approx.\ntarget\nonset", "Target\nsyllable\noffset")) + 
+  scale_color_brewer(palette = "Set1", name = "", labels = c("Monosyllabic", "Bisyllabic")) + 
+  theme_bw(base_size = 16, base_family = "Times New Roman") -> durGCAfullMod2
+
+ggsave('durGCAfullMod2.png', plot = durGCAfullMod2, dpi = 600, device = "png", 
+         path = "./mySources/figs/dur/s3_adv_int_nat/eye_track", 
+         height = 4, width = 8, unit = "in")
 
 
 
