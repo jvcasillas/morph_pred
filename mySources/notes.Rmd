@@ -68,7 +68,9 @@
 
 - Open data w/ dataviewer .6 or higher
 - Select "Time Course (binned) Analysis report"
-- We are using 10ms bins
+- We are using 10, 20 and 50ms bins
+- Select OPT1 = , use fixation and saccades
+
 
 # colNames
 
@@ -118,7 +120,8 @@ RIGHT_IA_0_SAMPLE_COUNT
 RIGHT_IA_1_SAMPLE_COUNT_%
 RIGHT_IA_2_SAMPLE_COUNT_%
 RIGHT_IA_0_SAMPLE_COUNT_%
-
+correctresponse
+KEY_PRESSED
 
 
 
