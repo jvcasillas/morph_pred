@@ -24,14 +24,56 @@ setwd("~/academia/research/in_progress/morph_pred")
 df_stress <- read_csv("./mySources/data/clean/stressBIN10iaClean.csv") %>%
   filter(., corr == 1,
             group %in% c('lb', 'la', 'ss'), 
-            !(participant %in% c('L01', 'L02', 'L03', 'L04', 'L05', 
+            !participant %in% c('L01', 'L02', 'L03', 'L04', 'L05', 
                                  'L06', 'L07', 'L08', 'L09', 'L10', 
                                  'L15', 'L20', 'L21', 'L22', 'L23', 
                                  'L26', 'L30', 'L31', 'L33', 'LA04', 
-                                 'LA06', 'LA07', 'LA14')))
+                                 'LA06', 'LA07', 'LA14'))
 
 
 
+
+predict.glmm <- function(fit, newdata, type = 'gaussian') {
+    
+  ## Extract DV:  
+  
+  DV = strsplit(as.character(fit@call), ' ~ ')[[2]][1]
+  
+  ## Append empty DV column:
+  
+  newdata = cbind(newdata, rep(0, nrow(newdata)))
+  colnames(newdata)[ncol(newdata)] = DV
+  
+  ## Extract model matrix:
+  
+    mm <- model.matrix(terms(fit), newdata)
+    
+    ## Add fitted vals:
+    
+    newdata[, DV] <- predict(fit, newdata, re.form = NA)
+    
+    ## Extract confidence intervals:
+    
+    pvar1 <- diag(mm %*% tcrossprod(vcov(fit), mm))
+    newdata$UB <- newdata[, DV] + 1.96 * sqrt(pvar1)
+    newdata$LB <- newdata[, DV] - 1.96 * sqrt(pvar1)
+    
+    ## Transform if working with a non-gaussian GLMM:
+    
+    if (type == 'poisson') {
+      newdata$UB <- exp(newdata$UB)
+      newdata$LB <- exp(newdata$LB)
+      newdata[,DV] <- exp(newdata[,DV])
+      }
+
+    if (type == 'binomial') {
+      newdata$UB <- plogis(newdata$UB)
+      newdata$LB <- plogis(newdata$LB)
+      newdata[,DV] <- plogis(newdata[,DV])
+      }
+    
+    return(newdata)
+    }
 
 
 
@@ -142,44 +184,56 @@ df_stress_50 <- read_csv("./mySources/data/clean/stressBIN50iaClean.csv") %>%
   mutate(., group = factor(group, levels = c("ss", "la", "lb"))) %>%
   filter(., corr == 1,  
             group %in% c('lb', 'la', 'ss'), 
-            !(participant %in% c('L01', 'L02', 'L03', 'L04', 'L05', 
+            !participant %in% c('L01', 'L02', 'L03', 'L04', 'L05', 
                                  'L06', 'L07', 'L08', 'L09', 'L10', 
                                  'L15', 'L20', 'L21', 'L22', 'L23', 
                                  'L26', 'L30', 'L31', 'L33', 'LA04', 
-                                 'LA06', 'LA07', 'LA14')), 
-            binTonsetAlign >= 5 & binTonsetAlign <= 45)
+                                 'LA06', 'LA07', 'LA14'), 
+            binTonsetAlign >= 24 & binTonsetAlign <= 49, 
+            !target %in% c('cambia', 'cambio'))
 
 
 
 
 condition_names <- c(
-                    `stressed` = "Paroxytone",
-                    `unstressed` = "Oxytone"
+                    `0` = 'CV', 
+                    `1` = 'CVC'
                     )
 
 (df_stress_50 %>%
   na.omit(.) %>% 
-  # filter(., coda == 1) %>% 
   ggplot(., aes(x = binTonsetAlign, y = targetProp, color = group, shape = group)) + 
-  facet_grid(. ~ condition, labeller = as_labeller(condition_names)) + 
+  facet_grid(coda ~ ., labeller = as_labeller(condition_names)) + 
   geom_hline(yintercept = 0.5, color = 'white', size = 2) + 
-  geom_vline(xintercept = 20, color = 'grey60', lty = 3) + 
-  geom_vline(xintercept = 24, color = 'grey60', lty = 3) + 
-  stat_summary(fun.data = mean_cl_boot, geom = 'pointrange',  size = 0.5, 
-               fun.args = list(conf.int = .95, B = 5000)) +
-  stat_summary(fun.y = mean, geom = 'point', color = 'white', alpha = 0.3, size = 1.5) + 
+  geom_vline(xintercept = 38, color = 'grey40', lty = 3) + 
+  geom_vline(xintercept = 32, color = 'grey40', lty = 3) + 
+  stat_summary(fun.data = mean_cl_boot, geom = 'pointrange',  size = 0.75, 
+               fun.args = list(conf.int = .95, B = 1000)) +
+  stat_summary(fun.y = mean, geom = 'point', color = 'white', alpha = 0.3, size = 1.75) + 
   scale_shape_manual(name = "", values = 17:15, labels = c("SS", "LA", "LB")) + 
   scale_color_brewer(palette = 'Set1', name = "", labels = c("SS", "LA", "LB")) + 
-  scale_x_continuous(breaks = c(10, 20, 30, 40), labels = c("-500", "0", "500", "1000")) + 
+  scale_x_continuous(breaks = c(23, 28, 33, 38, 43, 48), labels = c("-750", "-500", "-250", "0", "250", "500")) + 
   labs(y = 'Proportion of target fixations', 
-       x = 'Time after target onset (ms)', 
+       x = 'Time relative to target syllable offset (ms)', 
        caption = "Mean +/- 95% CI") +
-  #coord_cartesian(ylim = c(0, 1)) + 
-  theme_grey(base_size = 12, base_family = "Times") -> stressP1)
+  coord_cartesian(ylim = c(0, 1)) + 
+  annotate("text", x = 38.35, y = 0.02, label = 'Target syllable offset', 
+           angle = 90, size = 3, hjust = 0) + 
+  annotate("text", x = 32.35, y = 0.02, label = 'Mean target word onset', 
+           angle = 90, size = 3, hjust = 0) + 
+  theme_grey(base_size = 15, base_family = "Times") -> stressP1)
 
 # ggsave('stressP1.png', plot = stressP1, dpi = 600, device = "png", 
-          # path = "./mySources/figs/stress/s1_beg_adv_nat/eye_track", 
-          # height = 3.25, width = 10.5, unit = "in")
+#           path = "./mySources/figs/stress/s1_beg_adv_nat/eye_track", 
+#           height = 6.75, width = 8.15, unit = "in")
+
+
+
+
+
+
+
+
 
 
 
@@ -217,7 +271,7 @@ condition_names <- c(
 # We want to analyze proportion of target gaze at target onset 
 # so we need to make a subset of the data that only uses the 
 # target onset bin (adjusted 200ms for VWP)
-stress_subset_0 <- df_short %>% filter(., binTsuffixAlign == 147)
+stress_subset_0 <- df_short %>% filter(., binTsuffixAlign == 147, !target %in% c('cambia', 'cambio'))
 
 # Quick and dirty mean of target fixations as a function of 
 # group and condition (stressed, unstressed *1st syllable*)
@@ -244,18 +298,18 @@ stress_ttest <- stress_subset_0 %>%
 # Convert pvalues from scientific notation
 stress_ttest$p.value <- format(stress_ttest$p.value, scientific = F)
 stress_ttest$sig <- "N.S."
-stress_ttest[stress_ttest$p.value <= 0.05, 'sig'] <- "*"
+stress_ttest[stress_ttest$p.value <= 0.05/6, 'sig'] <- "*"
 
 # Print results
 print(as.data.frame(stress_ttest[, c(1:7, 11)]))
 
-#group  condition  estimate    statistic       p.value parameter  conf.low  sig
-#   la   stressed 0.4933201 -0.148803174 0.55857145203        26 0.4167535 N.S.
-#   la unstressed 0.5839286  2.030959997 0.02630044260        26 0.5134446    *
-#   lb   stressed 0.4996867 -0.005911574 0.50232585022        18 0.4077902 N.S.
-#   lb unstressed 0.4827694 -0.311696637 0.62057374910        18 0.3869105 N.S.
-#   ss   stressed 0.6167749  2.555903872 0.00920282205        21 0.5381571    *
-#   ss unstressed 0.7287338  4.696397066 0.00006155838        21 0.6449265    *
+# group  condition  estimate   statistic       p.value parameter  conf.low  sig
+#    ss   stressed 0.6322078  2.79896749 0.00537726129        21 0.5509294    *
+#    ss unstressed 0.7235390  4.76754875 0.00005197742        21 0.6428574    *
+#    la   stressed 0.5022928  0.05122216 0.47976999874        26 0.4259471 N.S.
+#    la unstressed 0.5841931  2.12785440 0.02149710485        26 0.5167067 N.S.
+#    lb   stressed 0.5009398  0.01595298 0.49372369885        18 0.3987797 N.S.
+#    lb unstressed 0.4880326 -0.21468852 0.58378816118        18 0.3913704 N.S.
 
 
 
@@ -278,7 +332,7 @@ print(as.data.frame(stress_ttest[, c(1:7, 11)]))
     geom_linerange(aes(ymin = conf.low, ymax = estimate), color = 'grey40',
                        position = position_dodge(width = 0.75), size = 1) +
     geom_point(position = position_dodge(width = 0.75), size = 4) +
-    ylim(0, 1.0) +
+    # ylim(0, 1.0) +
     scale_color_brewer(palette = "Set1", name = '', labels = c('Paroxytone', 'Oxytone')) + 
     scale_x_discrete(labels = c('LB', 'LA', 'SS')) + 
     labs(title = 'Mean fixations at target syllable offset', 
@@ -290,6 +344,24 @@ print(as.data.frame(stress_ttest[, c(1:7, 11)]))
 # ggsave('stressTargetFixMOD1.png', plot = stressTargetFixMOD1, dpi = 600, device = "png", 
 #         path = "./mySources/figs/stress/s1_beg_adv_nat/eye_track", 
 #         height = 4, width = 6, unit = 'in')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -307,68 +379,220 @@ wm_df <- read_csv("./mySources/data/raw/wm_all.csv") %>%
                                         'L26', 'L30', 'L31', 'L33', 'La04', 
                                         'LA06', 'LA07', 'LA14'))) 
 
+scale_this <- function(x) as.vector(scale(x))
+
+
 # Are groups different from each other?
-stress_subset_0_prop <- stress_subset_0 %>%
-  na.omit(.) %>% 
-  group_by(., group, condition, participant) %>%
-  summarise(., meanFix = mean(targetProp)) # %>% 
-#  ungroup(.) %>%
-#  left_join(x = ., y = wm_df[, -1], by = 'participant') %>% 
-#  mutate(., group = factor(group, levels = c("ss", "la", "lb")), 
-#            condition = as.factor(condition))
+stress_subset_0_prop <- stress_subset_0 %>% 
+  na.omit(.) %>%
+  select(., group, condition, participant, target, coda, 
+            targetCount, distractorCount, eLog, wts, targetProp) %>%
+  # summarise(., meanFix = mean(targetProp)) %>% 
+ # ungroup(.) %>%
+ # left_join(x = ., y = wm_df[, -1], by = 'participant') %>% 
+ mutate(., group = factor(group, levels = c("ss", "la", "lb")), 
+           coda = as.factor(coda)) # %>% 
+ # group_by(., group) %>%
+ # mutate(., wmScaled = scale_this(WM))
 
-# tested with WM, not significant, so leaving out in 
-# order to keep more data
+stress_subset_0_prop$coda <- as.factor(stress_subset_0_prop$coda)
+stress_subset_0_prop$codaSum <- C(stress_subset_0_prop$coda, sum)
+# contrasts(stress_subset_0_prop$codaSum)
 
-# Set condition factors to sum contrasts
-#stress_subset_0_prop$condition <- C(stress_subset_0_prop$condition, sum)
-
-prop_0_mod_0 <- lmer(meanFix ~ 1 + 
-                    (1 | participant), 
-                    data = stress_subset_0_prop, REML = F, control = lmerControl(optimizer = 'bobyqa'))
-
-prop_0_mod_group <- lmer(meanFix ~ 1 + group + 
-                        (1 | participant), 
-                        data = stress_subset_0_prop, REML = F, control = lmerControl(optimizer = 'bobyqa'))
-
-prop_0_mod_cond <- lmer(meanFix ~ 1 + group + condition + 
-                        (1 | participant), 
-                        data = stress_subset_0_prop, REML = F, control = lmerControl(optimizer = 'bobyqa'))
-
-prop_0_mod_full <- lmer(meanFix ~ 1 + group * condition + 
-                      (1 | participant), 
-                       data = stress_subset_0_prop, REML = F, control = lmerControl(optimizer = 'bobyqa'))
-
-# prop_0_mod_cov <- lmer(meanFix ~ 1 + group * condition + WM + 
-#                       (1 | participant), 
-#                        data = stress_subset_0_prop, REML = F, control = lmerControl(optimizer = 'bobyqa'))
-
-# prop_0_mod_cov_full <- lmer(meanFix ~ 1 + group * condition * WM + 
-#                       (1 | participant), 
-#                        data = stress_subset_0_prop, REML = F, control = lmerControl(optimizer = 'bobyqa'))
+stress_subset_0_prop$condition <- as.factor(stress_subset_0_prop$condition)
+stress_subset_0_prop$conditionSum <- C(stress_subset_0_prop$condition, sum)
+# contrasts(stress_subset_0_prop$codaSum)
 
 
-# anova(prop_0_mod_0, prop_0_mod_group, prop_0_mod_cond, prop_0_mod_full, test = "Chisq")
 
-#        Df     AIC     BIC  logLik deviance   Chisq Chi Df Pr(>Chisq)    
-# object  3  1.1555  9.8935  2.4222  -4.8445                              
-# ..1     5 -8.8770  5.6863  9.4385 -18.8770 14.0325      2  0.0008972 ***
-# ..2     6 -9.9486  7.5273 10.9743 -21.9486  3.0717      1  0.0796670 .  
-# ..3     8 -7.9025 15.3988 11.9512 -23.9025  1.9538      2  0.3764707    
+# random effects building
 
-# summary(prop_0_mod_group)
+prop_0_ranefA <- glmer(cbind(targetCount, 10 - targetCount) ~ 1 + 
+                    (1 | participant),
+                    data = stress_subset_0_prop, REML = F, family = 'binomial', 
+                    control = glmerControl(optimizer = 'bobyqa'))
+
+prop_0_ranefB <- glmer(cbind(targetCount, 10 - targetCount) ~ 1 + 
+                    (1 | participant) + (1 | target),
+                    data = stress_subset_0_prop, family = 'binomial', 
+                    control = glmerControl(optimizer = 'bobyqa'))
+
+anova(prop_0_ranefA, prop_0_ranefB, refit = F) # keep intercept for target
+
+prop_0_ranefC <- glmer(cbind(targetCount, 10 - targetCount) ~ 1 + 
+                    (1 | participant) + (1 | target) + 
+                    (0 + conditionSum | participant),
+                    data = stress_subset_0_prop, family = 'binomial', 
+                    control = glmerControl(optimizer = 'bobyqa'))
+
+anova(prop_0_ranefB, prop_0_ranefC, refit = F) # keep uncorrelated slope for condition
+
+prop_0_ranefD <- glmer(cbind(targetCount, 10 - targetCount) ~ 1 + 
+                    (1 | participant) + (1 | target) + 
+                    (0 + conditionSum | participant) + (0 + codaSum | participant),
+                    data = stress_subset_0_prop, family = 'binomial', 
+                    control = glmerControl(optimizer = 'bobyqa'))
+
+anova(prop_0_ranefC, prop_0_ranefD, refit = F) # Keep uncorrelated slope for coda
+
+prop_0_ranefE <- glmer(cbind(targetCount, 10 - targetCount) ~ 1 + 
+                    (1 | participant) + (1 | target) + 
+                    (0 + conditionSum*codaSum | participant),
+                    data = stress_subset_0_prop, family = 'binomial', 
+                    control = glmerControl(optimizer = 'bobyqa'))
+
+anova(prop_0_ranefD, prop_0_ranefE, refit = F) # Keep condition x coda interaction slope
+
+prop_0_ranefF <- glmer(cbind(targetCount, 10 - targetCount) ~ 1 + 
+                    (1 | participant) + (1 | target) + 
+                    (1 + conditionSum*codaSum | participant),
+                    data = stress_subset_0_prop, family = 'binomial', 
+                    control = glmerControl(optimizer = 'bobyqa'))
+
+anova(prop_0_ranefE, prop_0_ranefF, refit = F) # Keep correlated slope
+
+
+
+# test fixed effects
+
+prop_0_mod_0 <- glmer(cbind(targetCount, 10 - targetCount) ~ 1 + 
+                    (1 | participant) + (1 | target) + 
+                    (1 + conditionSum*codaSum | participant),
+                    data = stress_subset_0_prop, family = 'binomial', 
+                    control = glmerControl(optimizer = 'bobyqa'))
+
+prop_0_mod_group <- glmer(cbind(targetCount, 10 - targetCount) ~ 1 + group + 
+                    (1 | participant) + (1 | target) + 
+                    (1 + conditionSum*codaSum | participant),
+                    data = stress_subset_0_prop, family = 'binomial', 
+                    control = glmerControl(optimizer = 'bobyqa'))
+
+prop_0_mod_cond <- glmer(cbind(targetCount, 10 - targetCount) ~ 1 + group + conditionSum + 
+                    (1 | participant) + (1 | target) + 
+                    (1 + conditionSum*codaSum | participant),
+                    data = stress_subset_0_prop, family = 'binomial', 
+                    control = glmerControl(optimizer = 'bobyqa'))
+
+prop_0_mod_coda <- glmer(cbind(targetCount, 10 - targetCount) ~ 1 + group + codaSum + 
+                    (1 | participant) + (1 | target) + 
+                    (1 + conditionSum*codaSum | participant),
+                    data = stress_subset_0_prop, family = 'binomial', 
+                    control = glmerControl(optimizer = 'bobyqa'))
+
+prop_0_mod_int1 <- glmer(cbind(targetCount, 10 - targetCount) ~ 1 + group + codaSum + group:codaSum + 
+                    (1 | participant) + (1 | target) + 
+                    (1 + conditionSum*codaSum | participant),
+                    data = stress_subset_0_prop, family = 'binomial', 
+                    control = glmerControl(optimizer = 'bobyqa'))
+
+prop_0_mod_int2 <- glmer(cbind(targetCount, 10 - targetCount) ~ 1 + group + codaSum + group:conditionSum + 
+                    (1 | participant) + (1 | target) + 
+                    (1 + conditionSum*codaSum | participant),
+                    data = stress_subset_0_prop, family = 'binomial', 
+                    control = glmerControl(optimizer = 'bobyqa'))
+
+prop_0_mod_int3 <- glmer(cbind(targetCount, 10 - targetCount) ~ 1 + group + codaSum + conditionSum:codaSum + 
+                    (1 | participant) + (1 | target) + 
+                    (1 + conditionSum*codaSum | participant),
+                    data = stress_subset_0_prop, family = 'binomial', 
+                    control = glmerControl(optimizer = 'bobyqa'))
+
+prop_0_mod_full <- glmer(cbind(targetCount, 10 - targetCount) ~ 1 + group * conditionSum * codaSum + 
+                    (1 | participant) + (1 | target) + 
+                    (1 + conditionSum*codaSum | participant),
+                    data = stress_subset_0_prop, family = 'binomial', 
+                    control = glmerControl(optimizer = 'bobyqa'))
+
+
+
+anova(prop_0_mod_0, prop_0_mod_group) # main effect of group 
+anova(prop_0_mod_group, prop_0_mod_cond) # no effect of condition
+anova(prop_0_mod_group, prop_0_mod_coda) # main effect of coda
+anova(prop_0_mod_coda, prop_0_mod_int1) # no group x coda interaction
+anova(prop_0_mod_coda, prop_0_mod_int2) # no group condition interaction
+anova(prop_0_mod_coda, prop_0_mod_int3) # no condi x coda interaction
+anova(prop_0_mod_coda, prop_0_mod_full) # no three way interaction
+
+
+#    AIC    BIC  logLik deviance  Chisq Chi Df Pr(>Chisq) 
+# 9697.2 9770.5 -4833.6   9667.2 17.116      2   0.000192  prop_0_mod_group ***
+# 9699.1 9777.3 -4833.6   9667.1 0.0504      1     0.8223  prop_0_mod_cond
+# 9691.6 9769.8 -4829.8   9659.6 7.5734      1   0.005924  prop_0_mod_coda  **
+# 9693.1 9781.1 -4828.6   9657.1 2.4681      2     0.2911  group x coda
+# 9692.3 9785.2 -4827.1   9654.3 5.3049      3     0.1508  group x condition
+# 9693.7 9781.7 -4828.9   9657.7 1.8708      2     0.3924  cond x coda
+# 9695.3 9812.7 -4823.7   9647.3 12.252      8     0.1403  prop_0_mod_full
+
+
+stress_subset_0_prop$group <- factor(stress_subset_0_prop$group, levels = c("ss", "la",  "lb"))
+
+prop_0_mod_final <- glmer(cbind(targetCount, 10 - targetCount) ~ 1 + group + codaSum + conditionSum + 
+                    (1 | participant) + (1 | target) +  
+                    (1 + conditionSum*codaSum | participant),
+                    data = stress_subset_0_prop, family = 'binomial', 
+                    control = glmerControl(optimizer = 'bobyqa'))
+
+MuMIn::r.squaredGLMM(prop_0_mod_final)
+
+# summary(prop_0_mod_final)
+# confint(prop_0_mod_final, method = "Wald")
 
 # Fixed effects:
-#              Estimate Std. Error        df t value Pr(>|t|)    
-# (Intercept)   0.53862    0.03072 136.00000  17.533  < 2e-16 ***
-# grouplb      -0.04740    0.04780 136.00000  -0.992  0.32318    
-# groupss       0.13413    0.04585 136.00000   2.926  0.00403 ** 
+#             Estimate  2.5%  97.5% Std. Error z value Pr(>|z|)    
+# (Intercept)   1.6347  1.08   2.19     0.2851   5.735 9.77e-09 ***
+# groupla      -1.2489 -1.92  -0.57     0.3446  -3.624  0.00029 ***
+# grouplb      -1.5237 -2.28  -0.77     0.3869  -3.939 8.20e-05 ***
+# codaSum1     -0.5303 -0.90  -0.16     0.1899  -2.793  0.00523 ** 
+
 
 # Relevel to test lb vs la 
 stress_subset_0_prop$group <- factor(stress_subset_0_prop$group, levels = c("lb", "la",  "ss"))
 
-summary(lmer(meanFix ~ 1 + group + (1 | participant), data = stress_subset_0_prop, REML = F, control = lmerControl(optimizer = 'bobyqa')))
-# Learner groups are not different from each other
+summary(glmer(cbind(targetCount, 10 - targetCount) ~ 1 + group + codaSum + 
+       (1 | participant) + (1 | target) + 
+       (1 + conditionSum*codaSum | participant),
+       data = stress_subset_0_prop, family = 'binomial', 
+       control = glmerControl(optimizer = 'bobyqa')))
+
+# Fixed effects:
+#             Estimate Std. Error z value Pr(>|z|)    
+# (Intercept)   0.1110     0.3059   0.363  0.71664    
+# groupla       0.2747     0.3714   0.740  0.45951    
+# groupss       1.5237     0.3868   3.939 8.19e-05 ***
+# codaSum1     -0.5303     0.1899  -2.793  0.00523 ** 
+
+
+
+
+et_ci <- confint(prop_0_mod_final, method = "Wald", level = 0.99) %>% 
+  as.data.frame(.) %>% 
+  slice(., 13:16) %>% 
+  rename(., ciLow = `0.5 %`, ciHi = `99.5 %`)
+
+stressFixModP0 <- broom::tidy(prop_0_mod_final) %>% slice(1:4) %>% 
+  cbind(., et_ci) %>% 
+  mutate(., term = recode(term, `(Intercept)` = '(Intercept)', 
+                                codaSum1 = 'Syllable\nstructure', 
+                                groupla = 'LA', 
+                                grouplb = 'LB'), 
+            term = factor(term, levels = c('LB', 
+                                           'LA', 
+                                           'Syllable\nstructure', 
+                                           '(Intercept)'))) %>%
+  ggplot(., aes(x = estimate, y = term)) + 
+    geom_vline(xintercept = 0, lty = 3) + 
+    geom_errorbarh(aes(xmin = ciLow, xmax = ciHi), height = 0.2, size = 0.65) + 
+    geom_point(size = 3) + 
+    geom_point(size = 2, color = 'lightgrey') + 
+    labs(y = 'Term', x = 'Estimate +/- 95% CI') + 
+    theme_bw(base_size = 15, base_family = 'Times') + 
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+# ggsave('stressP0.png', plot = stressFixModP0, dpi = 600, device = "png", 
+#         path = "./mySources/figs/stress/s1_beg_adv_nat/eye_track", 
+#         height = 2.5, width = 7, unit = 'in')
+
+
 
 
 
@@ -376,36 +600,279 @@ summary(lmer(meanFix ~ 1 + group + (1 | participant), data = stress_subset_0_pro
 # Calculate mean target fixation as a function of group, condition, 
 # for each participant. We will plot the mean and calculate the 
 # bootstrapped 95% confidence interval and plot it all. 
-(stress_subset_0 %>%
-  na.omit(.) %>%
-  group_by(., group, condition, participant) %>%
-  summarise(., meanFix = mean(targetProp)) %>% 
-  ungroup(.) %>%
+
+stressFixModsP1 <- stress_subset_0_prop %>% 
   mutate(., group = factor(group, levels = c("lb", "la",  "ss"))) %>%
-  ggplot(., aes(x = group, y = meanFix, 
-                dodge = condition, color = condition,
-                group = interaction(group, condition))) +
+  group_by(., group, condition, participant) %>%
+  summarise(., meanFix = mean(targetProp)) %>%
+  ggplot(., aes(x = group, y = meanFix, shape = condition, 
+                group = interaction(group, condition), dodge = condition, color = group)) + 
     geom_hline(yintercept = 0.5, lty = 3) + 
-    stat_summary(fun.data = mean_cl_boot, geom = 'errorbar', 
-                 position = position_dodge(width = 0.5), 
-                 width = 0.35, color = 'grey40') + 
-    stat_summary(fun.y = mean, geom = 'point', size = 4,
+    stat_summary(fun.data = mean_cl_boot, geom = 'pointrange', 
+                 position = position_dodge(width = 0.5), color = 'black', 
+                 size = 0.90, show.legend = FALSE, fun.args = list(conf.int = 0.99)) + 
+    stat_summary(fun.y = mean, geom = 'point', size = 2.75,
                  position = position_dodge(width = 0.5)) + 
-    coord_cartesian(ylim = c(0, 1)) + 
-    labs(title = 'j', y = '', x = '', caption = 'Mean +/- 95% CI') + 
+    ylim(0, 1) + 
+    labs(y = '% Correct', x = '', caption = '') + 
     scale_x_discrete(labels = c('LB', 'LA', 'SS')) + 
-    scale_y_continuous(position = 'right') + 
-    scale_color_brewer(palette = "Set1", name = '', guide = F) + 
-    theme_bw(base_size = 12, base_family = 'Times') + 
-    theme(plot.title = element_text(color = "white")) -> stressTargetFixMOD2)
+    scale_color_manual(name = '', values = c('grey90', 'grey75', 'grey55'), guide = FALSE) + 
+    scale_shape_manual(name = '', values = c(16, 17), labels = c('Paroxytone', 'Oxytone')) + 
+    guides(shape = guide_legend(override.aes = list(shape = c(1, 2), color = 'black'))) +
+    theme_bw(base_size = 15, base_family = 'Times') +
+    theme(legend.position = c(0.26, 0.14), 
+          legend.box.just = "left", 
+          legend.background = element_rect(fill = "transparent"), 
+          legend.key = element_rect(fill = "transparent", colour = "transparent"), 
+          legend.key.size = unit(0.75, 'lines'), 
+          panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
 
-stressFixMods <- plot_grid(stressTargetFixMOD1, stressTargetFixMOD2, ncol = 2)
+
+stressFixModsP2 <- stress_subset_0_prop %>% 
+  mutate(., group = factor(group, levels = c("lb", "la",  "ss"))) %>%
+  group_by(., group, coda, participant) %>%
+  summarise(., meanFix = mean(targetProp)) %>%
+  ggplot(., aes(x = group, y = meanFix, shape = coda, 
+                group = interaction(group, coda), dodge = coda, color = group)) + 
+    geom_hline(yintercept = 0.5, lty = 3) + 
+    stat_summary(fun.data = mean_cl_boot, geom = 'pointrange', 
+                 position = position_dodge(width = 0.5), color = 'black', 
+                 size = 0.90, show.legend = FALSE, fun.args = list(conf.int = 0.99)) + 
+    stat_summary(fun.y = mean, geom = 'point', size = 2.75,
+                 position = position_dodge(width = 0.5)) + 
+    labs(y = '% Correct', x = '', caption = '+/- 99% bootstrap CI.') + 
+    scale_y_continuous(position = "right", limits = c(0, 1)) + 
+    scale_x_discrete(labels = c('LB', 'LA', 'SS')) + 
+    scale_color_manual(name = '', values = c('grey90', 'grey75', 'grey55'), guide = FALSE) + 
+    scale_shape_manual(name = '', values = c(16, 17), labels = c('CV', 'CVC')) + 
+    guides(shape = guide_legend(override.aes = list(shape = c(1, 2), color = 'black'))) +
+    theme_bw(base_size = 15, base_family = 'Times') +
+    theme(legend.position = c(0.16, 0.14), 
+          legend.box.just = "left", 
+          legend.background = element_rect(fill = "transparent"), 
+          legend.key = element_rect(fill = "transparent", colour = "transparent"), 
+          legend.key.size = unit(0.75, 'lines'), 
+          panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
 
 
-# Looks good, save as .png file
-# ggsave('stressFixMods.png', plot = stressFixMods, dpi = 600, device = "png", 
-#          path = "./mySources/figs/stress/s1_beg_adv_nat/eye_track", 
-#          height = 3.25, width = 8.5, unit = "in")
+# arrange all plots together
+stress_eyet_plot <- grid.arrange(stressFixModsP1, 
+                                 stressFixModsP2, 
+                                   ncol = 2)
+
+ggsave('stressGatingAll.png', 
+       plot = stress_eyet_plot, dpi = 600, device = "png", 
+      path = "./mySources/figs/stress/s1_beg_adv_nat/eye_track", 
+       height = 3.5, width = 8.5, units = 'in')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# LANDMARK ANALYSES
+
+glimpse(df_stress)
+
+# calculate proportion of target fixations by sub, by target, by stress cond, by group
+# for each landmark in the time course
+
+df_timecourse <- df_stress %>% 
+  filter(., bin <= 400) %>% 
+  select(., participant, group, bin, BIN_START_TIME, BIN_END_TIME, target, 
+            startsentence:target, condition, coda, targetCount:targetProp, eLog) %>% 
+  mutate(., bin = bin * 10)
+
+# ggplot(df_timecourse, aes(x = bin, y = eLog, color = group)) + 
+#   stat_summary(fun.data = mean_se, geom = 'pointrange')
+
+
+range(df_timecourse$bin)
+
+df_timecourse_startsentence <- df_timecourse %>% 
+  filter(., startsentence + 1540 >= BIN_START_TIME, startsentence + 1540 <= BIN_END_TIME) %>% 
+  select(., participant, group, target, condition:eLog) %>% 
+  mutate(., landmark = 'start_sentence')
+
+df_timecourse_word2_c1v1 <- df_timecourse %>% 
+  filter(., word2_c1v1 + 1540 >= BIN_START_TIME, word2_c1v1 + 1540 <= BIN_END_TIME) %>% 
+  select(., participant, group, target, condition:eLog) %>% 
+  mutate(., landmark = 'word2_c1v1')
+
+
+df_timecourse_word3_20msafterv1 <- df_timecourse %>% 
+  filter(., word3_20msafterv1 + 1500 >= BIN_START_TIME, word3_20msafterv1 + 1500 <= BIN_END_TIME) %>% 
+  select(., participant, group, target, condition:eLog) %>% 
+  mutate(., landmark = 'word3_20msafterv1')
+
+
+df_timecourse_word3_c1v1 <- df_timecourse %>% 
+  filter(., word3_c1v1 + 1540 >= BIN_START_TIME, word3_c1v1 + 1540 <= BIN_END_TIME) %>% 
+  select(., participant, group, target, condition:eLog) %>% 
+  mutate(., landmark = 'word3_c1v1')
+
+
+df_timecourse_word3_c2 <- df_timecourse %>% 
+  filter(., word3_c2 + 1540 >= BIN_START_TIME, word3_c2 + 1540 <= BIN_END_TIME) %>% 
+  select(., participant, group, target, condition:eLog) %>% 
+  mutate(., landmark = 'word3_c2')
+
+df_timecourse_word3_c3 <- df_timecourse %>% 
+  filter(., word3_c3 + 1550 >= BIN_START_TIME, word3_c3 + 1550 <= BIN_END_TIME)  %>% 
+  select(., participant, group, target, condition:eLog) %>% 
+  mutate(., landmark = 'word3_c3')
+
+df_timecourse_word3_suffix <- df_timecourse %>% 
+  filter(., word3_suffix + 1540 >= BIN_START_TIME, word3_suffix + 1540 <= BIN_END_TIME) %>% 
+  select(., participant, group, target, condition:eLog) %>% 
+  mutate(., landmark = 'word3_suffix')
+
+df_timecourse_word4_c1v1 <- df_timecourse %>% 
+  filter(., word4_c1v1 + 1540 >= BIN_START_TIME, word4_c1v1 + 1540 <= BIN_END_TIME) %>% 
+  select(., participant, group, target, condition:eLog) %>% 
+  mutate(., landmark = 'word4_c1v1')
+
+df_timecourse_word5 <- df_timecourse %>% 
+  filter(., word5 + 1540 >= BIN_START_TIME, word5 + 1540 <= BIN_END_TIME) %>% 
+  select(., participant, group, target, condition:eLog) %>% 
+  mutate(., landmark = 'word5')
+
+df_timecourse_end_sentence <- df_timecourse %>% 
+  filter(., end_sentence + 1540 >= BIN_START_TIME, end_sentence + 1540 <= BIN_END_TIME)  %>% 
+  select(., participant, group, target, condition:eLog) %>% 
+  mutate(., landmark = 'end_sentence')
+
+df_landmarks <- do.call("rbind", list(df_timecourse_startsentence, 
+                      df_timecourse_word2_c1v1, 
+                      df_timecourse_word3_20msafterv1, 
+                      df_timecourse_word3_c1v1, 
+                      df_timecourse_word3_c2, 
+                      df_timecourse_word3_c3, 
+                      df_timecourse_word3_suffix, 
+                      df_timecourse_word4_c1v1, 
+                      df_timecourse_word5, 
+                      df_timecourse_end_sentence))
+
+glimpse(df_landmarks)
+
+df_landmarks <- mutate(df_landmarks, 
+  landmark = factor(landmark, levels = c('start_sentence',
+                                         'word2_c1v1', 
+                                         'word3_c1v1', 
+                                         'word3_20msafterv1', 
+                                         'word3_c2', 
+                                         'word3_c3', 
+                                         'word3_suffix', 
+                                         'word4_c1v1', 
+                                         'word5', 
+                                         'end_sentence')))
+
+
+df_landmarks %>% 
+  na.omit(.) %>% 
+  filter(., coda == 0, 
+            landmark %in% c('word3_c1v1', 'word3_20msafterv1', 'word3_c2', 
+                            'word3_suffix', 'word4_c1v1')) %>%
+  group_by(., participant, group, condition, landmark) %>% 
+  summarize(., target_fix = mean(targetProp)) %>% 
+  ggplot(., aes(x = landmark, y = target_fix, shape = group, 
+                dodge = group, fill = group)) + 
+    geom_hline(yintercept = 0.5, color = 'black', lty = 3) + 
+    stat_summary(fun.data = mean_cl_boot, geom = 'pointrange', 
+                 position = position_dodge(0.5), size = 1.1) + 
+    scale_shape_manual(values = c(21, 22, 23)) + 
+    scale_fill_brewer(palette = "Set1") + 
+    scale_x_discrete(name = 'Time point', 
+                     labels = c('Target word\nonset', '20ms after\nV1', 
+                                'Target syllable\noffset', 'Target suffix', 
+                                'Following\nword')) + 
+    coord_cartesian(ylim = c(0.3, 1)) + 
+    theme_minimal()
+
+df_landmarks %>% 
+  na.omit(.) %>% 
+  filter(., coda == 1, 
+            landmark %in% c('word3_c1v1', 'word3_20msafterv1', 'word3_c2', 'word3_c3', 'word3_suffix', 'word4_c1v1')) %>%
+  group_by(., participant, target, group, condition, landmark) %>% 
+  summarize(., target_fix = mean(targetProp)) %>% 
+  ggplot(., aes(x = landmark, y = target_fix, shape = group, 
+                dodge = group, fill = group)) + 
+    geom_hline(yintercept = 0.5, color = 'black', lty = 3) + 
+    stat_summary(fun.data = mean_cl_boot, geom = 'pointrange', 
+                 position = position_dodge(0.5), size = 1.1) + 
+    scale_shape_manual(values = c(21, 22, 23)) + 
+    scale_fill_brewer(palette = "Set1") + 
+    scale_x_discrete(name = 'Time point', 
+                     labels = c('Target word\nonset', '20ms after\nV1', 'Coda onset', 
+                                'Target syllable\noffset', 'Target suffix', 'Following\nword')) + 
+    coord_cartesian(ylim = c(0.3, 1)) + 
+    theme_minimal()
+
+# 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -465,8 +932,8 @@ stressFixMods <- plot_grid(stressTargetFixMOD1, stressTargetFixMOD2, ncol = 2)
 #    - thus we can use -60 binAdj as the starting point 
 #      and be sure we are including the entire target word
 #    - we can also do a little higher to lighten the models (-50)
-stress_gc_subset <- filter(df_stress_50, binTonsetAlign >= 16 & 
-                                         binTonsetAlign <= 45) %>% as.data.frame 
+stress_gc_subset <- filter(df_stress_50, binTonsetAlign >= 33 & 
+                                         binTonsetAlign <= 43) %>% as.data.frame 
 
 
 # - Readjust time course 
@@ -475,13 +942,13 @@ stress_gc_subset <- filter(df_stress_50, binTonsetAlign >= 16 &
 #      bin, plus 1 (to avoid starting at 0)
 
 # lsrl_gc_subset$binGC <- lsrl_gc_subset$binAdj + 51
-stress_gc_subset$binGC <- stress_gc_subset$binTonsetAlign - 15
+stress_gc_subset$binGC <- stress_gc_subset$binTonsetAlign - 32
 
 
 # - Now we add higher order polynomials for analyses
 
-t <- poly(min(stress_gc_subset$binGC):max(stress_gc_subset$binGC), 3)
-stress_gc_subset[, paste('ot', 1:3, sep = "")] <- t[stress_gc_subset$binGC, 1:3]
+t <- poly(min(stress_gc_subset$binGC):max(stress_gc_subset$binGC), 4)
+stress_gc_subset[, paste('ot', 1:4, sep = "")] <- t[stress_gc_subset$binGC, 1:4]
 
 # glimpse(lsrl_gc_subset)
 
@@ -512,8 +979,10 @@ stress_gc_subset$condition <- as.factor(stress_gc_subset$condition)
 stress_gc_subset$conditionSum <- C(stress_gc_subset$condition, sum)
 # contrasts(stress_gc_subset$conditionSum)
 
-stress_gc_subset$groupSum <- C(stress_gc_subset$group, sum)
-# contrasts(stress_gc_subset$groupSum)
+stress_gc_subset$coda <- as.factor(stress_gc_subset$coda)
+stress_gc_subset$codaSum <- C(stress_gc_subset$coda, sum)
+# contrasts(stress_gc_subset$codaSum)
+
 
 ## @knitr ignore2
 
@@ -530,24 +999,72 @@ gc_mod_cond_3  <- readRDS('./mySources/models/stress/s1_beg_adv_nat/eye_track/gc
 gc_mod_full    <- readRDS('./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod_full.rds')
 
 
+# random effects structure
+mod_ot1 <- lmer(eLog ~ ot1 + (1 + ot1 | participant) + 
+                (1 + ot1 | participant:codaSum), 
+                control = lmerControl(optimizer = 'bobyqa'), 
+                data = stress_gc_subset, weights = 1/wts, REML = F)
+mod_ot2 <- lmer(eLog ~ ot1 + ot2 + (1 + (ot1+ot2) | participant) + 
+                (1 + (ot1+ot2) | participant:codaSum), 
+                control = lmerControl(optimizer = 'bobyqa'), 
+                data = stress_gc_subset, weights = 1/wts, REML = F)
+mod_ot3 <- lmer(eLog ~ ot1 + ot2 + ot3 + (1 + (ot1+ot2+ot3) | participant) + 
+                (1 + (ot1+ot2+ot3) | participant:codaSum), 
+                control = lmerControl(optimizer = 'bobyqa'), 
+                data = stress_gc_subset, weights = 1/wts, REML = F)
+
+anova(mod_ot1, mod_ot2, mod_ot3) # best fit with quadratic poly
+
+mod_ot2_simp <- lmer(eLog ~ ot1 + ot2 + (1 + (ot1+ot2) | participant), 
+                control = lmerControl(optimizer = 'bobyqa'), 
+                data = stress_gc_subset, weights = 1/wts, REML = F)
+
+mod_ot2_cond <- lmer(eLog ~ ot1 + ot2 + (1 + (ot1+ot2) | participant) + 
+                (1 + (ot1+ot2) | participant:conditionSum), 
+                control = lmerControl(optimizer = 'bobyqa'), 
+                data = stress_gc_subset, weights = 1/wts, REML = F)
+
+anova(mod_ot2_simp, mod_ot2_cond) # cond is better than just part
+
+mod_ot2_coda <- lmer(eLog ~ ot1 + ot2 + (1 + (ot1+ot2) | participant) + 
+                (1 + (ot1+ot2) | participant:codaSum), 
+                control = lmerControl(optimizer = 'bobyqa'), 
+                data = stress_gc_subset, weights = 1/wts, REML = F)
+
+anova(mod_ot2_simp, mod_ot2_coda) # coda is better than simp
+
+mod_ot2_max <- lmer(eLog ~ ot1 + ot2 + (1 + (ot1+ot2) | participant) + 
+                (1 + (ot1+ot2) | participant:codaSum:conditionSum), 
+                control = lmerControl(optimizer = 'bobyqa'), 
+                data = stress_gc_subset, weights = 1/wts, REML = F)
+
+anova(mod_ot2_coda, mod_ot2_max) # coda is better than simp
+
+
+
+
+
+
+
+
 # Base model 
 if(T){
-  gc_mod_base <- lmer(eLog ~ (ot1+ot2+ot3) + 
-                 ((ot1+ot2+ot3) | participant) + 
-                 ((ot1+ot2+ot3) | participant:conditionSum),
-                 ((ot1+ot2+ot3) | target),
+  gc_mod_base <- lmer(eLog ~ (ot1+ot2) + 
+                 (1 + (ot1+ot2) | participant) + 
+                 (1 + (ot1+ot2) | participant:codaSum), 
                  control = lmerControl(optimizer = 'bobyqa'), 
                  data = stress_gc_subset, weights = 1/wts, REML = F)
   saveRDS(gc_mod_base, file = "./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod_base.rds", compress = 'xz')
 }
 
 
+
+
 # Add group effect on intercept 
 if(T){
-  gc_mod_group_0 <- lmer(eLog ~ (ot1+ot2+ot3) + groupSum + 
-                    ((ot1+ot2+ot3) | participant) + 
-                    ((ot1+ot2+ot3) | participant:conditionSum),
-                    ((ot1+ot2+ot3) | target),
+  gc_mod_group_0 <- lmer(eLog ~ (ot1+ot2) + group + 
+                    (1 + (ot1+ot2) | participant) + 
+                    (1 + (ot1+ot2) | participant:codaSum), 
                     control = lmerControl(optimizer = 'bobyqa'), 
                     data = stress_gc_subset, weights = 1/wts, REML = F)
   saveRDS(gc_mod_group_0, file = "./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod_group_0.rds", compress = 'xz')
@@ -555,11 +1072,10 @@ if(T){
 
 # Add group effect on slope
 if(T){
- gc_mod_group_1 <- lmer(eLog ~ (ot1+ot2+ot3) + groupSum + 
-                   ot1:groupSum + 
-                   ((ot1+ot2+ot3) | participant) + 
-                   ((ot1+ot2+ot3) | participant:conditionSum),
-                   ((ot1+ot2+ot3) | target),
+ gc_mod_group_1 <- lmer(eLog ~ (ot1+ot2) + group + 
+                   ot1:group + 
+                   (1 + (ot1+ot2) | participant) + 
+                   (1 + (ot1+ot2) | participant:codaSum), 
                    control = lmerControl(optimizer = 'bobyqa'), 
                    data = stress_gc_subset, weights = 1/wts, REML = F)
   saveRDS(gc_mod_group_1, file = "./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod_group_1.rds", compress = 'xz')
@@ -567,174 +1083,132 @@ if(T){
 
 # Add group effect on quadratic poly 
 if(T){
-  gc_mod_group_2 <- lmer(eLog ~ (ot1+ot2+ot3) + groupSum + 
-                    ot1:groupSum + ot2:groupSum + 
-                    ((ot1+ot2+ot3) | participant) + 
-                    ((ot1+ot2+ot3) | participant:conditionSum),
-                    ((ot1+ot2+ot3) | target),
+  gc_mod_group_2 <- lmer(eLog ~ (ot1+ot2) + group + 
+                    ot1:group + ot2:group + 
+                    (1 + (ot1+ot2) | participant) + 
+                    (1 + (ot1+ot2) | participant:codaSum), 
                     control = lmerControl(optimizer = 'bobyqa'), 
                     data = stress_gc_subset, weights = 1/wts, REML = F)
   saveRDS(gc_mod_group_2, file = "./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod_group_2.rds", compress = 'xz')
 }
 
-# Add group effect on cubic poly 
-if(T){
-  gc_mod_group_3 <- lmer(eLog ~ (ot1+ot2+ot3) + groupSum + 
-                    ot1:groupSum + ot2:groupSum + ot3:groupSum + 
-                    ((ot1+ot2+ot3) | participant) + 
-                    ((ot1+ot2+ot3) | participant:conditionSum),
-                    ((ot1+ot2+ot3) | target),
-                    control = lmerControl(optimizer = 'bobyqa'), 
-                    data = stress_gc_subset, weights = 1/wts, REML = F)
-  saveRDS(gc_mod_group_3, file = "./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod_group_3.rds", compress = 'xz')
-}
-
-# Add condition effect on intercept 
-if(T){
-  gc_mod_cond_0 <- lmer(eLog ~ (ot1+ot2+ot3) * groupSum + conditionSum + 
-                   ((ot1+ot2+ot3) | participant) + 
-                   ((ot1+ot2+ot3) | participant:conditionSum),
-                   ((ot1+ot2+ot3) | target),
-                   control = lmerControl(optimizer = 'bobyqa'), 
-                   data = stress_gc_subset, weights = 1/wts, REML = F)
-  saveRDS(gc_mod_cond_0, file = "./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod_cond_0.rds", compress = 'xz')
-}
-
-# Add condition effect on slope 
-if(T){
-  gc_mod_cond_1 <- lmer(eLog ~ (ot1+ot2+ot3) * groupSum + conditionSum + 
-                   ot1:conditionSum + 
-                   ((ot1+ot2+ot3) | participant) + 
-                   ((ot1+ot2+ot3) | participant:conditionSum),
-                   ((ot1+ot2+ot3) | target),
-                   control = lmerControl(optimizer = 'bobyqa'), 
-                   data = stress_gc_subset, weights = 1/wts, REML = F)
-  saveRDS(gc_mod_cond_1, file = "./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod_cond_1.rds", compress = 'xz')
-}
-
-# Add condition effect on quadratic poly 
-if(T){
-  gc_mod_cond_2 <- lmer(eLog ~ (ot1+ot2+ot3) * groupSum + conditionSum + 
-                   ot1:conditionSum + ot2:conditionSum + 
-                   ((ot1+ot2+ot3) | participant) + 
-                   ((ot1+ot2+ot3) | participant:conditionSum),
-                   ((ot1+ot2+ot3) | target),
-                   control = lmerControl(optimizer = 'bobyqa'), 
-                   data = stress_gc_subset, weights = 1/wts, REML = F)
-  saveRDS(gc_mod_cond_2, file = "./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod_cond_2.rds", compress = 'xz')
-}
-
-# Add condition effect on cubic poly 
-if(T){
-  gc_mod_cond_3 <- lmer(eLog ~ (ot1+ot2+ot3) * groupSum + conditionSum + 
-                   ot1:conditionSum + ot2:conditionSum + ot3:conditionSum + 
-                   ((ot1+ot2+ot3) | participant) + 
-                   ((ot1+ot2+ot3) | participant:conditionSum),
-                   ((ot1+ot2+ot3) | target),
-                   control = lmerControl(optimizer = 'bobyqa'), 
-                   data = stress_gc_subset, weights = 1/wts, REML = F)
-  saveRDS(gc_mod_cond_3, file = "./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod_cond_3.rds", compress = 'xz')
-}
-
-# Include all interactions
-if(T){
-gc_mod_full <- glmer(cbind(targetCount, 50 - targetCount) ~ (ot1+ot2+ot3) * groupSum * conditionSum + 
-               ((ot1+ot2+ot3) | participant) + 
-               ((ot1+ot2+ot3) | participant:conditionSum) + 
-               ((ot1+ot2+ot3) | target),  
-               control = glmerControl(optimizer = 'bobyqa'), 
-               data = stress_gc_subset, family = 'binomial', REML = F)
-  saveRDS(gc_mod_full, file = "./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod_full.rds", compress = 'xz')
-}
-
-# Model comparison 
-# - subsequent models test three time terms: 
-#    - the intercept (additive effects)
-#    - the linear slope (ot1)
-#    - the steepness of the quadratic curvature (ot2)
-
 anova(gc_mod_base, 
       gc_mod_group_0, 
       gc_mod_group_1, 
-      gc_mod_group_2, 
-      gc_mod_group_3, 
-      gc_mod_cond_0, 
-      gc_mod_cond_1, 
-      gc_mod_cond_2,
-      gc_mod_cond_3, 
-      gc_mod_full, test = 'Chisq')
-
-# Df    AIC    BIC  logLik deviance   Chisq Chi Df Pr(>Chisq)    
-# 25 242262 242478 -121106   242212                               # base model 
-# 27 242263 242497 -121105   242209  2.2181      2   0.329865     # add group effect on intercept 
-# 29 242267 242518 -121104   242209  0.5739      2   0.750561     # add group effect on slope
-# 31 242264 242532 -121101   242202  7.3073      2   0.025896 *   # add group effect on quadratic poly 
-# 33 242265 242551 -121100   242199  2.0534      2   0.358187     # add group effect on cubic poly 
-# 34 242260 242554 -121096   242192  7.6926      1   0.005545 **  # add cond effect on intercept
-# 35 242261 242564 -121095   242191  1.1893      1   0.275474     # add cond effect on slope 
-# 36 242234 242546 -121081   242162 28.5858      1  8.964e-08 *** # add cond effect on quadratic poly
-# 37 242236 242556 -121081   242162  0.2078      1   0.648520     # add cond effect on cubic poly 
-# 45 242162 242552 -121036   242072 89.6219      8  5.549e-16 *** # full model 
+      gc_mod_group_2, test = 'Chisq')
 
 
 
-# summary(gc_mod_full)
+
+# full mod
+if(T){
+gc_mod_full_0 <- lmer(eLog ~ (ot1+ot2) * group * codaSum + 
+               (1 + (ot1+ot2) | participant) + 
+               # (1 + (ot1+ot2) | participant:codaSum) +
+               (1 + (ot1+ot2) | participant:conditionSum), 
+               control = lmerControl(optimizer = 'bobyqa'), 
+               data = stress_gc_subset, weights = 1/wts, REML = F)
+  saveRDS(gc_mod_full_0, file = "./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod_ful_0.rds", compress = 'xz')
+}
+
+if(T){
+gc_mod_full_1 <- lmer(eLog ~ (ot1+ot2) * group * codaSum + conditionSum + 
+               (1 + (ot1+ot2) | participant) + 
+               # (1 + (ot1+ot2) | participant:codaSum) +
+               (1 + (ot1+ot2) | participant:conditionSum), 
+               control = lmerControl(optimizer = 'bobyqa'), 
+               data = stress_gc_subset, weights = 1/wts, REML = F)
+  saveRDS(gc_mod_full_1, file = "./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod_full_1.rds", compress = 'xz')
+}
+
+anova(gc_mod_full_0, gc_mod_full_1) # no main effect of cond
+# ..1    32 60048 60281 -29992    59984 3.386      1    0.06575 .
+
+
+
+# summary(gc_mod_full_0)
+
+# Random effects:
+#  Groups                   Name        Variance Std.Dev. Corr       
+#  participant:conditionSum ot1         3.52654  1.8779              
+#                           ot2         0.77497  0.8803   0.18       
+#  participant:codaSum      (Intercept) 0.19775  0.4447              
+#                           ot1         1.32949  1.1530   -0.35      
+#                           ot2         0.08958  0.2993   -0.45  0.59
+#  participant              (Intercept) 0.24703  0.4970              
+#                           ot1         0.25367  0.5037   0.85       
+#                           ot2         0.08633  0.2938   0.80  0.37 
+#  Residual                             9.04131  3.0069              
+# 
 # Fixed effects:
-#                                   Estimate Std. Error         df t value  Pr(>|t|)    
-# (Intercept)                      5.118e-01  2.436e-02  8.900e+01  21.009   < 2e-16 ***
-# ot1                              6.938e-01  1.183e-01  8.600e+01   5.863  8.12e-08 ***
-# ot2                              5.388e-01  8.124e-02  9.200e+01   6.632  2.22e-09 ***
-# groupla                          3.404e-02  2.532e-02  6.500e+01   1.344   0.18355    
-# grouplb                          2.456e-02  3.129e-02  6.300e+01   0.785   0.43543    
-# conditionunstressed              5.412e-02  2.335e-02  3.500e+01   2.318   0.02641 *  
-# ot1:groupla                     -5.446e-01  1.201e-01  6.900e+01  -4.535  2.37e-05 ***
-# ot1:grouplb                     -7.034e-01  1.467e-01  6.400e+01  -4.794  1.01e-05 ***
-# ot2:groupla                     -1.173e-01  8.461e-02  8.300e+01  -1.387   0.16927    
-# ot2:grouplb                     -3.481e-01  1.015e-01  7.200e+01  -3.430   0.00101 ** 
-# ot1:conditionunstressed          2.866e-01  1.223e-01  4.000e+01   2.344   0.02411 *  
-# ot2:conditionunstressed         -2.692e-01  8.849e-02  5.200e+01  -3.043   0.00368 ** 
-# groupla:conditionunstressed     -6.961e-02  8.374e-03  7.252e+04  -8.313   < 2e-16 ***
-# grouplb:conditionunstressed     -1.483e-01  9.160e-03  7.252e+04 -16.186   < 2e-16 ***
-# ot1:groupla:conditionunstressed  3.680e-01  6.377e-02  7.253e+04   5.770  7.95e-09 ***
-# ot1:grouplb:conditionunstressed  3.157e-01  6.976e-02  7.252e+04   4.526  6.02e-06 ***
-# ot2:groupla:conditionunstressed  7.170e-02  6.377e-02  7.254e+04   1.124   0.26086    
-# ot2:grouplb:conditionunstressed  3.227e-01  6.976e-02  7.254e+04   4.627  3.72e-06 ***
+#                        Estimate Std. Error         df t value Pr(>|t|)    
+# (Intercept)           8.897e-01  1.507e-01  8.500e+01   5.906 6.94e-08 ***
+# ot1                   3.295e+00  3.774e-01  8.600e+01   8.730 1.80e-13 ***
+# ot2                  -2.040e-01  2.332e-01  6.800e+01  -0.875  0.38466    
+
+# groupla              -3.743e-01  2.030e-01  8.500e+01  -1.844  0.06871 .  
+# ot1:groupla          -8.039e-01  5.097e-01  8.600e+01  -1.577  0.11844    
+# ot2:groupla           1.073e+00  3.154e-01  6.900e+01   3.402  0.00111 ** 
+
+# grouplb              -5.739e-01  2.218e-01  8.600e+01  -2.587  0.01136 *  
+# ot1:grouplb          -1.015e+00  5.581e-01  8.700e+01  -1.819  0.07237 .  
+# ot2:grouplb           1.045e+00  3.458e-01  7.100e+01   3.021  0.00350 ** 
+
+# codaSum1              7.244e-02  5.109e-02  1.060e+04   1.418  0.15629    
+# ot1:codaSum1          2.509e-01  1.787e-01  9.833e+03   1.404  0.16035    
+# ot2:codaSum1          4.669e-02  1.717e-01  6.695e+03   0.272  0.78567    
+
+# groupla:codaSum1     -1.757e-01  6.868e-02  1.068e+04  -2.559  0.01051 *  
+# ot1:groupla:codaSum1 -3.413e-01  2.405e-01  9.909e+03  -1.419  0.15579    
+# ot2:groupla:codaSum1  1.036e-01  2.335e-01  6.815e+03   0.444  0.65712    
+
+# grouplb:codaSum1     -1.504e-02  7.660e-02  1.060e+04  -0.196  0.84436    
+# ot1:grouplb:codaSum1  1.384e-01  2.677e-01  9.608e+03   0.517  0.60529    
+# ot2:grouplb:codaSum1  5.830e-02  2.586e-01  7.001e+03   0.225  0.82166    
+
+
+
+
+
+
+
+
+
+
 
 
 
 
 # create new df including the fitted model 
 data.comp <- data.frame(na.omit(stress_gc_subset), 
-                        GCA_Full = fitted(gc_mod_full))
+                        GCA_Full = fitted(gc_mod_full_0))
 # glimpse(data.comp)
 
+
 condition_namesGCAMod <- c(
-                    `ss` = "SS", 
-                    `la` = "LA", 
-                    `lb` = "LB"
+                    `0` = "CV", 
+                    `1` = "CVC"
                     )
 
-data.comp %>% 
-  ggplot(., aes(x = binGC, y = targetProp, color = condition)) + 
-  facet_grid(. ~ group, labeller = as_labeller(condition_namesGCAMod)) + 
-  stat_summary(fun.data = mean_se, geom = 'errorbar', 
-               show.legend = FALSE, size = 0.1) +
-  stat_summary(fun.y = mean, geom = 'point', size = 0.2) + 
-  stat_summary(aes(y = GCA_Full, color = condition), fun.y = mean, geom = 'line', size = 0.4) + 
-  labs(x = "Time after target onset (ms)", y = "Target fixations") + 
-  scale_x_continuous(breaks = c(1, 45), labels = c("200", "1000")) + 
-  scale_color_brewer(palette = "Set1", name = "", 
-                     labels = c("Oxytone", "Paroxytone")) + 
-  theme_bw(base_size = 12, base_family = "Times New Roman") -> stressGCAfullMod
+(gca_full <- data.comp %>% 
+  ggplot(., aes(x = binTonsetAlign, y = eLog, color = group, shape = group)) + 
+  facet_grid(. ~ coda, labeller = as_labeller(condition_namesGCAMod)) + 
+  geom_smooth(method = 'gam', formula = y ~ poly(x, 2), se = F, show.legend = FALSE) + 
+  # stat_summary(aes(y = GCA_Full, color = group), fun.y = mean, geom = 'line', size = 0.4) + 
+  stat_summary(fun.data = mean_cl_boot, geom = 'pointrange',  size = 0.75, 
+               fun.args = list(conf.int = .95, B = 1000)) +
+  stat_summary(fun.y = mean, geom = 'point', color = 'white', alpha = 0.3, size = 1.75) + 
+  scale_shape_manual(name = "", values = 17:15, labels = c("SS", "LA", "LB")) + 
+  labs(x = "Time relative to target syllable offset (ms)", y = "Fixation empirical logit", 
+       caption = "Mean +/- 95% CI") + 
+  scale_color_brewer(palette = "Set1", name = "", guide = 'legend', 
+                     labels = c("SS", "LA", "LB")) + 
+  scale_x_continuous(breaks = c(28, 33, 38, 43, 48), labels = c("-500", "-250", "0", "250", "500")) + 
+  theme_grey(base_size = 15, base_family = "Times New Roman"))
 
-# ggsave('stressGCAfullMod.png', plot = stressGCAfullMod, dpi = 600, device = "png", path = "./mySources/figs/stress/s1_beg_adv_nat/eye_track")
-
-
-
-
-
-
-
+ggsave('stressP2.png', plot = gca_full, dpi = 600, device = "png", 
+          path = "./mySources/figs/stress/s1_beg_adv_nat/eye_track", 
+          height = 4.5, width = 8.5, unit = "in")
 
 
 
@@ -744,189 +1218,8 @@ data.comp %>%
 
 
 
-# RUN GCA WITHOUT LB GROUP 
-
-lsrl_gc_ss_la <- lsrl_gc_subset[lsrl_gc_subset$group != 'lb', ]
-
-lsrl_gc_ss_la$group <- droplevels(lsrl_gc_ss_la$group)
-
-lsrl_gc_ss_la$groupSum <- C(lsrl_gc_ss_la$group, sum)
-
-contrasts(lsrl_gc_ss_la$groupSum)
-contrasts(lsrl_gc_ss_la$conditionSum)
-
-# load the models:
-# gc_mod2_base    <- readRDS('./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod2_base.rds')
-# gc_mod2_group_0 <- readRDS('./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod2_group_0.rds')
-# gc_mod2_group_1 <- readRDS('./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod2_group_1.rds')
-# gc_mod2_group_2 <- readRDS('./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod2_group_2.rds')
-# gc_mod2_cond_0  <- readRDS('./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod2_cond_0.rds')
-# gc_mod2_cond_1  <- readRDS('./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod2_cond_1.rds')
-# gc_mod2_cond_2  <- readRDS('./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod2_cond_2.rds')
-# gc_mod2_full    <- readRDS('./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod2_full.rds')
-
-
-# Base model 
-if(T){
-  gc_mod2_base <- lmer(targetProp ~ (ot1+ot2) + 
-                 ((ot1+ot2) | participant) + 
-                 ((ot1+ot2) | target),
-                 control = lmerControl(optimizer = 'bobyqa'), 
-                 data = lsrl_gc_ss_la, REML = F)
-  saveRDS(gc_mod2_base, file = "./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod2_base.rds", compress = 'xz')
-}
-
-
-# Add group effect on intercept 
-if(T){
-  gc_mod2_group_0 <- lmer(targetProp ~ (ot1+ot2) + groupSum + 
-                    ((ot1+ot2) | participant) + 
-                    ((ot1+ot2) | target), 
-                    control = lmerControl(optimizer = 'bobyqa'), 
-                    data = lsrl_gc_ss_la, REML = F)
-  saveRDS(gc_mod2_group_0, file = "./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod2_group_0.rds", compress = 'xz')
-}
-
-# Add group effect on slope
-if(T){
- gc_mod2_group_1 <- lmer(targetProp ~ (ot1+ot2) + groupSum + 
-                   ot1:groupSum + 
-                   ((ot1+ot2) | participant) + 
-                   ((ot1+ot2) | target),
-                   control = lmerControl(optimizer = 'bobyqa'), 
-                   data = lsrl_gc_ss_la, REML = F)
-  saveRDS(gc_mod2_group_1, file = "./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod2_group_1.rds", compress = 'xz')
-}
-
-# Add group effect on quadratic poly 
-if(T){
-  gc_mod2_group_2 <- lmer(targetProp ~ (ot1+ot2) + groupSum + 
-                    ot1:groupSum + ot2:groupSum + 
-                    ((ot1+ot2) | participant) + 
-                    ((ot1+ot2) | target),
-                    control = lmerControl(optimizer = 'bobyqa'), 
-                    data = lsrl_gc_ss_la, REML = F)
-  saveRDS(gc_mod2_group_2, file = "./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod2_group_2.rds", compress = 'xz')
-}
-
-
-# Add condition effect on intercept 
-if(T){
-  gc_mod2_cond_0 <- lmer(targetProp ~ (ot1+ot2) * groupSum + conditionSum + 
-                   ((ot1+ot2) | participant) + 
-                   ((ot1+ot2) | target),
-                   control = lmerControl(optimizer = 'bobyqa'), 
-                   data = lsrl_gc_ss_la, REML = F)
-  saveRDS(gc_mod2_cond_0, file = "./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod2_cond_0.rds", compress = 'xz')
-}
-
-# Add condition effect on slope 
-if(T){
-  gc_mod2_cond_1 <- lmer(targetProp ~ (ot1+ot2) * groupSum + conditionSum + 
-                   ot1:conditionSum + 
-                   ((ot1+ot2) | participant) + 
-                   ((ot1+ot2) | target),
-                   control = lmerControl(optimizer = 'bobyqa'), 
-                   data = lsrl_gc_ss_la, REML = F)
-  saveRDS(gc_mod2_cond_1, file = "./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod2_cond_1.rds", compress = 'xz')
-}
-
-# Add condition effect on quadratic poly 
-if(T){
-  gc_mod2_cond_2 <- lmer(targetProp ~ (ot1+ot2) * groupSum + conditionSum + 
-                   ot1:conditionSum + ot2:conditionSum + 
-                   ((ot1+ot2) | participant) + 
-                   ((ot1+ot2) | target),
-                   control = lmerControl(optimizer = 'bobyqa'), 
-                   data = lsrl_gc_ss_la, REML = F)
-  saveRDS(gc_mod2_cond_2, file = "./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod2_cond_2.rds", compress = 'xz')
-}
-
-
-# Include all interactions
-if(T){
-gc_mod2_full <- lmer(targetProp ~ (ot1+ot2) * groupSum * conditionSum + 
-               ((ot1+ot2) | participant) + 
-               ((ot1+ot2) | target),
-               control = lmerControl(optimizer = 'bobyqa'), 
-               data = lsrl_gc_ss_la, REML = F)
-  saveRDS(gc_mod2_full, file = "./mySources/models/stress/s1_beg_adv_nat/eye_track/gc_mod2_full.rds", compress = 'xz')
-}
-
-# Model comparison 
-# - subsequent models test three time terms: 
-#    - the intercept (additive effects)
-#    - the linear slope (ot1)
-#    - the steepness of the quadratic curvature (ot2)
-
-# anova(gc_mod2_base, 
-#       gc_mod2_group_0, 
-#       gc_mod2_group_1, 
-#       gc_mod2_group_2, 
-#       gc_mod2_cond_0, 
-#       gc_mod2_cond_1, 
-#       gc_mod2_cond_2, 
-#       gc_mod2_full, test = 'Chisq')
-
-#        Df   AIC   BIC logLik deviance    Chisq Chi Df Pr(>Chisq)    
-# object 16 68773 68915 -34370    68741                                # base model 
-# ..1    17 68775 68925 -34370    68741   0.0040      1   0.949859     # add group effect on intercept 
-# ..2    18 68768 68928 -34366    68732   8.4043      1   0.003743 **  # add group effect on slope
-# ..3    19 68769 68938 -34366    68731   1.1115      1   0.291749     # add group effect on quadratic poly 
-# ..4    20 68771 68948 -34365    68731   0.5965      1   0.439899     # add cond effect on intercept
-# ..5    21 68765 68951 -34362    68723   7.4548      1   0.006327 **  # add cond effect on slope 
-# ..6    22 68760 68955 -34358    68716   6.7032      1   0.009624 **  # add cond effect on quadratic poly
-# ..7    25 68656 68878 -34303    68606 110.4731      3  < 2.2e-16 *** # full model 
-
-
-
-summary(gc_mod2_full)
-
-# Fixed effects:
-#                               Estimate Std. Error         df t value Pr(>|t|)
-# (Intercept)                  5.384e-01  1.762e-02  7.000e+01  30.550  < 2e-16  ***
-# ot1                          6.557e-01  8.989e-02  6.300e+01   7.294 6.11e-10  ***
-# ot2                          3.631e-01  5.487e-02  6.400e+01   6.617 8.90e-09  ***
-# groupSum1                    1.649e-04  1.191e-02  4.900e+01   0.014  0.98901     
-# conditionSum1               -8.414e-03  1.314e-02  3.200e+01  -0.640  0.52671     
-# ot1:groupSum1                1.838e-01  5.766e-02  4.700e+01   3.187  0.00255  ** 
-# ot2:groupSum1                4.226e-02  3.982e-02  4.700e+01   1.061  0.29386     
-# ot1:conditionSum1           -2.320e-01  7.072e-02  3.200e+01  -3.280  0.00253  ** 
-# ot2:conditionSum1            1.150e-01  4.092e-02  3.200e+01   2.809  0.00840  ** 
-# groupSum1:conditionSum1     -1.817e-02  2.077e-03  5.180e+04  -8.750  < 2e-16  ***
-# ot1:groupSum1:conditionSum1  9.025e-02  1.582e-02  5.180e+04   5.706 1.16e-08  ***
-# ot2:groupSum1:conditionSum1  1.923e-02  1.581e-02  5.182e+04   1.216  0.22409     
 
 
 
 
 
-# create new df including the fitted model 
-data_comp2 <- data.frame(na.omit(lsrl_gc_ss_la), 
-                        GCA_Full = fitted(gc_mod2_full))
-# glimpse(data_comp2)
-
-
-suffix_area2 <- data.frame(x = 53:58, y = Inf)
-
-condition_namesMod2LSRL <- c(
-                    `ss` = "SS", 
-                    `la` = "LA"
-                    )
-
-data_comp2 %>% 
-  ggplot(., aes(x = binGC, y = targetProp, color = condition)) + 
-  facet_grid(. ~ group, labeller = as_labeller(condition_namesMod2LSRL)) + 
-  geom_area(data = suffix_area2, aes(x = x, y = y), inherit = FALSE, alpha = 0.3, fill = 'lightcyan2') +
-  stat_summary(fun.data = mean_se, geom = 'errorbar', 
-               show.legend = FALSE, size = 0.1) +
-  stat_summary(fun.y = mean, geom = 'point', size = 0.2) + 
-  stat_summary(aes(y = GCA_Full, color = condition), fun.y = mean, geom = 'line', size = 0.4) + 
-  xlab("Adjusted time course") +
-  ylab("Target fixations") +
-  coord_cartesian(ylim = c(0.0, 1.0)) + 
-  scale_x_continuous(breaks = c(1, 53), labels = c("Approx.\ntarget\nonset", "Target\nsyllable\nonset")) + 
-  scale_color_brewer(palette = "Set1", name = "", labels = c("Paroxytone", "Oxytone")) + 
-  theme_bw(base_size = 16, base_family = "Times New Roman") -> stressGCAfullMod2
-
-# ggsave('stressGCAfullMod2.png', plot = stressGCAfullMod2, dpi = 600, device = "png", path = "./mySources/figs/stress/s1_beg_adv_nat/eye_track")

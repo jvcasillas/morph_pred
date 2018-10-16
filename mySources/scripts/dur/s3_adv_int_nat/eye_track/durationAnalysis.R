@@ -371,27 +371,63 @@ unique(dur_0_prop$participant)
 # Add working memory covariate
 # NEED DATA FOR INT
 # read data
-my_wm <- read.csv("./mySources/data/raw/my_wm.csv", header = TRUE, quote = "")
+my_wm <- read.csv("./mySources/data/raw/wm_all.csv", header = TRUE, quote = "") %>% 
+         filter(., group %in% c("S", "IN", "LA"))
+
+wm_df <- structure(list(group = structure(c(3L, 3L, 3L, 3L, 3L, 3L, 3L, 
+3L, 3L, 3L, 3L, 3L, 3L, 3L, 3L, 3L, 3L, 3L, 3L, 3L, 3L, 3L, 3L, 
+3L, 3L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 2L, 2L, 
+2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 
+2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L), .Label = c("IN", "LA", "S"), class = "factor"), 
+    participant = structure(c(39L, 40L, 41L, 42L, 43L, 44L, 45L, 
+    46L, 47L, 48L, 49L, 50L, 51L, 52L, 53L, 54L, 55L, 56L, 57L, 
+    58L, 59L, 60L, 61L, 62L, 63L, 1L, 2L, 3L, 4L, 5L, 6L, 7L, 
+    8L, 9L, 10L, 11L, 12L, 13L, 14L, 15L, 16L, 17L, 18L, 19L, 
+    20L, 21L, 22L, 23L, 24L, 25L, 26L, 27L, 28L, 29L, 30L, 31L, 
+    32L, 33L, 34L, 35L, 36L, 37L, 38L), .Label = c("in01", "in02", 
+    "in03", "in04", "in05", "in06", "in07", "in08", "in09", "in10", 
+    "in11", "in12", "la01", "la02", "la03", "la05", "la08", "la09", 
+    "la10", "la11", "la12", "la13", "la15", "la16", "la17", "la18", 
+    "la20", "la21", "la22", "la23", "la24", "la25", "la26", "la27", 
+    "la28", "la29", "la30", "la31", "s01", "s02", "s03", "s04", 
+    "s05", "s06", "s07", "s08", "s09", "s10", "s11", "s12", 
+    "s13", "s14", "s15", "s16", "s17", "s18", "s19", "s20", 
+    "s21", "ss10", "ss30", "ss32", "ss38"), class = "factor"), 
+    WM = c(6L, 10L, 11L, 6L, 11L, 9L, 10L, 7L, 8L, 12L, 8L, 10L, 
+    11L, 10L, 8L, 6L, 12L, 10L, 8L, 9L, 9L, 12L, 6L, 10L, 10L, 
+    10L, 10L, 8L, 9L, 8L, 8L, 9L, 9L, 8L, 6L, 9L, 10L, 10L, 13L, 
+    1L, 11L, 9L, 8L, 10L, 8L, 10L, 9L, 11L, 7L, 8L, 10L, 8L, 
+    10L, 9L, 9L, 10L, 8L, 10L, 11L, 9L, 8L, 10L, 8L)), row.names = c(NA, 
+-63L), .Names = c("group", "participant", "WM"), class = "data.frame")
+
+glimpse(wm_df)
+
+new_prop <- left_join(x = dur_0_prop, y = wm_df[, -1], by = 'participant') %>% na.omit(.)
 
 
 
 prop_0_mod_0 <- lmer(meanFix ~ 1 + 
                     (1 | participant), 
-                    data = dur_0_prop, REML = F, control = lmerControl(optimizer = 'bobyqa'))
+                    data = new_prop, REML = F, control = lmerControl(optimizer = 'bobyqa'))
 
 prop_0_mod_group <- lmer(meanFix ~ 1 + group + 
                         (1 | participant), 
-                        data = dur_0_prop, REML = F, control = lmerControl(optimizer = 'bobyqa'))
+                        data = new_prop, REML = F, control = lmerControl(optimizer = 'bobyqa'))
 
 prop_0_mod_cond <- lmer(meanFix ~ 1 + group + condition + 
                         (1 | participant), 
-                        data = dur_0_prop, REML = F, control = lmerControl(optimizer = 'bobyqa'))
+                        data = new_prop, REML = F, control = lmerControl(optimizer = 'bobyqa'))
 
 prop_0_mod_full <- lmer(meanFix ~ 1 + group * condition + 
                       (1 | participant), 
-                       data = dur_0_prop, REML = F, control = lmerControl(optimizer = 'bobyqa'))
+                       data = new_prop, REML = F, control = lmerControl(optimizer = 'bobyqa'))
 
-anova(prop_0_mod_0, prop_0_mod_group, prop_0_mod_cond, prop_0_mod_full, test = "Chisq")
+prop_0_mod_full <- lmer(meanFix ~ 1 + group * condition + 
+                      (1 | participant), 
+                       data = new_prop, REML = F, control = lmerControl(optimizer = 'bobyqa'))
+
+
+anova(prop_0_mod_0, prop_0_mod_group, prop_0_mod_cond, prop_0_mod_full, prop_0_mod_full,  test = "Chisq")
 
 #        Df     AIC    BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)   
 # object  3 16.8573 25.413 -5.4286  10.8573                            
