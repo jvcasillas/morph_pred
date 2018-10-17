@@ -148,6 +148,7 @@ learner_mods %>%
 
 # All plots -------------------------------------------------------------------
 
+
 # Learner labs and axis -------------------------------------------------------
 group_labs_learners <- c('LA', 'LB', 'SS')
 
@@ -671,6 +672,7 @@ heritage_mods %>%
 # Learner labs and axis -------------------------------------------------------
 group_labs_heritage <- c('HS', 'LA', 'SS')
 
+
 # Without coda
 no_coda_landmarks_heritage <- c('word3_c1v1', 'word3_20msafterv1', 'word3_c2', 
                                 'word3_suffix', 'word4_c1v1')
@@ -1001,7 +1003,7 @@ tidy(mono_mod_final) %>%
 ```
 
 
-```{r, 'freq-plots', cache=T}
+```{r, 'freq-plots', cache=T, engine.opts='tikz', fig.height=4.25, echo=F}
 #library(sjPlot)
 #plot_model(mono_mod_final, type = "pred")
 #
