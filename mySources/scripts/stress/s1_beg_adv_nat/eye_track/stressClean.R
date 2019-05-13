@@ -9,18 +9,15 @@
 # clean working directory
 rm(list = ls(all = TRUE))
 
-# Set working directory
-# setwd("~/Desktop/morph_pred/")
-setwd("~/academia/research/in_progress/morph_pred")
 
 
-library(tidyverse); library(plotly)
+library(tidyverse); library(plotly);
 library(lme4); library(lmerTest)
 
 
 # Read data and set encoding 
-stress10 <- read_tsv("./mySources/data/raw/allExpOutput10_ia.txt", 
-                     locale = locale(encoding = "LATIN1")) %>%
+# CRIS: I removed the endoding because it was messing up the accents on target words
+stress10 <- read_tsv("./mySources/data/stress_10ms.txt") %>%
 
 #stress20 <- read_tsv("./mySources/data/raw/allExpOutput20_ia.txt", 
 #                     locale = locale(encoding = "LATIN1")) %>%
@@ -32,6 +29,8 @@ stress10 <- read_tsv("./mySources/data/raw/allExpOutput10_ia.txt",
   filter(., exp == "stress") %>% 
 
   # Remove unnecessary columns
+  # CRIS: I changed the RIGHT_IA_... to AVERAGE_IA_... 
+  # (new data frame uses cyclopean mode from data viewer)
   select(., -TRIAL_LABEL,                 -TRIAL_INDEX,
             -identifier,                  -sentencewav, 
             -word1,                       -word2_20msafterv1, 
@@ -41,19 +40,19 @@ stress10 <- read_tsv("./mySources/data/raw/allExpOutput10_ia.txt",
             -word4_suffix,                -word6, 
             -word7,                       -EYE_TRACKED, 
             -IA_0_ID,                     -IA_3_ID, 
-            -IA_4_ID,                     -RIGHT_IA_3_SAMPLE_COUNT, 
-            -RIGHT_IA_4_SAMPLE_COUNT,     -RIGHT_IA_0_SAMPLE_COUNT,
-            -`RIGHT_IA_0_SAMPLE_COUNT_%`, -`RIGHT_IA_3_SAMPLE_COUNT_%`, 
-            -`RIGHT_IA_4_SAMPLE_COUNT_%`) %>% 
+            -IA_4_ID,                     -AVERAGE_IA_3_SAMPLE_COUNT, 
+            -AVERAGE_IA_4_SAMPLE_COUNT,     -AVERAGE_IA_0_SAMPLE_COUNT,
+            -`AVERAGE_IA_0_SAMPLE_COUNT_%`, -`AVERAGE_IA_3_SAMPLE_COUNT_%`, 
+            -`AVERAGE_IA_4_SAMPLE_COUNT_%`) %>% 
 
   # Rename some columns
   rename(., participant = RECORDING_SESSION_LABEL, 
             bin = BIN_INDEX, 
             wavID = id, 
-            targetCount = RIGHT_IA_1_SAMPLE_COUNT, 
-            distractorCount = RIGHT_IA_2_SAMPLE_COUNT, 
-            targetProp = `RIGHT_IA_1_SAMPLE_COUNT_%`, 
-            distractorProp = `RIGHT_IA_2_SAMPLE_COUNT_%`) %>% 
+            targetCount = AVERAGE_IA_1_SAMPLE_COUNT, 
+            distractorCount = AVERAGE_IA_2_SAMPLE_COUNT, 
+            targetProp = `AVERAGE_IA_1_SAMPLE_COUNT_%`, 
+            distractorProp = `AVERAGE_IA_2_SAMPLE_COUNT_%`) %>% 
 
   # Remove weird chars from target list
   # Create condition variable (unstressed/stressed)
@@ -64,15 +63,15 @@ stress10 <- read_tsv("./mySources/data/raw/allExpOutput10_ia.txt",
   mutate(., target = as.factor(target),
             target = gsub("\u0097", "o", paste(.$target)),
             condition = ifelse(target %in%  
-              c('bebio', 'cambio', 'canto', 'comio', 'compro', 
-                'firmo', 'grabo', 'guardo', 'lanzo', 'lavo', 
-                'lleno', 'mando', 'pinto', 'rompio', 'saco', 
-                'subio', 'condition'), 
+              c('bebió', 'cambió', 'cantó', 'comió', 'compró', 
+                'firmó', 'grabó', 'guardó', 'lanzó', 'lavó', 
+                'llenó', 'mandó', 'pintó', 'rompió', 'sacó', 
+                'subió'), 
                 yes = "unstressed", no = "stressed"), 
             coda = ifelse(target %in% 
-              c('bebe', 'bebio', 'llena', 'lleno', 'sube', 'subio', 
-                'come', 'comio', 'saca', 'saco', 'lava', 'lavo', 
-                'graba', 'grabo'), 
+              c('bebe', 'bebió', 'llena', 'llenó', 'sube', 'subió', 
+                'come', 'comió', 'saca', 'sacó', 'lava', 'lavó', 
+                'graba', 'grabó'), 
                 yes = 0, no = 1),
             corr = ifelse(correctresponse == "Lshift" & KEY_PRESSED == "Lshift" | 
                           correctresponse == "Rshift" & KEY_PRESSED == "Rshift", 
@@ -84,13 +83,13 @@ stress10 <- read_tsv("./mySources/data/raw/allExpOutput10_ia.txt",
 
   # Create 'group' column and new 'id' 
   # in order to match participant ids with WM df
-  separate(., col = participant, into = c("group", "id"), sep = -3, remove = TRUE) %>%
+  separate(., col = participant, into = c("group", "id"), sep = -2, remove = TRUE) %>%
 
   # Recode groups that have random labels
   # create new participant id labels
   # Realign bins to start from 1
   mutate(., group = recode(group, l = 'lb', s = 'ss', `in` = 'int'), 
-            group_temp = recode(group, lb = 'L', ss = "SB", int = "IN", hs = "HS", la = "LA"),
+            group_temp = recode(group, lb = 'L', ss = "SB",ss = "SBs", int = "IN", hs = "HS", la = "LA"),
             target = recode(target, gaba = 'graba'), 
             bin = bin + 1) %>%
 
@@ -99,10 +98,8 @@ stress10 <- read_tsv("./mySources/data/raw/allExpOutput10_ia.txt",
   unite(., col = participant, group_temp, id, sep = "", remove = TRUE)
   
 
-
-
-
-#glimpse(stress10)
+glimpse(stress10)
+unique(stress10$group)
 #glimpse(stress20)
 #glimpse(stress50)
 
@@ -148,7 +145,7 @@ bebe[bebe$bin == tSSbebe, 'binTsuffixAlign'] <- 0
 bebe$binTsuffixAlign <- bebe$bin - tSSbebe
 
 # bebio stressed
-bebio <- filter(df_stress, target == 'bebio')
+bebio <- filter(df_stress, target == 'bebió')
 bebio$binTonsetAlign <- 999
 tOSbebio <- round(unique(bebio$word3_c1v1) / 10)
 bebio[bebio$bin == tOSbebio, 'binTonsetAlign'] <- 0
@@ -170,7 +167,7 @@ cambia[cambia$bin == tSScambia, 'binTsuffixAlign'] <- 0
 cambia$binTsuffixAlign <- cambia$bin - tSScambia
 
 # cambio  
-cambio <- filter(df_stress, target == 'cambio')
+cambio <- filter(df_stress, target == 'cambió')
 cambio$binTonsetAlign <- 999
 tOScambio <- round(unique(cambio$word3_c1v1) / 10)
 cambio[cambio$bin == tOScambio, 'binTonsetAlign'] <- 0
@@ -192,7 +189,7 @@ canta[canta$bin == tSScanta, 'binTsuffixAlign'] <- 0
 canta$binTsuffixAlign <- canta$bin - tSScanta
 
 # canto   
-canto <- filter(df_stress, target == 'canto')
+canto <- filter(df_stress, target == 'cantó')
 canto$binTonsetAlign <- 999
 tOScanto <- round(unique(canto$word3_c1v1) / 10)
 canto[canto$bin == tOScanto, 'binTonsetAlign'] <- 0
@@ -214,7 +211,7 @@ come[come$bin == tSScome, 'binTsuffixAlign'] <- 0
 come$binTsuffixAlign <- come$bin - tSScome
 
 # comio 
-comio <- filter(df_stress, target == 'comio')
+comio <- filter(df_stress, target == 'comió')
 comio$binTonsetAlign <- 999
 tOScomio <- round(unique(comio$word3_c1v1) / 10)
 comio[comio$bin == tOScomio, 'binTonsetAlign'] <- 0
@@ -236,7 +233,7 @@ compra[compra$bin == tSScompra, 'binTsuffixAlign'] <- 0
 compra$binTsuffixAlign <- compra$bin - tSScompra
 
 # compro  
-compro <- filter(df_stress, target == 'compro')
+compro <- filter(df_stress, target == 'compró')
 compro$binTonsetAlign <- 999
 tOScompro <- round(unique(compro$word3_c1v1) / 10)
 compro[compro$bin == tOScompro, 'binTonsetAlign'] <- 0
@@ -258,7 +255,7 @@ firma[firma$bin == tSSfirma, 'binTsuffixAlign'] <- 0
 firma$binTsuffixAlign <- firma$bin - tSSfirma
 
 # firmo   
-firmo <- filter(df_stress, target == 'firmo')
+firmo <- filter(df_stress, target == 'firmó')
 firmo$binTonsetAlign <- 999
 tOSfirmo <- round(unique(firmo$word3_c1v1) / 10)
 firmo[firmo$bin == tOSfirmo, 'binTonsetAlign'] <- 0
@@ -280,7 +277,7 @@ graba[graba$bin == tSSgraba, 'binTsuffixAlign'] <- 0
 graba$binTsuffixAlign <- graba$bin - tSSgraba
 
 # grabo 
-grabo <- filter(df_stress, target == 'grabo')
+grabo <- filter(df_stress, target == 'grabó')
 grabo$binTonsetAlign <- 999
 tOSgrabo <- round(unique(grabo$word3_c1v1) / 10)
 grabo[grabo$bin == tOSgrabo, 'binTonsetAlign'] <- 0
@@ -302,7 +299,7 @@ guarda[guarda$bin == tSSguarda, 'binTsuffixAlign'] <- 0
 guarda$binTsuffixAlign <- guarda$bin - tSSguarda
 
 # guardo  
-guardo <- filter(df_stress, target == 'guardo')
+guardo <- filter(df_stress, target == 'guardó')
 guardo$binTonsetAlign <- 999
 tOSguardo <- round(unique(guardo$word3_c1v1) / 10)
 guardo[guardo$bin == tOSguardo, 'binTonsetAlign'] <- 0
@@ -324,7 +321,7 @@ lanza[lanza$bin == tSSlanza, 'binTsuffixAlign'] <- 0
 lanza$binTsuffixAlign <- lanza$bin - tSSlanza
 
 # lanzo   
-lanzo <- filter(df_stress, target == 'lanzo')
+lanzo <- filter(df_stress, target == 'lanzó')
 lanzo$binTonsetAlign <- 999
 tOSlanzo <- round(unique(lanzo$word3_c1v1) / 10)
 lanzo[lanzo$bin == tOSlanzo, 'binTonsetAlign'] <- 0
@@ -346,7 +343,7 @@ lava[lava$bin == tSSlava, 'binTsuffixAlign'] <- 0
 lava$binTsuffixAlign <- lava$bin - tSSlava
 
 # lavo  
-lavo <- filter(df_stress, target == 'lavo')
+lavo <- filter(df_stress, target == 'lavó')
 lavo$binTonsetAlign <- 999
 tOSlavo <- round(unique(lavo$word3_c1v1) / 10)
 lavo[lavo$bin == tOSlavo, 'binTonsetAlign'] <- 0
@@ -368,7 +365,7 @@ llena[llena$bin == tSSllena, 'binTsuffixAlign'] <- 0
 llena$binTsuffixAlign <- llena$bin - tSSllena
 
 # lleno 
-lleno <- filter(df_stress, target == 'lleno')
+lleno <- filter(df_stress, target == 'llenó')
 lleno$binTonsetAlign <- 999
 tOSlleno <- round(unique(lleno$word3_c1v1) / 10)
 lleno[lleno$bin == tOSlleno, 'binTonsetAlign'] <- 0
@@ -390,7 +387,7 @@ manda[manda$bin == tSSmanda, 'binTsuffixAlign'] <- 0
 manda$binTsuffixAlign <- manda$bin - tSSmanda
 
 # mando  
-mando <- filter(df_stress, target == 'mando')
+mando <- filter(df_stress, target == 'mandó')
 mando$binTonsetAlign <- 999
 tOSmando <- round(unique(mando$word3_c1v1) / 10)
 mando[mando$bin == tOSmando, 'binTonsetAlign'] <- 0
@@ -412,7 +409,7 @@ pinta[pinta$bin == tSSpinta, 'binTsuffixAlign'] <- 0
 pinta$binTsuffixAlign <- pinta$bin - tSSpinta
 
 # pinto  
-pinto <- filter(df_stress, target == 'pinto')
+pinto <- filter(df_stress, target == 'pintó')
 pinto$binTonsetAlign <- 999
 tOSpinto <- round(unique(pinto$word3_c1v1) / 10)
 pinto[pinto$bin == tOSpinto, 'binTonsetAlign'] <- 0
@@ -434,7 +431,7 @@ rompe[rompe$bin == tSSrompe, 'binTsuffixAlign'] <- 0
 rompe$binTsuffixAlign <- rompe$bin - tSSrompe
 
 # rompio 
-rompio <- filter(df_stress, target == 'rompio')
+rompio <- filter(df_stress, target == 'rompió')
 rompio$binTonsetAlign <- 999
 tOSrompio <- round(unique(rompio$word3_c1v1) / 10)
 rompio[rompio$bin == tOSrompio, 'binTonsetAlign'] <- 0
@@ -456,7 +453,7 @@ saca[saca$bin == tSSsaca, 'binTsuffixAlign'] <- 0
 saca$binTsuffixAlign <- saca$bin - tSSsaca
 
 # saco
-saco <- filter(df_stress, target == 'saco')
+saco <- filter(df_stress, target == 'sacó')
 saco$binTonsetAlign <- 999
 tOSsaco <- round(unique(saco$word3_c1v1) / 10)
 saco[saco$bin == tOSsaco, 'binTonsetAlign'] <- 0
@@ -478,7 +475,7 @@ sube[sube$bin == tSSsube, 'binTsuffixAlign'] <- 0
 sube$binTsuffixAlign <- sube$bin - tSSsube
 
 # subio 
-subio <- filter(df_stress, target == 'subio')
+subio <- filter(df_stress, target == 'subió')
 subio$binTonsetAlign <- 999
 tOSsubio <- round(unique(subio$word3_c1v1) / 10)
 subio[subio$bin == tOSsubio, 'binTonsetAlign'] <- 0
@@ -533,7 +530,7 @@ df_stress_adj <- as.data.frame(df_stress_adj)
 glimpse(df_stress_adj)
 
 # write table
- write.table(df_stress_adj, "./mySources/data/clean/stressBIN10iaClean.csv", row.names = F, quote = F, sep = ",")
+ write.table(df_stress_adj, "./mySources/data/stressBIN10iaClean.csv", row.names = F, quote = F, sep = ",")
 # write.table(df_stress_adj, "./mySources/data/clean/stressBIN20iaClean.csv", row.names = F, quote = F, sep = ",")
 # write.table(df_stress_adj, "./mySources/data/clean/stressBIN50iaClean.csv", row.names = F, quote = F, sep = ",")
 

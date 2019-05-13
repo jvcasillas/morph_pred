@@ -15,13 +15,10 @@ library(lme4); library(lmerTest); library(gridExtra); library(cowplot)
 
 ## @knitr ignore
 
-# Set working directory
-# setwd("~/Desktop/morph_pred/")
-setwd("~/academia/research/in_progress/morph_pred")
 
 
 # read data
-df_stress <- read_csv("./mySources/data/clean/stressBIN10iaClean.csv") %>%
+df_stress <- read_csv("./mySources/data/stressBIN10iaClean.csv") %>%
   filter(., corr == 1,
             group %in% c('int', 'la', 'ss'), 
             !participant %in% c('L01', 'L02', 'L03', 'L04', 'L05', 
@@ -30,8 +27,9 @@ df_stress <- read_csv("./mySources/data/clean/stressBIN10iaClean.csv") %>%
                                  'L26', 'L30', 'L31', 'L33', 'LA04', 
                                  'LA06', 'LA07', 'LA14'))
 
-
-
+glimpse(df_stress)
+unique(df_stress$group)
+unique(df_stress$condition)
 
 predict.glmm <- function(fit, newdata, type = 'gaussian') {
     
@@ -190,7 +188,7 @@ df_stress_50 <- read_csv("./mySources/data/clean/stressBIN50iaClean.csv") %>%
                                  'L26', 'L30', 'L31', 'L33', 'LA04', 
                                  'LA06', 'LA07', 'LA14'), 
             binTonsetAlign >= 24 & binTonsetAlign <= 49, 
-            !target %in% c('cambia', 'cambio'))
+            !target %in% c('cambia', 'cambió'))
 
 
 df_stress_50[df_stress_50$group == 'int', 'binTonsetAlign'] <- df_stress_50[df_stress_50$group == 'int', 'binTonsetAlign'] - 1
@@ -277,17 +275,25 @@ condition_names <- c(
 # so we need to make a subset of the data that only uses the 
 # target onset bin (adjusted 200ms for VWP)
 
+glimpse(df_short)
 df_short_temp <- df_short
-df_short_temp[df_short_temp$group == 'int' & df_short_temp$condition == 'stressed', 'binTsuffixAlign'] <- df_short_temp[df_short_temp$group == 'int' & df_short_temp$condition == 'stressed', 'binTsuffixAlign'] - 12
-df_short_temp[df_short_temp$group == 'int' & df_short_temp$condition == 'unstressed', 'binTsuffixAlign'] <- df_short_temp[df_short_temp$group == 'int' & df_short_temp$condition == 'unstressed', 'binTsuffixAlign'] - 12
-stress_subset_0 <- df_short_temp %>% filter(., binTsuffixAlign == 147, !target %in% c('cambia', 'cambio'))
+
+df_short_temp[df_short_temp$group == 'int' & df_short_temp$condition == 'stressed', 'binTsuffixAlign'] <- 
+  df_short_temp[df_short_temp$group == 'int' & df_short_temp$condition == 'stressed', 'binTsuffixAlign'] - 12
+
+df_short_temp[df_short_temp$group == 'int' & df_short_temp$condition == 'unstressed', 'binTsuffixAlign'] <- 
+  df_short_temp[df_short_temp$group == 'int' & df_short_temp$condition == 'unstressed', 'binTsuffixAlign'] - 12
+
+# stress_subset_0 <- df_short_temp %>% filter(., binTsuffixAlign == 147, !target %in% c('cambia', 'cambio'))
+df_short_temp <- df_short_temp %>% filter(., binTsuffixAlign == 147, !target %in% c('cambia', 'cambió'))
 
 
 
 
 # Quick and dirty mean of target fixations as a function of 
 # group and condition (stressed, unstressed *1st syllable*)
-stress_subset_0 %>% 
+
+df_short %>% 
   na.omit(.) %>% 
   group_by(., group, condition) %>%
   summarise(., meanFix = mean(targetProp))

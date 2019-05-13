@@ -5,13 +5,26 @@
 2. open data viewer
 3. import participant data files
 	- file > import data > multiple eyelink data files
-4. Regroup to remove practice trials
+4. preferences > cyclopean mode (checked) this creates a variable that is the average between left and right eyes (to make sure we have the eye tracked)
+5. remove data before audio onset. clic on Full Trial Period > edit > blank page icon > 
+  - name the interest period: audio_onset_end_sentend
+  - Interest period start event "Message Text": SENTENCE_ONSET
+  - Interest period end event "Message Text": end_sentence
+  - "OK"
+  - "OK" again to select that time period
+6. Regroup to remove practice trials
 	- right click main folder, select 'trial regrouping'
 	- select 'exp', regroup
 	- delete 'ps', 'pl', 'pd'
 	- RUN EVERYTHING FOR EACH EXPERIMENT
 		- duration (get sample report with specific interest periods)
-5. make marker/time period (to limit output)
+7. To extract one report per experiment:
+  - highlight that experiment after regrouping (e.g. stress)
+  - on bottom left menu, check: "Exclude from Reports"
+  - repeat with the rest of experiments you want to exclude from that report
+
+Alternative for selecting a time-period:		
+8. make marker/time period (to limit output)
 	- sliding menu thing, click 'edit'
 	- click new interest period icon
 	- make a message event, then click 'details'
@@ -30,14 +43,18 @@
 		- Start time offset = 0
 		- End time message text = 'word5'
 		- end time offset = 200
-5. make report
-	- analysis > report > sample 
+9. make report
+	- analysis > reports > Time Course Binning Analysis 
+	- select all variables 
+	- Bin Interval in ms: 10ms/50ms... 
 	- this will make 'file.txt'
-6. run python script (VisualWorld.py)
+*10. run python script (VisualWorld.py)
 	- open terminal
 	- cd to location of 'VisualWorld.py' and 'file.txt'
 	- run: 'python VisualWorld.py'
 	- select file: 'file.txt'
+	(we don't need this step anymore)
+	
 7. DF
 	- RIGHT_0_P = elsewhere
 	- RIGHT_1_C = target
