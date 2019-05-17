@@ -1,5 +1,9 @@
-conf
 exp_data
-sources
-mySources/data
+data/clean/archive/
+data/exp_data/
+data/raw/archive/
+data/raw/stress_10ms.txt
+docs/2015_Coartic-master/
+docs/ET/
+docs/notes/
 .Rproj.user
