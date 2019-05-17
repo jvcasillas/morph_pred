@@ -1,0 +1,20 @@
+---
+title: "Morphological predictability"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Authors: Nuria Sagarra, Cristina Lozano-Argüelles, Joseph V. Casillas  
+Last update: `r Sys.Date()`  
+Description: 
+
+
+## Project structure
+
+```{r, results='asis'}
+academicWriteR::print_dir_ul(".", nested = T, remove = "README|.Rproj")
+```
