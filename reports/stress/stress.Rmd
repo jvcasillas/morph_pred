@@ -1,0 +1,456 @@
+---
+title: 'Morphosyntactic Predictability'
+date: "Last update: `r Sys.time()`"
+header-includes:
+   - \usepackage{tabularx}
+output: 
+  pdf_document: 
+    highlight: tango
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+---
+
+# Study 1: beg, adv, nat
+
+## Stress
+
+### Gating
+
+Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
+tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
+cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
+proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+### Eye tracking
+
+#### Bin adjustments and centering
+
+Because all the .wav files have different durations we have to normalize the 
+time course. We do this by centering the bins around the onset of the second 
+syllable of the target word. The plot on the left represents the data before 
+normalizing and the plot on the right is the outcome. The blue dots represent 
+the onset of the target word. The red dots represent the onset of the target 
+syllable. The vertical red lines represent the latest onset of the adjusted 
+start point and the earliest end of the target word. Everything between the 
+red lines represents the target window of interest.
+
+\includegraphics[width=\textwidth]{../../figs/stress/general/stressBinPlots.png}
+
+
+#### Time course plot
+
+Proportion of fixations to targets and distractors as a function of 
+group (LB, LA, SS) and word type (paroxytone, oxytone).
+
+\includegraphics[width=\textwidth]{../../figs/stress/s1_beg_adv_nat/eye_track/stressLSRLp1.png}
+
+
+
+\clearpage
+
+#### Analyses
+
+##### Is stress used to predict morphology?
+
+We want to analyze the proportion of target fixations at the target 
+syllable onset, so we need to make a subset of the data that only uses 
+the target onset bin (binAdj = 0).
+
+We will test this for each group in each condition (stressed, untressed)
+using a one-sided t-test. Specifically, we are testing the 
+hypothesis that the proportion of looks is greater than 
+chance (50%). 
+
+- H0: u = 0.50
+- Ha: u > 0.50
+
+The generic code is: ```t.test(myVector, alternative = "greater", my = 0.5, conf.level = 0.95)```
+
+| Group | Condition  | Estimate | statistic | conf.low |  df | p.value | sig  |
+| :---- | :--------- | :------- | :-------- | :------- | :-- | :------ | :--- |
+| lb    | stressed   | 0.54     | 0.61      | 0.43     | 11  | 0.276   | N.S. |
+| lb    | unstressed | 0.57     | 1.58      | 0.49     | 11  | 0.071   | N.S. |
+| la    | stressed   | 0.66     | 3.50      | 0.57     | 25  | 0.000   | *    |
+| la    | unstressed | 0.69     | 5.15      | 0.63     | 25  | 0.000   | *    |
+| ss    | stressed   | 0.71     | 4.85      | 0.63     | 22  | 0.000   | *    |
+| ss    | unstressed | 0.79     | 7.90      | 0.72     | 22  | 0.000   | *    |
+
+
+
+\includegraphics[width=\textwidth]{../../figs/stress/s1_beg_adv_nat/eye_track/stressTargetFixMODP3.png}
+
+\clearpage
+
+##### Do target fixations vary as a function of group and stress at the onset of the target syllable?
+
+We use a LMEM to analyze mean target fixations as a function of group, condition and working memory. Main effects and interactions are tested using nested model 
+comparisons. 
+
+|       Model        |  Df |  AIC   |  BIC   | logLik | deviance | Chisq | Chi Df |   Pr(>Chisq)  |
+| :----------------- | :-- | :----- | :----- | :----- | :------- | :---- | :----- | :------------ |
+| Base               | 3   | -30.30 | -21.88 | 18.15  | -36.30   |       |        |               |
+| Group              | 5   | -41.24 | -27.22 | 25.62  | -51.24   | 14.94 | 2      | 0.0005683 *** |
+| Condition          | 6   | -41.62 | -24.79 | 26.81  | -53.62   | 2.37  | 1      | 0.1233552     |
+| Group x cond.      | 8   | -37.91 | -15.47 | 26.95  | -53.91   | 0.28  | 2      | 0.8651943     |
+| WM                 | 9   | -36.48 | -11.24 | 27.24  | -54.48   | 0.57  | 1      | 0.4489036     |
+| Group x cond. x WM | 14  | -34.89 | 4.35   | 31.44  | -62.89   | 8.41  | 5      | 0.1349345     |
+
+There is only a main effect of group. We refit the model to get parameter estimates. 
+
+|             | Estimate | Std. Error |   df   | t value |    Pr(>t)    |
+| :---------- | -------- | ---------- | ------ | ------- | ------------ |
+| (Intercept) |     0.75 |      0.028 | 122.00 |   25.94 | < 2e-16 ***  |
+| groupla     |    -0.07 |      0.039 | 122.00 |   -1.85 | 0.065569 .   |
+| grouplb     |    -0.19 |      0.049 | 122.00 |   -3.98 | 0.000116 *** |
+
+
+
+We can now plot the model with upper and lower bound CI. 
+
+\includegraphics[width=\textwidth]{../../figs/stress/s1_beg_adv_nat/eye_track/stressTargetFixPlot.png}
+
+
+##### Do target fixations vary as a function of group and stress over the time course?
+
+Check main effects and interaction using nested model comparisons. This 
+includes effects of higher order orthogonal polynomials (intercept, 
+linear slope, and quadratic terms).
+
+|                                |  Df |  AIC  |  BIC  | logLik | deviance | Chisq  | Chi Df |   Pr(>Chisq)  |
+| :----------------------------- | :-- | :---- | :---- | :----- | :------- | :----- | :----- | :------------ |
+| Base model                     | 16  | 97453 | 97601 | -48711 | 97421    |        |        |               |
+| Group effect on intercept      | 18  | 97453 | 97618 | -48708 | 97417    | 4.60   | 2      | 0.100095      |
+| Group effect on slope          | 20  | 97445 | 97628 | -48702 | 97405    | 12.30  | 2      | 0.002124 **   |
+| Group effect on quadratic poly | 22  | 97445 | 97647 | -48700 | 97401    | 3.77   | 2      | 0.151399      |
+| Cond effect on intercept       | 23  | 97445 | 97656 | -48699 | 97399    | 2.04   | 1      | 0.153205      |
+| Cond effect on slope           | 24  | 97431 | 97652 | -48692 | 97383    | 15.28  | 1      | 9.255e-05 *** |
+| Cond effect on quadratic poly  | 25  | 97430 | 97660 | -48690 | 97380    | 3.35   | 1      | 0.067017 .    |
+| Full model                     | 31  | 97120 | 97405 | -48529 | 97058    | 321.72 | 6      | < 2.2e-16 *** |
+
+We retain the full model and check parameters. 
+
+|                                 |  Estimate  | Std. Error |     df    | t value |    Pr(>t)    |
+| :------------------------------ | :--------- | :--------- | :-------- | :------ | :----------- |
+| (Intercept)                     | 5.118e-01  | 2.436e-02  | 8.900e+01 | 21.009  | < 2e-16 ***  |
+| ot1                             | 6.938e-01  | 1.183e-01  | 8.600e+01 | 5.863   | 8.12e-08 *** |
+| ot2                             | 5.388e-01  | 8.124e-02  | 9.200e+01 | 6.632   | 2.22e-09 *** |
+| groupla                         | 3.404e-02  | 2.532e-02  | 6.500e+01 | 1.344   | 0.18355      |
+| grouplb                         | 2.456e-02  | 3.129e-02  | 6.300e+01 | 0.785   | 0.43543      |
+| conditionunstressed             | 5.412e-02  | 2.335e-02  | 3.500e+01 | 2.318   | 0.02641 *    |
+| ot1:groupla                     | -5.446e-01 | 1.201e-01  | 6.900e+01 | -4.535  | 2.37e-05 *** |
+| ot1:grouplb                     | -7.034e-01 | 1.467e-01  | 6.400e+01 | -4.794  | 1.01e-05 *** |
+| ot2:groupla                     | -1.173e-01 | 8.461e-02  | 8.300e+01 | -1.387  | 0.16927      |
+| ot2:grouplb                     | -3.481e-01 | 1.015e-01  | 7.200e+01 | -3.430  | 0.00101 **   |
+| ot1:conditionunstressed         | 2.866e-01  | 1.223e-01  | 4.000e+01 | 2.344   | 0.02411 *    |
+| ot2:conditionunstressed         | -2.692e-01 | 8.849e-02  | 5.200e+01 | -3.043  | 0.00368 **   |
+| groupla:conditionunstressed     | -6.961e-02 | 8.374e-03  | 7.252e+04 | -8.313  | < 2e-16 ***  |
+| grouplb:conditionunstressed     | -1.483e-01 | 9.160e-03  | 7.252e+04 | -16.186 | < 2e-16 ***  |
+| ot1:groupla:conditionunstressed | 3.680e-01  | 6.377e-02  | 7.253e+04 | 5.770   | 7.95e-09 *** |
+| ot1:grouplb:conditionunstressed | 3.157e-01  | 6.976e-02  | 7.252e+04 | 4.526   | 6.02e-06 *** |
+| ot2:groupla:conditionunstressed | 7.170e-02  | 6.377e-02  | 7.254e+04 | 1.124   | 0.26086      |
+| ot2:grouplb:conditionunstressed | 3.227e-01  | 6.976e-02  | 7.254e+04 | 4.627   | 3.72e-06 *** |
+
+(interpret later)
+
+\includegraphics[width=\textwidth]{../../figs/stress/s1_beg_adv_nat/eye_track/stressGCAfullMod.png}
+
+
+### Production
+
+Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
+tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
+cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
+proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+
+\clearpage
+
+## Duration
+
+### Gating
+
+### Eye-tracking
+
+### Production
+
+\clearpage
+
+## Lexical 
+
+### Gating
+
+### Eye-tracking
+
+### Production
+
+\clearpage
+
+
+
+
+
+
+
+
+# Study 2: adv, her, nat
+
+## Stress
+
+## Overview
+
+Gating
+
+- all groups predict above chance in both oxytone and paroxytone conditions
+- HS overall less accurate than LA and SS (SS > LA = SS), this is due to being 
+sig. less accurate in paroxytone condition
+- Condition by wm interaction: higher working memory associated with increased accuracy in the oxytone condition 
+
+Eye-tracking
+
+- At target syllable onset: 
+	- All groups predict above chance in both conditions. 
+	- In both conditions the LA group differs from the natives (less target fixations. 
+	- The LA and HS groups do not differ from each other.
+- Time course
+	- natives fixate on the correct target sooner and at a faster rate. 
+	- HS focus on target at a faster rate and sooner than LA in paroxytone condition
+	- No differences in oxytone condition between LA and HS
+
+### Gating
+
+#### Analyses
+
+##### Is stress used to predict morphology?  
+
+Yes. All groups predict above chance in both conditions. 
+
+| Group | Condition  | Estimate | Statistic | conf.low | df  | p.value | sig  |
+| :---- | :--------- | :------- | :-------- | :------- | :-- | :------ | :--- |
+| S     | stressed   | 0.79     | 9.97      | 0.74     | 24  | 0.000   | *    |
+| S     | unstressed | 0.79     | 9.21      | 0.73     | 24  | 0.000   | *    |
+| HS    | stressed   | 0.68     | 5.26      | 0.62     | 22  | 0.000   | *    |
+| HS    | unstressed | 0.77     | 7.16      | 0.70     | 22  | 0.000   | *    |
+| LA    | stressed   | 0.78     | 8.34      | 0.72     | 23  | 0.000   | *    |
+| LA    | unstressed | 0.82     | 11.13     | 0.77     | 23  | 0.000   | *    |
+
+\includegraphics[width=\textwidth]{../../figs/stress/s2_adv_her_nat/gating/stressGatingTT.png}
+
+##### Do target fixations vary as a function of group and stress at the onset of the target syllable?
+
+We use a LMEM to analyze mean accuracy as a function of group, condition and working memory. Main effects and interactions are tested using nested model comparisons.
+
+| Model              | Df  | AIC    | BIC    | logLik  | deviance | Chisq  | Chi Df | Pr(>Chisq)    |
+| :----------------- | :-- | :----- | :----- | :-----  | :------- | :----  | :----- | :------------ |
+| Base               | 2   | 2856.7 | 2868.6 | -1426.4 | 2852.7   |        |        |               |
+| Group              | 4   | 2854.5 | 2878.2 | -1423.3 | 2846.5   | 6.1930 | 2      | 0.045207  *   |
+| Condition          | 5   | 2849.8 | 2879.4 | -1419.9 | 2839.8   | 6.6915 | 1      | 0.009687  **  |
+| Group x cond.      | 7   | 2849.3 | 2890.7 | -1417.7 | 2835.3   | 4.4972 | 2      | 0.105548      |
+| WM                 | 8   | 2850.8 | 2898.2 | -1417.4 | 2834.8   | 0.4941 | 1      | 0.482107      |
+| condition x wm     | 9   | 2848.3 | 2901.5 | -1415.2 | 2830.3   | 4.5360 | 1      | 0.033189  *   |
+
+We keep the full model 
+
+|                   | Estimate | Std. Error | z value | Pr(>z)       |
+| :---------------- | -------: | ---------: | ------: | -----------: |
+| (Intercept)       | 2.34598  | 0.68960    | 3.402   | 0.000669 *** |
+| GroupHS           | -1.07752 | 0.38018    | -2.834  | 0.004593 **  |
+| GroupLA           | -0.28208 | 0.39641    | -0.712  | 0.476728     |
+| Condition         | -0.78643 | 0.40270    | -1.953  | 0.050835 .   |
+| wm                | -0.10125 | 0.06684    | -1.515  | 0.129845     |
+| GroupHS:Condition | 0.51122  | 0.22651    | 2.257   | 0.024015 *   |
+| GroupLA:Condition | 0.28202  | 0.23642    | 1.193   | 0.232916     |
+| Condition:wm      | 0.08350  | 0.03917    | 2.132   | 0.033040 *   |
+
+
+\includegraphics[width=\textwidth]{../../figs/stress/s2_adv_her_nat/gating/stressGatingP2.png}
+
+- Main effect of group: HS overall less accurate than LA and SS
+- Main effect of condition: HS more accurate in oxytone condition
+- Condition by wm interaction: higher working memory associated with increased accuracy in the oxytone condition 
+- Do HS and LA differ from each other? Yes, HS are less accurate overall 
+
+\clearpage
+
+
+
+
+
+
+### Eye tracking
+
+#### Bin adjustments and centering
+
+Same as study 1. 
+
+#### Time course plot
+
+Proportion of fixations to targets and distractors as a function of 
+group (LA, HS, SS) and word type (paroxytone, oxytone).
+
+\includegraphics[width=\textwidth]{../../figs/stress/s2_adv_her_nat/eye_track/stressHLSp1.png}
+
+\clearpage
+
+#### Analyses
+
+##### Is stress used to predict morphology?  
+
+
+Yes. All groups predict above chance in both conditions. 
+
+| Group | Condition  | Estimate | Statistic | conf.low | df  | p.value | sig  |
+| :---- | :--------- | :------- | :-------- | :------- | :-- | :------ | :--- |
+| la    | stressed   | 0.61     | 2.81      | 0.54     | 27  | 0.004   | *    |
+| la    | unstressed | 0.71     | 6.20      | 0.65     | 27  | 0.000   | *    |
+| hs    | stressed   | 0.64     | 4.38      | 0.59     | 22  | 0.000   | *    |
+| hs    | unstressed | 0.74     | 7.72      | 0.69     | 22  | 0.000   | *    |
+| ss    | stressed   | 0.71     | 4.85      | 0.63     | 22  | 0.000   | *    |
+| ss    | unstressed | 0.78     | 7.90      | 0.72     | 22  | 0.000   | *    |
+
+
+\includegraphics[width=\textwidth]{../../figs/stress/s2_adv_her_nat/eye_track/stressTargetFixMODP3.png}
+
+##### Do target fixations vary as a function of group and stress at the onset of the target syllable?
+
+We use a LMEM to analyze mean target fixations as a function of group, condition and working memory. Main effects and interactions are tested using nested model comparisons.
+
+| Model              | Df  | AIC    | BIC    | logLik | deviance | Chisq | Chi Df | Pr(>Chisq)    |
+| :----------------- | :-- | :----- | :----- | :----- | :------- | :---- | :----- | :------------ |
+| Base               | 3   | -61.83 | -52.84 | 33.91  | -67.83   |       |        |               |
+| Group              | 5   | -62.63 | -47.64 | 36.31  | -72.63   | 4.79  | 2      | 0.09086 .     |
+| Condition          | 6   | -69.36 | -51.38 | 40.68  | -81.36   | 8.73  | 1      | 0.00313 **    |
+| Group x cond.      | 8   | -65.43 | -41.46 | 40.71  | -81.43   | 0.07  | 2      | 0.96447       |
+| WM                 | 9   | -65.25 | -38.28 | 41.62  | -83.25   | 1.82  | 1      | 0.17716       |
+| condition x wm     | 10  | -63.57 | -33.60 | 41.78  | -83.57   | 0.31  | 1      | 0.57564       |
+
+There is only a main effect of condition. We refit the model to get parameter estimates. 
+
+|                     | Estimate | Std. Error | df      | t value | Pr(>t)       |
+| :------------------ | -------: | ---------: | ------: | ------: | -----------: |
+| (Intercept)         | 0.70     | 0.031      | 109.98  | 22.27   | < 2e-16 ***  |
+| groupla             | -0.08    | 0.037      | 71.00   | -2.20   | 0.03075 *    |
+| grouphs             | -0.05    | 0.039      | 71.00   | -1.36   | 0.17785      |
+| conditionunstressed | 0.09     | 0.030      | 73.00   | 2.99    | 0.00379 **   |
+
+We can now plot the model with upper and lower bound CI. 
+
+\includegraphics[width=\textwidth]{../../figs/stress/s2_adv_her_nat/eye_track/stressTargetFixP2.png}
+
+In the stressed and unstressed conditions the LA group differs from the native controls. The HS group does not. The LA and HS groups do not differ from each other. 
+
+##### Do target fixations vary as a function of group and stress over the time course?
+
+Check main effects and interaction using nested model comparisons. This 
+includes effects of higher order orthogonal polynomials (intercept, 
+linear slope, and quadratic terms).
+
+
+|                                | Df  | AIC    | BIC    | logLik | deviance | Chisq   | Chi Df | Pr(>Chisq)    |
+| :----------------------------- | :-- | :----  | :----  | :----- | :------- | :-----  | :----- | :------------ |
+| base model                     | 16  | 119906 | 120056 | -59937 | 119874   |         |        |               |
+| Group effect on intercept      | 18  | 119909 | 120079 | -59937 | 119873   | 0.3100  | 2      | 0.8564336     |
+| Group effect on linear slope   | 20  | 119902 | 120090 | -59931 | 119862   | 11.0322 | 2      | 0.0040214 **  |
+| Group effect on quadratic poly | 22  | 119905 | 120112 | -59931 | 119861   | 1.1633  | 2      | 0.5589720     |
+| Cond. effect on intercept      | 23  | 119907 | 120123 | -59931 | 119861   | 0.0392  | 1      | 0.8430199     |
+| Cond. effect on linear slope   | 24  | 119898 | 120124 | -59925 | 119850   | 11.2161 | 1      | 0.0008109 *** |
+| Cond. effect on quadratic poly | 25  | 119895 | 120130 | -59922 | 119845   | 5.2366  | 1      | 0.0221171 *   |
+| Full model                     | 31  | 119788 | 120079 | -59863 | 119726 1 | 18.9164 | 6      | < 2.2e-16 *** |
+| WM                             | 32  | 119787 | 120088 | -59862 | 119723   | 2.5104  | 1      | 0.1130945     |
+
+We retain the full model and check parameters. 
+
+|                                 | Estimate   | Std. Error | df        | t value | Pr(>t)       |
+| :------------------------------ | :--------- | :--------- | :-------- | :------ | :----------- |
+| (Intercept)                     | 5.120e-01  | 2.511e-02  | 8.900e+01 | 20.390  | < 2e-16 ***  |
+| ot1                             | 6.967e-01  | 1.119e-01  | 9.800e+01 | 6.227   | 1.18e-08 *** |
+| ot2                             | 5.378e-01  | 7.306e-02  | 1.170e+02 | 7.362   | 2.74e-11 *** |
+| grouphs                         | 1.903e-03  | 2.523e-02  | 7.800e+01 | 0.075   | 0.940071     |
+| groupla                         | 2.942e-03  | 2.413e-02  | 7.800e+01 | 0.122   | 0.903257     |
+| conditionunstressed             | 5.430e-02  | 2.569e-02  | 3.500e+01 | 2.114   | 0.041764 *   |
+| ot1:grouphs                     | -3.025e-01 | 1.186e-01  | 8.300e+01 | -2.550  | 0.012617 *   |
+| ot1:groupla                     | -5.618e-01 | 1.138e-01  | 8.500e+01 | -4.935  | 3.96e-06 *** |
+| ot2:grouphs                     | -1.336e-01 | 8.637e-02  | 9.300e+01 | -1.546  | 0.125373     |
+| ot2:groupla                     | -1.238e-01 | 8.330e-02  | 9.700e+01 | -1.486  | 0.140404     |
+| ot1:conditionunstressed         | 2.832e-01  | 1.141e-01  | 4.300e+01 | 2.483   | 0.017017 *   |
+| ot2:conditionunstressed         | -2.668e-01 | 7.251e-02  | 7.400e+01 | -3.680  | 0.000439 *** |
+| grouphs:conditionunstressed     | -1.119e-02 | 8.241e-03  | 8.930e+04 | -1.358  | 0.174495     |
+| groupla:conditionunstressed     | -2.804e-02 | 8.186e-03  | 8.929e+04 | -3.426  | 0.000614 *** |
+| ot1:grouphs:conditionunstressed | -7.199e-02 | 6.276e-02  | 8.930e+04 | -1.147  | 0.251314     |
+| ot1:groupla:conditionunstressed | 4.191e-01  | 6.234e-02  | 8.930e+04 | 6.723   | 1.79e-11 *** |
+| ot2:grouphs:conditionunstressed | 2.410e-01  | 6.275e-02  | 8.932e+04 | 3.841   | 0.000123 *** |
+| ot2:groupla:conditionunstressed | 9.447e-02  | 6.234e-02  | 8.931e+04 | 1.515   | 0.129673     |
+
+\includegraphics[width=\textwidth]{../../figs/stress/s2_adv_her_nat/eye_track/stressGCAfullMod.png}
+
+- Main effect of group on the linear slope: SS > HS = LA 
+- Main effect of condition on the linear slope: Overall steep slope in oxytone condition. Faster rate of change. 
+- Main effect of condition on the quadratic term: Faster rate of change in oxytone condition. Overall 
+ealier looks to target. 
+- LA and HS groups differ from native controls in the steepness of the slope and the curvature. 
+**Take home message**: native fixate on the correct target sooner and at a faster rate. 
+
+How do LA and HS compare to each other?
+
+- Effect of group on linear slope: HS focus on target at a faster rate and sooner that LA in paroxytone condition
+- No differences in oxytone condition
+
+### Production
+
+\clearpage
+
+## Duration
+
+### Gating
+
+### Eye-tracking
+
+### Production
+
+\clearpage
+
+## Lexical 
+
+### Gating
+
+### Eye-tracking
+
+### Production
+
+\clearpage
+
+
+# Study 3: adv, int, nat
+
+## Stress
+
+### Gating
+
+### Eye tracking
+
+### Production
+
+\clearpage
+
+## Duration
+
+### Gating
+
+### Eye-tracking
+
+### Production
+
+\clearpage
+
+## Lexical 
+
+### Gating
+
+### Eye-tracking
+
+### Production
+

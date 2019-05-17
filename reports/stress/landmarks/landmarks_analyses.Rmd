@@ -1,0 +1,1051 @@
+---
+title: "Landmark analyses"
+author: ""
+date: "Last updated: `r Sys.Date()`"
+header-includes:
+   - \usepackage{booktabs}
+   - \usepackage{multirow}
+output: 
+  pdf_document: 
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Setup
+
+## Load libraries
+
+```{r, 'load-libraries', message=FALSE, warning=FALSE}
+library(tidyverse)
+library(broom)
+library(knitr)
+library(kableExtra)
+library(lme4)
+library(merTools)
+library(patchwork)
+```
+
+## Load data
+
+```{r, 'load-data', message=FALSE, warning=FALSE}
+learners <- read_csv("./data/landmarks_stress_la_lb_ss.csv") # learner data
+heritage <- read_csv("./data/landmarks_stress_la_hs_ss.csv") # heritage data
+wm_df_learners <- read_csv("./data/wm.csv")                  # wm learners
+wm_df_heritage <- read_csv("./data/wm_all.csv")              # wm heritage
+pstm_df <- read_csv("./data/dur_stress_background_info.csv") # phon memory
+verb_freq_df <- read_csv("./data/verb_freq.csv")             # verb freq
+phon_freq <- read_csv("./data/phonotactic_frequency.csv")    # phonotactic freq
+```
+
+```{r, 'combine-heritage', echo=F}
+all <- heritage %>% 
+  filter(group == 'hs') %>% 
+  bind_rows(., learners)
+```
+
+```{r, 'load-functions', message=F, warning=F, echo=F}
+my_theme <- function() {
+  theme_minimal() + 
+    theme(
+      plot.title = element_text(size = rel(1.5), face = "bold"), 
+      plot.subtitle = element_text(size = rel(1.1)),
+      plot.caption = element_text(color = "#777777", vjust = 0),
+      axis.title = element_text(size = rel(.9), hjust = 0.95, face = "italic"), 
+      panel.grid.major = element_line(size = rel(.1), color = "#000000"), 
+      panel.grid.minor = element_line(size = rel(.05), color = "#000000")
+    )
+}
+```
+
+
+# Late learners and native controls
+
+## Do they predict above chance?
+
+The data analyzed using a linear model with intercept removed. This makes each 
+parameter estimate a two-sided test of independence ($H_{a} \neq 0$). In order 
+to make this test one-sided ($H_{a} > 0$) we will take the t-values from the 
+model and calculate the associated probability from the t-distribution for a 
+one-sided test using the model degrees of freedom. In R this can be done with 
+the following function:  
+
+```{r, 'show-function', eval=F}
+pt(t_values, mod_df, lower = FALSE)
+```
+
+The p-values from the model will now be one-sided tests that the mean 
+difference is greater than 0. Next, we need to put the target fixations 
+(dependent variable) on the same scale. As is, chance = 50\%, thus everything 
+will be significant because target fixations are on average at 50\% as a 
+minimum. To get around this issue we can subtract 0.5 from each participants' 
+mean target fixation at each landmark and test to see if that value is greater 
+than 0. 
+
+For example, if at the target word onset you are fixating on the target 50\% 
+of the time (i.e., at chance), then when we subtract 0.5 from 0.5, we get 0. 0 
+is not greater than 0, so it wouldn't be significant. We will conduct this 
+test for each group, at each landmark. Then we will add the 0.5 back on to the 
+model estimates and the confidence intervals for plotting purposes. 
+
+```{r, 'predict-above-chance-learners', cache=TRUE}
+
+# Model degrees of freedom
+learner_mod_df <- 65
+
+learner_mods <- learners %>% 
+  filter(., !(landmark %in% c('start_sentence', 'word2_c1v1', 
+                              'end_sentence'))) %>% 
+  group_by(., participant, group, coda, landmark) %>% 
+  summarize(., target_fix = mean(targetProp)) %>% 
+  ungroup(.) %>% 
+  group_by(., landmark, coda) %>% 
+  do(tidy(lm(I(target_fix - 0.5) ~ -1 + group, data = .), conf.int = T, 
+          conf.level = 0.99)) %>% 
+  mutate(., p_adj = pt(statistic, learner_mod_df, lower = F), 
+            p_adj = formatC(p_adj, digits = 7, format = "f"), 
+            sig = if_else(p_adj < 0.05, true = "*", false = " ")) %>% 
+  ungroup(.) %>% 
+  mutate(., landmark = fct_relevel(landmark, 
+                                   'word3_c1v1', 'word3_20msafterv1', 
+                                   'word3_c2', 'word3_c3', 'word3_suffix')) %>% 
+  arrange(., coda, landmark)
+```
+
+```{r, 'learner-mods-ouput', echo=F, results='asis'}
+
+# Format mods into LaTeX table ------------------------------------------------
+learner_mods %>% 
+  filter(., landmark != 'word5') %>% 
+  dplyr::select(-p.value, -coda) %>% 
+  slice(., -c(10:12)) %>% 
+  mutate(., term = fct_recode(term, 'la' = 'groupla', 'lb' = 'grouplb', 
+                                    'ss' = 'groupss')) %>% 
+  kable(., format = 'latex', digits = 2, booktabs = T, escape = T, 
+           caption = "Model output", align = c('l', rep('r', 8), 'l')) %>% 
+  kable_styling(., font_size = 9, latex_options = "hold_position") %>% 
+  collapse_rows(., columns = 1, latex_hline = "none", 
+                   row_group_label_position = 'identity') %>% 
+  group_rows("No-coda targets", 1, 15) %>% 
+  group_rows("Coda targets", 16, 33) %>% 
+  footnote(., escape = F, 
+              general = c("Parameter estimates show average target fixation 
+                           minus 0.5.", 
+                          "P-values represent one-sided t-tests.", 
+                          "\\\\textbf{word3\\\\_c2} represents the 2nd 
+                           syllable onset for no-coda targets and the coda 
+                           onset for coda targets."))
+```
+
+
+\clearpage
+
+## Landmark plots
+
+```{r, 'learner-plots', echo=F, engine.opts='tikz', fig.height=4.25, cache=TRUE}
+
+# All plots -------------------------------------------------------------------
+
+
+# Learner labs and axis -------------------------------------------------------
+group_labs_learners <- c('LA', 'LB', 'SS')
+
+# Without coda
+no_coda_landmarks_learners <- c('word3_c1v1', 'word3_20msafterv1', 'word3_c2', 
+                                'word3_suffix', 'word4_c1v1')
+
+coda_landmarks_learners <- c('word3_c1v1', 'word3_20msafterv1', 'word3_c2', 
+                             'word3_c3', 'word3_suffix', 'word4_c1v1')
+
+no_coda_x_learners <- c('Target word\nonset', '20 ms\nafter V1', 
+                        'Syllable 1\noffset', 'V2 (suffix)', 'Following\nword')
+
+coda_x_learners <- c('Target word\nonset', '20 ms\nafter V1', 'Coda onset', 
+                     'Syllable 1\noffset', 'V2 (suffix)', 'Following\nword')
+
+# No coda plots ---------------------------------------------------------------
+learner_mods %>% 
+  filter(., coda == 0, landmark %in% no_coda_landmarks_learners) %>% 
+  ggplot(., aes(x = landmark, y = estimate + 0.5, dodge = term, 
+                fill = term, shape = term)) + 
+    geom_hline(yintercept = 0.5, lty = 3) + 
+    geom_linerange(aes(ymin = conf.low + 0.5, ymax = conf.high + 0.5), 
+                   position = position_dodge(0.5)) + 
+    geom_point(position = position_dodge(0.5), size = 4) + 
+    scale_shape_manual(name = '', values = 21:23, 
+                       labels = group_labs_learners) + 
+    scale_fill_brewer(palette = "Set1", name = '', 
+                      labels = group_labs_learners) + 
+    ylim(0.25, 1) + 
+    scale_x_discrete(labels = no_coda_x_learners) + 
+    labs(y = 'Target fixations', x = 'Landmark', title = 'No coda', 
+         caption = 'Mean +/- 99% CI') + 
+    my_theme()
+
+# Coda plots ------------------------------------------------------------------
+learner_mods %>% 
+  filter(., coda == 1, 
+            landmark %in% coda_landmarks_learners) %>% 
+  ggplot(., aes(x = landmark, y = estimate + 0.5, dodge = term, 
+                fill = term, shape = term)) + 
+    geom_hline(yintercept = 0.5, lty = 3) + 
+    geom_linerange(aes(ymin = conf.low + 0.5, ymax = conf.high + 0.5), 
+                   position = position_dodge(0.5)) + 
+    geom_point(position = position_dodge(0.5), size = 4) + 
+    scale_shape_manual(name = '', values = 21:23, 
+                       labels = group_labs_learners) + 
+    scale_fill_brewer(palette = "Set1", name = '', 
+                      labels = group_labs_learners) + 
+    ylim(0.25, 1) + 
+    scale_x_discrete(labels = coda_x_learners) + 
+    labs(y = 'Target fixations', x = 'Landmark', title = 'Coda', 
+         caption = 'Mean +/- 99% CI') + 
+    my_theme()
+```
+
+## Are working memory, word frequency, or phonotactic frequency factors?
+
+Note: 
+
+- Phonological short-term memory is analyzed seperately because we do not 
+have data from all three groups. 
+- These analyses **do not** include late beginners because they did not 
+predict above chance at the target syllable offset (or earlier). This makes 
+model fitting much faster.
+
+```{r, 'working-memory-learners-cleanup', echo=F}
+wm_df <- wm_df_learners
+
+# Get first two letters of ID
+wm_df$id_first_2 <- substr(wm_df$participant, start = 1, stop = 2)
+wm_df$id_first_2 <- gsub("[0-9]", "s", paste(wm_df$id_first_2))
+wm_df$id_first_2 <- gsub("ls", "lb", paste(wm_df$id_first_2))
+
+# get numbers
+wm_df$id_nums <- stringr::str_sub(wm_df$participant, start = -2)
+wm_df$id_nums <- gsub("[a-z]", "0", paste(wm_df$id_nums))
+
+# unite the columns and delete the junk
+wm_df <- wm_df %>% 
+  unite(., participant2, c(id_first_2, id_nums), sep = "") %>% 
+  dplyr::select(-participant) %>% 
+  rename(., participant = participant2)
+
+
+# Get first two letters of ID
+learners$id_first_2 <- substr(learners$participant, start = 1, stop = 2)
+learners$id_first_2 <- gsub("[0-9]", "b", paste(learners$id_first_2))
+learners$id_first_2 <- gsub("SB", "ss", paste(learners$id_first_2))
+learners$id_first_2 <- tolower(learners$id_first_2)
+
+# get numbers
+learners$id_nums <- stringr::str_sub(learners$participant, start = -2)
+
+# unite the columns and delete the junk
+learners <- learners %>% 
+  unite(., participant2, c(id_first_2, id_nums), sep = "") %>% 
+  dplyr::select(-participant) %>% 
+  rename(., participant = participant2)
+
+# unite the dfs
+learners_wm_complete <- left_join(x = learners, y = wm_df) %>% 
+  na.omit(.) %>%
+  mutate(., wm_c = wm - mean(wm)) %>% 
+  ungroup(.) %>% 
+  filter(., !(participant %in% c("la20", "la21", "la22", 
+                                 "la23", "la30", "la31", 
+                                 "la02", "la05", "la06", 
+                                 "la08", "la10", "la15")))
+
+# include verb freq and phon_freq
+learners_complete <- verb_freq_df %>% 
+  filter(., target %in% unique(learners_wm_complete$target)) %>% 
+  left_join(learners_wm_complete, .) %>% 
+  left_join(., phon_freq) %>% 
+  na.omit(.) %>% 
+  filter(., target != 'llena', group != 'lb')
+
+# must remove 'llena' because it is much more frequent than all other verbs
+
+# combine heritage here too and run all models together: 
+# unite the dfs
+heritage_wm_complete <- wm_df_heritage %>% 
+  filter(., !(group %in% c("L", "IN"))) %>% 
+  mutate(., group = fct_recode(group, hs = 'HS', ss = 'S', la = 'LA')) %>% 
+  left_join(x = heritage, y = .) %>% 
+  na.omit(.) %>%
+  mutate(., wm_c = WM - mean(WM)) %>% 
+  ungroup(.) %>% 
+  filter(., !(participant %in% c("la20", "la21", "la22", 
+                                 "la23", "la30", "la31", 
+                                 "la02", "la05", "la06", 
+                                 "la08", "la10", "la15")))
+
+heritage_complete <- verb_freq_df %>% 
+  filter(., target %in% unique(heritage_wm_complete$target)) %>% 
+  left_join(heritage_wm_complete, .) %>% 
+  left_join(., phon_freq) %>% 
+  na.omit(.) %>% 
+  filter(., target != 'llena')
+
+# unite learners with 'heritage_complete'
+all_data <- heritage_complete %>% 
+  filter(group == "hs") %>% 
+  rename(., wm = WM) %>% 
+  bind_rows(., learners_complete) %>% 
+  na.omit(.) %>% 
+  group_by(coda) %>% 
+  mutate(., freq_sc = (freq - mean(freq)) / sd(freq), 
+            phon_prob_sc = (phon_prob - mean(phon_prob)) / sd(phon_prob), 
+            biphon_prob_sc = (biphon_prob - mean(biphon_prob)) / sd(biphon_prob)) %>% 
+  ungroup(.)
+```
+
+
+First check for homogeneity of variance for working memory. 
+
+```{r, 'learners-homo-var'}
+wm_df %>% 
+  separate(., participant, into = c('group', 'trash'), sep = 2, remove = F) %>% 
+  bartlett.test(wm ~ group, data = .)
+```
+
+Looks good. 
+
+Now we analyze items without and with codas: 
+
+```{r, 'main-analysis', echo=F}
+
+# No coda, syl 2 onset --------------------------------------------------------
+no_coda <- all_data %>% 
+  filter(., coda == 0 & landmark == 'word3_c2') %>% 
+  mutate(., group = fct_relevel(group, 'ss'))
+
+nocoda_mod_null <- glmer(
+  cbind(targetCount, distractorCount) ~ - 1 +
+    (1 + wm_c | participant) + 
+    (1 + wm_c + freq_sc + phon_prob_sc | target), 
+  data = no_coda, 
+  control = glmerControl(optimizer = 'bobyqa', optCtrl = list(maxfun = 3e5)),
+  family = 'binomial')
+
+
+# add group:wm interaction
+nocoda_mod_wm <- update(nocoda_mod_null, .~. + group:wm_c)
+
+# effect of group:wm interaction
+anova(nocoda_mod_null, nocoda_mod_wm, test = 'Chisq') # no
+
+# add group:freq interaction
+nocoda_mod_freq <- update(nocoda_mod_null, .~. + group:freq_sc)
+
+# effect of group:freq interaction
+anova(nocoda_mod_null, nocoda_mod_freq, test = 'Chisq') # yes
+
+# add group:phon_prob interaction
+nocoda_mod_phon_prob <- update(nocoda_mod_freq, .~. + group:phon_prob_sc)
+
+# effect of group: phon_prob interaction
+anova(nocoda_mod_freq, nocoda_mod_phon_prob, test = 'Chisq') # yes
+
+# update final model with all main effects (this is only for plotting)
+nocoda_mod_final <- update(nocoda_mod_phon_prob, .~. + 
+                                        group + 
+                                        freq_sc + 
+                                        phon_prob_sc + 1)
+
+# summary of final model for reporting (no main effects)
+summary(nocoda_mod_phon_prob)
+
+
+# Coda, syl 1 offset ----------------------------------------------------------
+coda <- all_data %>% 
+  filter(., coda == 1, landmark == 'word3_c3') %>% 
+  mutate(., group = fct_relevel(group, 'ss'))
+
+coda_mod_null <- glmer(
+  cbind(targetCount, distractorCount) ~ - 1 +
+    (1 + wm_c | participant) + 
+    (0 + wm_c + freq_sc + phon_prob_sc | target), 
+  data = coda, 
+  control = glmerControl(optimizer = 'bobyqa', optCtrl = list(maxfun = 3e5)),
+  family = 'binomial')
+
+
+# add group:wm interaction
+coda_mod_wm <- update(coda_mod_null, .~. + group:wm_c)
+
+# test group:wm interaction
+anova(coda_mod_null, coda_mod_wm, test = 'Chisq') # no
+
+# add group:freq interaction
+coda_mod_freq <- update(coda_mod_null, .~. + group:freq_sc)
+
+# test group:freq interaction
+anova(coda_mod_wm, coda_mod_freq, test = 'Chisq') # yes
+
+# add group:phon_prob interaction
+coda_mod_phon_prob <- update(coda_mod_freq, .~. + group:phon_prob_sc)
+
+# test group:phon_prob interaction
+anova(coda_mod_freq, coda_mod_phon_prob, test = 'Chisq') # yes
+
+# update final model with main effects (for plotting)
+coda_mod_final <- update(coda_mod_phon_prob, .~. + 
+                                        group + 
+                                        freq_sc + 
+                                        phon_prob_sc + 1)
+
+summary(coda_mod_phon_prob)
+
+```
+
+
+
+
+
+## Phonological short-term memory
+
+Note: this is separate from main analysis because there is not data from SS 
+group. 
+
+```{r, 'pstm-learners', echo=F, message=F}
+
+pstm_learners_clean <- pstm_df %>% 
+  filter(., !is.na(ID), ID != 'LA07') %>% 
+  separate(., ID, into = c("group", "trash"), sep = 2, remove = F) %>% 
+  mutate(., group = gsub("[0-9]", "", paste(.$group))) %>% 
+  filter(., group %in% c("L", "LA")) %>% 
+  dplyr::select(., participant = ID, group, pstm = PSTM, -trash) %>% 
+  na.omit(.) %>% 
+  mutate(., group = fct_recode(group, 'lb' = 'L', 'la' = 'LA'), 
+            pstm = as.numeric(pstm), 
+            pstm_c = pstm - mean(pstm), 
+            idnum = stringr::str_sub(participant, start = -2)) %>% 
+  unite(., participant, c('group', 'idnum'), remove = F, sep = '') %>% 
+  dplyr::select(-idnum)
+  
+
+# missing from wm, but in PSTM: HS11 LA07
+
+lb_la_pstm <- learners %>% 
+  mutate(., group = as.factor(group)) %>% 
+  filter(., group %in% c("lb", "la")) %>% 
+  left_join(., pstm_learners_clean) %>% 
+  na.omit(.)
+```
+
+First check for homogeneity of variance. 
+
+```{r, 'lb-la-homo-var'}
+pstm_learners_clean %>% 
+  bartlett.test(pstm_c ~ group, data = .)
+
+
+
+pstm_learners_clean %>% 
+  na.omit(.) %>% 
+  ggplot(., aes(x = group, y = pstm_c, label = participant)) + 
+    geom_text() + 
+    stat_summary(fun.data = mean_sdl, geom = 'pointrange')
+```
+
+Groups look ok. Might have to take some out. 
+
+
+```{r, 'learner-pstm-mods', warning=F, echo=F}
+
+# No coda, syl 2 onset --------------------------------------------------------
+lb_la_pstm_no_coda <- lb_la_pstm %>% 
+  filter(., coda == 0 & landmark == 'word3_c2') %>% 
+  mutate(., group = fct_relevel(group, 'la')) %>% 
+  na.omit(.)
+
+lb_la_pstm_no_coda_mod_null <- glmer(
+  cbind(targetCount, distractorCount) ~ - 1 +
+                                        (1 + pstm_c | participant) + 
+                                        (1 + pstm_c | target), 
+  data = lb_la_pstm_no_coda, 
+  control = glmerControl(optimizer = 'bobyqa'),
+  family = 'binomial')
+
+
+lb_la_pstm_no_coda_mod_full <- update(lb_la_pstm_no_coda_mod_null, .~. + group:pstm_c)
+#anova(lb_la_pstm_no_coda_mod_null, lb_la_pstm_no_coda_mod_full) # no interaction
+
+lb_la_pstm_no_coda_mod_final <- update(lb_la_pstm_no_coda_mod_full, .~. + group + pstm_c + 1)
+
+
+summary(lb_la_pstm_no_coda_mod_full)
+# goose egg
+
+# Coda, syl 1 offset ----------------------------------------------------------
+lb_la_pstm_coda <- lb_la_pstm %>% 
+  filter(., coda == 1, landmark == 'word3_c3') %>% 
+  mutate(., group = fct_relevel(group, 'la'), 
+            participant = as.factor(participant)) %>% 
+  na.omit(.)
+
+lb_la_pstm_coda_mod_null <- glmer(
+  cbind(targetCount, distractorCount) ~ - 1 +
+                                        (1 + pstm_c | participant) + 
+                                        (1 + pstm_c | target), 
+  data = lb_la_pstm_coda, 
+  control = glmerControl(optimizer = 'bobyqa'),
+  family = 'binomial')
+
+lb_la_pstm_coda_mod_full <- update(lb_la_pstm_coda_mod_null, .~. + group:pstm_c)
+#anova(lb_la_pstm_coda_mod_null, lb_la_pstm_coda_mod_full) # no interaction
+
+lb_la_pstm_coda_mod_final <- update(lb_la_pstm_coda_mod_full, .~. + group + pstm_c + 1)
+
+summary(lb_la_pstm_coda_mod_full)
+# another goose egg
+```
+
+## Learners summary
+
+**Without coda**: 
+
+- The native speakers fixate on targets above chance at the offset of the first 
+syllable. 
+- Advanced learners fixate on targets as well by the time they have heard the 
+target suffix. 
+- All three groups fixate on targets above chance by the following word.
+- No effect of working memory for any groups. 
+- Effects of word frequency (negative) but only for native monolinguals (?)
+- Effects of phonotactic probability (postive). 
+- No effect of phonological short-term memory for learners. 
+
+**With coda**: 
+
+- Native speakers fixate on targets above chance at the onset of the coda. 
+- Advanced learners fixate on targets above chance by the offset of the target 
+syllable. 
+- All three groups fixate on targets above chance by the following word. 
+- No effect of working memory.
+- No effect of frequency.. might be negatively correlated with target fixations 
+for the advanced learners (p = 0.59). Lots of variability. We need to think 
+about this. 
+- No effect of phonotactic probability. Positive trend for LA (p = 0.89)
+- No effect of phonological short-term memory.
+
+
+NOCODA
+
+|                      | Estimate | Std. Error | z value |    p     |     |
+| :------------------- | -------: | ---------: | ------: | -------: | :-- |
+| groupss:freq_sc      | -1.59469 |    0.40532 |  -3.934 | 8.34e-05 | *** |
+| groupla:freq_sc      | -0.09599 |    0.39645 |  -0.242 |    0.809 |     |
+| groupss:phon_prob_sc |  2.03925 |    0.39478 |   5.165 | 2.40e-07 | *** |
+| groupla:phon_prob_sc | -0.22547 |    0.36490 |  -0.618 |    0.537 |     |
+
+CODA
+
+|                      |  Estimate | Std. Error | z value |    P     |     |
+| :------------------- | --------: | ---------: | ------: | -------: | :-- |
+| groupss:freq_sc      |  0.005428 |   0.486499 |   0.011 | 0.991098 |     |
+| groupla:freq_sc      | -0.927648 |   0.491681 |  -1.887 | 0.059203 | .   |
+| groupss:phon_prob_sc |  0.519260 |   0.359096 |   1.446 | 0.148171 |     |
+| groupla:phon_prob_sc |  0.614744 |   0.362422 |   1.696 | 0.089846 | .   |
+
+To think about: we might have an explanation for the SS/LA difference in coda 
+vs. no coda targets: SS use phonotactic probability/frequency in the no coda 
+context (which helps because apparently it is the harder context of the two). 
+LA do not. That said, there is not effect in the coda context for natives, but 
+that could be because they don't need it there... they have more time, cues, 
+something?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\clearpage
+
+# Late vs. early bilinguals and native (monolingual) controls
+
+## Do they predict above chance?
+
+Same analysis as previously described. 
+
+```{r, 'predict-above-chance-heritage', cache=TRUE}
+
+# Model degrees of freedom
+heritage_mod_df <- 72
+
+heritage_mods <- heritage %>% 
+  filter(., !(landmark %in% c('start_sentence', 'word2_c1v1', 
+                              'end_sentence'))) %>% 
+  group_by(., participant, group, coda, landmark) %>% 
+  summarize(., target_fix = mean(targetProp)) %>% 
+  ungroup(.) %>% 
+  group_by(., landmark, coda) %>% 
+  do(tidy(lm(I(target_fix - 0.5) ~ -1 + group, data = .), conf.int = T, 
+          conf.level = 0.99)) %>% 
+  mutate(., p_adj = pt(statistic, heritage_mod_df, lower = F), 
+            p_adj = formatC(p_adj, digits = 7, format = "f"), 
+            sig = if_else(p_adj < 0.05, true = "*", false = " ")) %>% 
+  ungroup(.) %>% 
+  mutate(., landmark = fct_relevel(landmark, 
+                                   'word3_c1v1', 'word3_20msafterv1', 
+                                   'word3_c2', 'word3_c3', 'word3_suffix')) %>% 
+  arrange(., coda, landmark)
+```
+
+```{r, 'heritage-mods-ouput', echo=F, results='asis'}
+
+# Format mods into LaTeX table ------------------------------------------------
+heritage_mods %>% 
+  filter(., landmark != 'word5') %>% 
+  dplyr::select(-p.value, -coda) %>% 
+  slice(., -c(10:12)) %>% 
+  mutate(., term = fct_recode(term, 'la' = 'groupla', 'hs' = 'grouphs', 
+                                    'ss' = 'groupss')) %>% 
+  kable(., format = 'latex', digits = 2, booktabs = T, escape = T, 
+           caption = "Model output", align = c('l', rep('r', 8), 'l')) %>% 
+  kable_styling(., font_size = 9, latex_options = "hold_position") %>% 
+  collapse_rows(., columns = 1, latex_hline = "none", 
+                   row_group_label_position = 'identity') %>% 
+  group_rows("No-coda targets", 1, 15) %>% 
+  group_rows("Coda targets", 16, 33) %>% 
+  footnote(., escape = F, 
+              general = c("Parameter estimates show average target fixation 
+                           minus 0.5.", 
+                          "P-values represent one-sided t-tests.", 
+                          "\\\\textbf{word3\\\\_c2} represents the 2nd 
+                           syllable onset for no-coda targets and the coda 
+                           onset for coda targets."))
+```
+
+
+\clearpage
+
+## Landmark plots
+
+
+```{r, 'heritage-plots', echo=F, engine.opts='tikz', fig.height=4.25, cache=TRUE}
+
+# Learner labs and axis -------------------------------------------------------
+group_labs_heritage <- c('HS', 'LA', 'SS')
+
+
+# Without coda
+no_coda_landmarks_heritage <- c('word3_c1v1', 'word3_20msafterv1', 'word3_c2', 
+                                'word3_suffix', 'word4_c1v1')
+
+coda_landmarks_heritage <- c('word3_c1v1', 'word3_20msafterv1', 'word3_c2', 
+                             'word3_c3', 'word3_suffix', 'word4_c1v1')
+
+no_coda_x_heritage <- c('Target word\nonset', '20 ms\nafter V1', 
+                        'Syllable 1\noffset', 'V2 (suffix)', 'Following\nword')
+
+coda_x_heritage <- c('Target word\nonset', '20 ms\nafter V1', 'Coda onset', 
+                     'Syllable 1\noffset', 'V2 (suffix)', 'Following\nword')
+
+# No coda plots ---------------------------------------------------------------
+heritage_mods %>% 
+  filter(., coda == 0, landmark %in% no_coda_landmarks_heritage) %>% 
+  ggplot(., aes(x = landmark, y = estimate + 0.5, dodge = term, 
+                fill = term, shape = term)) + 
+    geom_hline(yintercept = 0.5, lty = 3) + 
+    geom_linerange(aes(ymin = conf.low + 0.5, ymax = conf.high + 0.5), 
+                   position = position_dodge(0.5)) + 
+    geom_point(position = position_dodge(0.5), size = 4) + 
+    scale_shape_manual(name = '', values = 21:23, 
+                       labels = group_labs_heritage) + 
+    scale_fill_brewer(palette = "Set1", name = '', 
+                      labels = group_labs_heritage) + 
+    ylim(0.25, 1) + 
+    scale_x_discrete(labels = no_coda_x_heritage) + 
+    labs(y = 'Target fixations', x = 'Landmark', title = 'No coda', 
+         caption = 'Mean +/- 99% CI') + 
+    my_theme()
+
+# Coda plots ------------------------------------------------------------------
+heritage_mods %>% 
+  filter(., coda == 1, 
+            landmark %in% coda_landmarks_heritage) %>% 
+  ggplot(., aes(x = landmark, y = estimate + 0.5, dodge = term, 
+                fill = term, shape = term)) + 
+    geom_hline(yintercept = 0.5, lty = 3) + 
+    geom_linerange(aes(ymin = conf.low + 0.5, ymax = conf.high + 0.5), 
+                   position = position_dodge(0.5)) + 
+    geom_point(position = position_dodge(0.5), size = 4) + 
+    scale_shape_manual(name = '', values = 21:23, 
+                       labels = group_labs_heritage) + 
+    scale_fill_brewer(palette = "Set1", name = '', 
+                      labels = group_labs_heritage) + 
+    ylim(0.25, 1) + 
+    scale_x_discrete(labels = coda_x_heritage) + 
+    labs(y = 'Target fixations', x = 'Landmark', title = 'Coda', 
+         caption = 'Mean +/- 99% CI') + 
+    my_theme()
+```
+
+
+
+
+
+
+
+
+## Are working memory, frequency, or phonological frequency factors?
+
+Check for homogeneity of variance. 
+
+
+```{r, 'heritage-homo-var'}
+wm_df_heritage %>% 
+  filter(., group %in% c("LA", "HS", "S")) %>% 
+  bartlett.test(WM ~ group, data = .)
+```
+
+Looks good. 
+
+<!-- analysis comes from 'main analysis' above -->
+
+
+## Phonological short-term memory
+
+```{r, 'pstm-temp', echo=F, warning=F, eval=T}
+
+pstm_clean <- pstm_df %>% 
+  filter(., !is.na(ID), ID != 'LA07') %>% 
+  separate(., ID, into = c("group", "trash"), sep = 2, remove = F) %>% 
+  filter(., group %in% c("HS", "LA")) %>% 
+  dplyr::select(., participant = ID, group, pstm = PSTM, -trash) %>% 
+  na.omit(.) %>% 
+  mutate(., group = tolower(group), 
+            pstm = as.numeric(pstm), 
+            pstm_c = pstm - mean(pstm))
+
+# missing from wm, but in PSTM: HS11 LA07
+
+hs_la_pstm <- heritage %>% 
+  filter(., group %in% c("hs", "la")) %>% 
+  left_join(., pstm_clean) %>% 
+  na.omit(.)
+```
+
+First check for homogeneity of variance. 
+
+```{r, 'hs-la-homo-var', eval=T}
+pstm_clean %>% 
+  bartlett.test(pstm_c ~ group, data = .)
+
+
+
+pstm_clean %>% 
+  na.omit(.) %>% 
+  ggplot(., aes(x = group, y = pstm_c, label = participant)) + 
+    geom_text() + 
+    stat_summary(fun.data = mean_sdl, geom = 'pointrange')
+```
+
+Groups look good. 
+
+
+```{r, 'pstm-mods', echo=F, eval=T}
+
+# No coda, syl 2 onset --------------------------------------------------------
+hs_la_pstm_no_coda <- hs_la_pstm %>% 
+  filter(., coda == 0 & landmark == 'word3_c2') %>% 
+  mutate(., group = fct_relevel(group, 'la')) %>% 
+  na.omit(.)
+
+hs_la_pstm_no_coda_mod_null <- glmer(
+  cbind(targetCount, distractorCount) ~ - 1 +
+                                        (1 + pstm_c | participant) + 
+                                        (1 + pstm_c | target), 
+  data = hs_la_pstm_no_coda, 
+  control = glmerControl(optimizer = 'bobyqa'),
+  family = 'binomial')
+
+hs_la_pstm_no_coda_mod_full <- update(hs_la_pstm_no_coda_mod_null, .~. + group:pstm_c)
+#anova(hs_la_pstm_no_coda_mod_null, hs_la_pstm_no_coda_mod_full) # no interaction
+
+hs_la_pstm_no_coda_mod_final <- update(hs_la_pstm_no_coda_mod_full, .~. + pstm_c + 1)
+
+summary(hs_la_pstm_no_coda_mod_full)
+
+# goose egg
+
+# Coda, syl 1 offset ----------------------------------------------------------
+hs_la_pstm_coda <- hs_la_pstm %>% 
+  filter(., coda == 1, landmark == 'word3_c3') %>% 
+  mutate(., group = fct_relevel(group, 'hs')) %>% 
+  na.omit(.)
+
+hs_la_pstm_coda_mod_null <- glmer(
+  cbind(targetCount, distractorCount) ~ - 1 +
+                                        (1 + pstm_c | participant) + 
+                                        (1 + pstm_c | target), 
+  data = hs_la_pstm_coda, 
+  control = glmerControl(optimizer = 'bobyqa'),
+  family = 'binomial')
+
+hs_la_pstm_coda_mod_full <- update(hs_la_pstm_coda_mod_null, .~. + group:pstm_c)
+#anova(hs_la_pstm_coda_mod_null, hs_la_pstm_coda_mod_full) # no interaction
+
+hs_la_pstm_coda_mod_final <- update(hs_la_pstm_coda_mod_full, .~. + pstm_c + 1)
+
+summary(hs_la_pstm_coda_mod_full)
+```
+
+## Early/late bilinguals summary
+
+## Learners summary
+
+(note: results focus on heritage because SS and LA are discussed above)
+
+**Without coda**: 
+
+- Only monolinguals fixate on target above chance at the offset of the first 
+syllable. 
+- All three groups fixate on target above chance by the suffix.
+- No effect of working memory (a lot of variability for heritage). 
+- No ffect of freq
+- Effect of phonotactic probability (positive) for heritage.
+- No effect of PSTM.
+
+**With coda**: 
+
+- Only monolinguals fixate on targets above chance at the coda. 
+- All three groups fixate on targets above chance at the offset of the first 
+syllable. 
+- No effect of working memory.
+- No effect of freq. 
+- Effect (positive) of phonotactic probability for heritage. 
+- No effect of PSTM.
+
+(repeat table for clarity)
+
+NOCODA
+
+|                      | Estimate | Std. Error | z value |    p     |     |
+| :------------------- | -------: | ---------: | ------: | -------: | :-- |
+| groupss:freq_sc      | -1.59469 |    0.40532 |  -3.934 | 8.34e-05 | *** |
+| grouphs:freq_sc      | -0.47730 |    0.42013 |  -1.136 |    0.256 |     |
+| groupla:freq_sc      | -0.09599 |    0.39645 |  -0.242 |    0.809 |     |
+| groupss:phon_prob_sc |  2.03925 |    0.39478 |   5.165 | 2.40e-07 | *** |
+| grouphs:phon_prob_sc |  1.58342 |    0.39124 |   4.047 | 5.18e-05 | *** |
+| groupla:phon_prob_sc | -0.22547 |    0.36490 |  -0.618 |    0.537 |     |
+
+CODA
+
+|                      |  Estimate | Std. Error | z value |    P     |     |
+| :------------------- | --------: | ---------: | ------: | -------: | :-- |
+| groupss:freq_sc      |  0.005428 |   0.486499 |   0.011 | 0.991098 |     |
+| grouphs:freq_sc      | -0.364999 |   0.492130 |  -0.742 | 0.458286 |     |
+| groupla:freq_sc      | -0.927648 |   0.491681 |  -1.887 | 0.059203 | .   |
+| groupss:phon_prob_sc |  0.519260 |   0.359096 |   1.446 | 0.148171 |     |
+| grouphs:phon_prob_sc |  1.253324 |   0.367327 |   3.412 | 0.000645 | *** |
+| groupla:phon_prob_sc |  0.614744 |   0.362422 |   1.696 | 0.089846 | .   |
+
+
+
+
+
+
+
+```{r, 'plots', echo=F, engine.opts='tikz', fig.height=4, warning=FALSE, message=FALSE, eval=F}
+
+nocoda_preds <- read_csv("./data/nocoda_preds.csv")
+coda_preds <- read_csv("./data/coda_preds.csv")
+
+
+no_coda %>% 
+  ggplot(., (aes(x = wm_c, y = targetProp, color = group))) + 
+    stat_summary(fun.data = mean_cl_boot, geom = 'pointrange')
+
+no_coda %>% 
+  ggplot(., (aes(x = freq_sc, y = targetProp, color = group))) + 
+    stat_summary(fun.data = mean_cl_boot, geom = 'pointrange')
+
+no_coda %>% 
+  ggplot(., (aes(x = phon_prob_sc, y = targetProp, color = group))) + 
+    stat_summary(fun.data = mean_cl_boot, geom = 'pointrange')
+
+
+coda %>% 
+  ggplot(., (aes(x = wm_c, y = targetProp, color = group))) + 
+    stat_summary(fun.data = mean_cl_boot, geom = 'pointrange')
+
+coda %>% 
+  ggplot(., (aes(x = freq_sc, y = targetProp, color = group))) + 
+    stat_summary(fun.data = mean_cl_boot, geom = 'pointrange')
+
+coda %>% 
+  ggplot(., (aes(x = phon_prob_sc, y = targetProp, color = group))) + 
+    stat_summary(fun.data = mean_cl_boot, geom = 'pointrange')
+
+```
+
+
+
+
+\clearpage
+
+# Monolingual lexical frequency/phonotactic frequency interaction
+
+
+```{r, 'mono-only-frequency', echo=F, warning=F, message=F, results='hide', cache=T}
+# Monos only, No coda, syl 2 onset --------------------------------------------
+
+freq_median <- median(all_data$freq_sc)
+phon_median <- median(all_data$phon_prob_sc)
+
+mono_no_coda <- all_data %>% 
+  filter(., coda == 0 & landmark == 'word3_c2', group == 'ss') %>% 
+  mutate(., freq_cat = if_else(freq_sc <= freq_median, "low", "high"), 
+            phon_cat = if_else(phon_prob_sc <= phon_median, "low", "high")) %>% 
+  na.omit(.)
+
+mono_mod_null <- glmer(
+  cbind(targetCount, distractorCount) ~ 1 +
+    (1 +  freq_sc + phon_prob_sc | participant) + 
+    (0 +  freq_sc | target), 
+  data = mono_no_coda, REML = F, 
+  control = glmerControl(optimizer = 'bobyqa', optCtrl = list(maxfun = 3e5)),
+  family = 'binomial')
+
+
+# add group:wm interaction
+mono_mod_freq <- update(mono_mod_null, .~. + freq_sc)
+
+# effect of freq_sc
+anova(mono_mod_null, mono_mod_freq, test = 'Chisq') # no
+
+# add phon_prob_sc
+mono_mod_phon <- update(mono_mod_null, .~. + phon_prob_sc)
+
+# effect of phon_prob_sc
+anova(mono_mod_null, mono_mod_phon, test = 'Chisq') # yes
+
+# add group:phon_prob interaction
+mono_mod_add <- update(mono_mod_freq, .~. + phon_prob_sc)
+
+# additive effect of phon_prob
+anova(mono_mod_freq, mono_mod_add, test = 'Chisq') # yes
+
+mono_mod_int <- update(mono_mod_add, .~. + freq_sc:phon_prob_sc)
+
+# interaction effect
+anova(mono_mod_add, mono_mod_int, test = 'Chisq') # yes
+
+
+# update final model with all main effects (this is only for plotting)
+mono_mod_final <- update(mono_mod_null, .~. + 
+                                        freq_sc + 
+                                        phon_prob_sc + 
+                                        freq_sc:phon_prob_sc)
+
+# summary of final model for reporting (no main effects)
+summary(mono_mod_final)
+
+
+#
+# categorical model
+#
+```
+
+
+
+```{r, 'print-int-summary', message=F, warning=F}
+tidy(mono_mod_final) %>% 
+  slice(., 1:4) %>% 
+  mutate(., p.value = p.value %>% academicWriteR::round_pval(.)) %>% 
+  kable(., format = 'latex', booktabs = T, escape = T)
+```
+
+
+```{r, 'freq-plots', cache=T, engine.opts='tikz', fig.height=4.25, echo=F}
+#library(sjPlot)
+#plot_model(mono_mod_final, type = "pred")
+#
+#library(ggeffects)
+## dat is a data frame with marginal effects
+#dat <- ggpredict(mono_mod_final, term = "freq_sc")
+#plot(dat)
+#
+#dat <- ggpredict(mono_mod_final, term = "phon_prob_sc")
+#plot(dat)
+#
+#mono_no_coda %>% 
+#  ggplot(., aes(x = phon_prob_sc, y = targetProp, color = freq_cat)) + 
+#    geom_jitter(height = 0.05, width = 0.5) + 
+#    geom_smooth(method = 'lm', fullrange = T, se = F)
+
+mono_no_coda %>% 
+  mutate(., freq_cat = fct_relevel(freq_cat, "low"), 
+            phon_cat = fct_relevel(phon_cat, "low")) %>% 
+  ggplot(., aes(x = freq_cat, y = targetProp, fill = phon_cat, 
+                dodge = phon_cat)) + 
+    stat_summary(fun.data = mean_cl_boot, geom = "pointrange", pch = 21, 
+                 size = 1.5, position = position_dodge(0.5), color = 'black') + 
+    ylim(0, 1) + 
+    scale_fill_brewer(name = "Phonological\nfrequency", palette = "Set1") + 
+    labs(title = "Monolingual Spanish speakers", 
+         subtitle = "Proportion of target looks as a function of lexical and phonological frequency", 
+         caption = "Mean +/- 95% CI", y = "Proportion target looks", 
+         x = "Lexical frequency") + 
+    my_theme()
+```
+
+What it means:  
+
+At the offset of the first syllable (before the suffix), the monolingual 
+Spanish speakers look at the target approx. 59% of the time. If we do a 
+median split of the lexical and phonological frequencies (low, high), we see 
+that the items with low lexical frequency, but high phonological frequency, 
+are driving the "above chance" difference. In other words, if it wasn't for the 
+high phonological frequency items, they likely would not be predicting above 
+chance at this point in the time course. 
+
+What we need:  
+
+Another plot that shows this same data for all the landmarks. 

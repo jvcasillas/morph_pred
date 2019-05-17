@@ -1,0 +1,17 @@
+base
+knitr
+ggplot2
+plotly
+tidyverse
+tibble
+tidyr
+readr
+purrr
+dplyr
+broom
+sjPlot
+Matrix
+lme4
+lmerTest
+gridExtra
+cowplot
