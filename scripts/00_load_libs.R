@@ -10,6 +10,7 @@ library(broom)
 library(lme4)
 library(lmerTest)
 library(foreign)
+library(patchwork)
 
 # -----------------------------------------------------------------------------
 

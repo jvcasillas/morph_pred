@@ -102,7 +102,7 @@ stress10 <- read_tsv(here("data", "raw", "stress_10ms.txt")) %>%
   # Get suffix onset label and center at 0 for each
   # participant for each item
   dplyr::select(participant, group, verb, target, condition, coda, target, bin,
-         targetProp, eLog, wts, word3_suffix) %>%
+         targetCount, targetProp, eLog, wts, word3_suffix) %>%
   gather(., landmark, lm_bin, -c(participant:wts)) %>%
   mutate(., lm_bin = (lm_bin / 10) %>% ceiling(.),
             t_onset = if_else(bin == lm_bin, TRUE, FALSE)) %>%
