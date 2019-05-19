@@ -102,10 +102,13 @@ stress50 <- read_tsv(here("data", "raw", "stress_50ms.txt")) %>%
   # Get suffix onset label and center at 0 for each
   # participant for each item
   dplyr::select(participant, group, verb, target, condition, coda, target, bin,
-                targetProp, eLog, wts, word3_suffix) %>%
+                targetCount, targetProp, eLog, wts, word3_c2, word3_c3) %>%
   gather(., landmark, lm_bin, -c(participant:wts)) %>%
   mutate(., lm_bin = (lm_bin / 50) %>% ceiling(.),
          t_onset = if_else(bin == lm_bin, TRUE, FALSE)) %>%
+  # Must remove word3_c2 for coda words (its the start of the coda, unnecessary)
+  # and remove word3_c3 for non coda words (they dont have c3, lm_bin = 0)
+  filter(coda == 1 & landmark == "word3_c3" | coda == 0 & lm_bin != 0) %>%
   group_by(., participant, target) %>%
   mutate(., time_zero = onset_pupil(bin, t_onset, event = c("TRUE"))) %>%
   ungroup(.) %>%
