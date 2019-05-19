@@ -21,6 +21,12 @@ el chico sa         c        o            la
          word3_C1V1 word3_C2 word3_suffix word4_C1V1
 
 
+target syllable starts: 
+ - with coda:    w3_c3
+ - without coda: w3_c2
+
+
+
 DURATION
 El cocinero escogió    col                                                    para  el    menú.
 w1 w2       w3         w4                                                     w5    w6    w7

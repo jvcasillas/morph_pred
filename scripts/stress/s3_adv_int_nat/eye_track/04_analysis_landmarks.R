@@ -1,3 +1,17 @@
+# Load wm data and combine with stress_subset_0 (proportion data)
+# in order to add working memory as a covariate
+wm_df <- read_csv(here("data", "raw", "wm_all.csv")) %>%
+  filter(., !(group %in% c("HS", "L")),
+         !(participant %in% c('L01', 'L02', 'L03', 'L04', 'L05',
+                              'L06', 'L07', 'L08', 'L09', 'L10',
+                              'L15', 'L20', 'L21', 'L22', 'L23',
+                              'L26', 'L30', 'L31', 'L33', 'La04',
+                              'LA06', 'LA07', 'LA14')))
+
+scale_this <- function(x) as.vector(scale(x))
+
+
+
 
 glimpse(df_stress)
 glimpse(df_short_temp)
