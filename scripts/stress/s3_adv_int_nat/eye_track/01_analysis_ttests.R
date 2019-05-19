@@ -17,6 +17,11 @@ source(here::here("scripts", "01_load_data.R"))
 
 
 
+
+
+
+# Data prep -------------------------------------------------------------------
+
 # Create stress subset that incldues interpreters, late advanced and natives
 # Must check on the participants that are removed
 # We want to analyze proportion of target gaze at target onset
@@ -26,14 +31,36 @@ source(here::here("scripts", "01_load_data.R"))
 
 df_short <- stress10 %>%
   filter(., group %in% c('int', 'la', 'ss'),
-            !participant %in% c('L01', 'L02', 'L03', 'L04', 'L05',
-                                'L06', 'L07', 'L08', 'L09', 'L10',
-                                'L15', 'L20', 'L21', 'L22', 'L23',
-                                'L26', 'L30', 'L31', 'L33', 'LA04',
-                                'LA06', 'LA07', 'LA14'),
+            !participant %in% c("L01", "L02", "L03", "L04", "L05",
+                                "L06", "L07", "L08", "L09", "L10",
+                                "L15", "L20", "L21", "L22", "L23",
+                                "L26", "L30", "L31", "L33", "LA04",
+                                "LA06", "LA09", "LA14", "LA15", "LA19"),
             time_zero == 20)
 
 
+# Old vector of removed participants
+# c('L01', 'L02', 'L03', 'L04', 'L05',
+#   'L06', 'L07', 'L08', 'L09', 'L10',
+#   'L15', 'L20', 'L21', 'L22', 'L23',
+#   'L26', 'L30', 'L31', 'L33', 'LA04',
+#   'LA06', 'LA07', 'LA14')
+
+# New vector of participants to include
+# c("LA01", "LA02", "LA03", "LA05", "LA07",
+#   "LA08", "LA10", "LA11", "LA12", "LA13",
+#   "LA16", "LA17", "LA18", "LA20", "LA21",
+#   "LA22", "LA23", "LA24", "LA25", "LA26",
+#   "LA27", "LA28", "LA29", "LA30", "LA31")
+
+# -----------------------------------------------------------------------------
+
+
+
+
+
+
+# T-tests ---------------------------------------------------------------------
 
 # Quick and dirty mean of target fixations as a function of
 # group and condition (stressed, unstressed *1st syllable*)
@@ -76,6 +103,8 @@ saveRDS(stress_ttest, "./reports/stress/stress_int/mods/stress_ttest.rds", compr
 #    la unstressed 0.5841931 2.12785440 0.02149710485        26 0.4861208 N.S.
 #    ss   stressed 0.6322078 2.79896749 0.00537726129        21 0.5132880    *
 #    ss unstressed 0.7235390 4.76754875 0.00005197742        21 0.6054925    *
+
+# -----------------------------------------------------------------------------
 
 
 

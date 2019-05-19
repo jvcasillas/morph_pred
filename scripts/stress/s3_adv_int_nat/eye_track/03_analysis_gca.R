@@ -1,69 +1,46 @@
-
-
-# read data
-df_stress <- read_csv("./mySources/data/clean/stressBIN10iaClean.csv") %>%
-  filter(., corr == 1,
-            group %in% c('int', 'la', 'ss'),
-            !participant %in% c('L01', 'L02', 'L03', 'L04', 'L05',
-                                 'L06', 'L07', 'L08', 'L09', 'L10',
-                                 'L15', 'L20', 'L21', 'L22', 'L23',
-                                 'L26', 'L30', 'L31', 'L33', 'LA04',
-                                 'LA06', 'LA07', 'LA14'))
-
-
-# Load wm data and combine with stress_subset_0 (proportion data)
-# in order to add working memory as a covariate
-wm_df <- read_csv("./mySources/data/raw/wm_all.csv") %>%
-         filter(., !(group %in% c("HS", "L")),
-                   !(participant %in% c('L01', 'L02', 'L03', 'L04', 'L05',
-                                        'L06', 'L07', 'L08', 'L09', 'L10',
-                                        'L15', 'L20', 'L21', 'L22', 'L23',
-                                        'L26', 'L30', 'L31', 'L33', 'La04',
-                                        'LA06', 'LA07', 'LA14')))
-
-scale_this <- function(x) as.vector(scale(x))
+# Growth curve analyisis ------------------------------------------------------
+#
+# - Question 1: Are the groups different from each other in when they begin
+#   to fixate on the target?
+#     - test 3 groups at each level of 'condition'
+#     - hypothesis: SS has steeper slope for both conditions
+# - Question 2: W/in groups, is the there a difference between
+#   oxytone/paroxytone items?
+#     - test oxytone vs. paroxytone for each group
+#     - hypothesis: steeper slope/earlier break in oxytone condition
+#
+# -----------------------------------------------------------------------------
 
 
 
 
 
-## @knitr stressGCA
+# Load data -------------------------------------------------------------------
+
+source(here::here("scripts", "01_load_data.R"))
+
+# -----------------------------------------------------------------------------
 
 
-####################################################
-# GROWTH CURVE ANALYSIS                            #
-# - Question 1: Are the groups different from      #
-#   each other in when they begin to fixate        #
-#   on the target?                                 #
-#     - test 3 groups at each level of 'condition' #
-#     - hypothesis: SS has steeper slope for both  #
-#       conditions                                 #
-# - Question 2: W/in groups, is the there a        #
-#   difference between oxytone/paroxyton           #
-#   items?                                         #
-#     - test oxytone vs. paroxytone for each group #
-#     - hypothesis: steeper slope/earlier break in #
-#       oxytone condition                          #
-####################################################
 
-# Prep
+
+
+
+
+# Data prep -------------------------------------------------------------------
+
 # - subset using time course
 #    - we want to find the earliest target word onset
 #    - we will substract 'a little more' and use that
 #      as the starting point
 #    - we already have this information in the 'twOnsetAdj'
 #      dataframe
-
-# print(twOnsetAdj)
-# min(twOnsetAdj$twOnsetAdj)
-
 #    - the lowest target word onset is: 'firma' @ -51.3
 #    - thus we can use -60 binAdj as the starting point
 #      and be sure we are including the entire target word
 #    - we can also do a little higher to lighten the models (-50)
 stress_gc_subset <- filter(df_stress_50, binTonsetAlign >= 33 &
-                                         binTonsetAlign <= 43) %>% as.data.frame
-
+                             binTonsetAlign <= 43) %>% as.data.frame
 
 # - Readjust time course
 #    - now we will make the time course positive, starting at 1
@@ -80,6 +57,23 @@ t <- poly(min(stress_gc_subset$binGC):max(stress_gc_subset$binGC), 4)
 stress_gc_subset[, paste('ot', 1:4, sep = "")] <- t[stress_gc_subset$binGC, 1:4]
 
 # glimpse(lsrl_gc_subset)
+
+
+df_stress <- stress10 %>%
+  filter(., group %in% c('int', 'la', 'ss'),
+            !participant %in% c("L01", "L02", "L03", "L04", "L05",
+                                "L06", "L07", "L08", "L09", "L10",
+                                "L15", "L20", "L21", "L22", "L23",
+                                "L26", "L30", "L31", "L33", "LA04",
+                                "LA06", "LA09", "LA14", "LA15", "LA19"))
+
+# -----------------------------------------------------------------------------
+
+
+
+
+
+
 
 
 
@@ -377,11 +371,11 @@ condition_namesGCAMod <- c(
 
 df_stress_50 <- stress50 %>%
   filter(.,  group %in% c('int', 'la', 'ss'),
-             !participant %in% c('L01', 'L02', 'L03', 'L04', 'L05',
-                                 'L06', 'L07', 'L08', 'L09', 'L10',
-                                 'L15', 'L20', 'L21', 'L22', 'L23',
-                                 'L26', 'L30', 'L31', 'L33', 'LA04',
-                                 'LA06', 'LA07', 'LA14'))
+             !participant %in% c("L01", "L02", "L03", "L04", "L05",
+                                 "L06", "L07", "L08", "L09", "L10",
+                                 "L15", "L20", "L21", "L22", "L23",
+                                 "L26", "L30", "L31", "L33", "LA04",
+                                 "LA06", "LA09", "LA14", "LA15", "LA19"))
 
 df_stress_50 %>%
   group_by(group) %>%
@@ -401,7 +395,7 @@ condition_names <- c(
     filter(., time_zero >= -10, time_zero <= 20) %>%
     mutate(., group = fct_relevel(group, "ss", "la", "int")) %>%
     ggplot(., aes(x = time_zero, y = targetProp, color = group, shape = group)) +
-    facet_grid(. ~ coda, labeller = as_labeller(condition_names)) +
+    facet_grid(condition ~ coda, labeller = as_labeller(condition_names)) +
     geom_hline(yintercept = 0.5, color = 'white', size = 3) +
     geom_vline(xintercept = 0, color = 'grey40', lty = 3) +
     geom_vline(xintercept = 4, color = 'grey40', lty = 3) +

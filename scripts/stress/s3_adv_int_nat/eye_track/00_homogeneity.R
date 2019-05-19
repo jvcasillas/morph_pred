@@ -1,10 +1,12 @@
 library(tidyverse); library("TOSTER")
 
-# Load data 
-dem_all <- read_csv("./1DurStress/data/dur_stress_demographics.csv")
+# Load data
+dem_all <- read_csv("./data/raw/dur_stress_demographics.csv")
 
-# Remove participant IN17 because we lost eye-tracking data (file was corrupted)
-# We remove LA09 and LA15 to make the groups homogenous in L2 proficiency (DELE)
+# Remove participant IN17 because we lost eye-tracking data
+# (file was corrupted)
+# We remove LA09 and LA15 to make the groups homogenous in L2
+# proficiency (DELE)
 
 dem_all <- dem_all %>%
   filter(., id != "IN17") %>%
@@ -12,7 +14,13 @@ dem_all <- dem_all %>%
 
 unique(dem_all$id)
 
-# Check info: id, group, dele, pstm, wm, age, aoa_l2, months_abroad, 
+dem_all %>%
+  group_by(group) %>%
+  summarize(n = n_distinct(id))
+
+
+
+# Check info: id, group, dele, pstm, wm, age, aoa_l2, months_abroad,
 # l1_use_week, l2_use_week, years_word_int
 
 glimpse(dem_all)
@@ -23,28 +31,28 @@ glimpse(dem_all)
 
 dem_all$wm <- as.numeric(dem_all$wm)
 
-# Create a table with mean + sd for: wm, pstm, dele, aoa_l2, months_abroad, 
+# Create a table with mean + sd for: wm, pstm, dele, aoa_l2, months_abroad,
 # l1_use_week, l2_use_week, years_word_int
 
-dem_all %>% 
-  group_by(., group) %>% 
-  summarise(., wm = round(mean(wm, na.rm=TRUE),2), 
+dem_all %>%
+  group_by(., group) %>%
+  summarise(., wm = round(mean(wm, na.rm=TRUE),2),
             wm_sd = round(sd(wm, na.rm=TRUE),2),
-            pstm = round(mean(pstm),2), 
+            pstm = round(mean(pstm),2),
             pstm_sd = round(sd(pstm),2),
-            dele = round(mean(dele),2), 
-            dele_sd = round(sd(dele),2), 
+            dele = round(mean(dele),2),
+            dele_sd = round(sd(dele),2),
             n =  n_distinct(id)) %>% knitr::kable()
 
 dem_all %>%
   group_by(., group) %>%
-  summarise(aoa_l2 = round(mean(aoa_l2),2), 
+  summarise(aoa_l2 = round(mean(aoa_l2),2),
             aoa_l2_sd = round(sd(aoa_l2),2),
-            abroad = round(mean(months_abroad),2), 
+            abroad = round(mean(months_abroad),2),
             abroad_sd = round(sd(months_abroad),2),
-            l1 = round(mean(l1_use_week),2), 
+            l1 = round(mean(l1_use_week),2),
             l1_sd = round(sd(l1_use_week),2),
-            l2 = round(mean(l2_use_week),2), 
+            l2 = round(mean(l2_use_week),2),
             l2_sd = round(sd(l2_use_week),2),
             n = n_distinct(id)) %>% knitr::kable()
 
@@ -81,48 +89,48 @@ bartlett.test(l2_use_week ~ group, data = dem_all)
 # all good
 TOSTtwo(m1 = 10.27, sd1 = 2.98, n1 = 22, # in
         m2 = 9.00, sd2 = 2.15, n2 = 25, # la
-        low_eqbound_d = -0.3, 
-        high_eqbound_d = 0.3, 
+        low_eqbound_d = -0.3,
+        high_eqbound_d = 0.3,
         alpha = 0.05)
 
 # pstm toast la vs in
 # all good
 TOSTtwo(m1 = 8.59, sd1 = 1.47, n1 = 22, # in
         m2 = 7.96, sd2 = 1.24, n2 = 25, # la
-        low_eqbound_d = -0.3, 
-        high_eqbound_d = 0.3, 
+        low_eqbound_d = -0.3,
+        high_eqbound_d = 0.3,
         alpha = 0.05)
 
 # dele toast la vs in
 # all good now that we removed LA09 and LA15
 TOSTtwo(m1 = 48.86, sd1 = 4.32, n1 = 22, # in
         m2 = 46.60, sd2 = 3.83, n2 = 25, # la
-        low_eqbound_d = -0.3, 
-        high_eqbound_d = 0.3, 
+        low_eqbound_d = -0.3,
+        high_eqbound_d = 0.3,
         alpha = 0.05)
 
 # age of acquistion toast la vs in
 # all good
 TOSTtwo(m1 = 15.14, sd1 = 4.46, n1 = 22, # in
         m2 = 13.72, sd2 = 3.20, n2 = 25, # la
-        low_eqbound_d = -0.3, 
-        high_eqbound_d = 0.3, 
+        low_eqbound_d = -0.3,
+        high_eqbound_d = 0.3,
         alpha = 0.05)
 
 # time abroad toast la vs in
 # all good, but Barlett is not ok, there's a lot of variance in the int group, what do we do here?
-TOSTtwo(m1 = 34.14, sd1 = 86.99, n1 = 22, # in 
-        m2 = 12.68, sd2 = 15.13, n2 = 25, # la 
-        low_eqbound_d = -0.3, 
-        high_eqbound_d = 0.3, 
+TOSTtwo(m1 = 34.14, sd1 = 86.99, n1 = 22, # in
+        m2 = 12.68, sd2 = 15.13, n2 = 25, # la
+        low_eqbound_d = -0.3,
+        high_eqbound_d = 0.3,
         alpha = 0.05)
 
 # l1 use in a normal week toast la vs in
 # They are different, Interpreters use less their L1
 TOSTtwo(m1 = 64.09, sd1 = 11.51, n1 = 22, # in
         m2 = 72.76, sd2 = 12.91, n2 = 25, # la
-        low_eqbound_d = -0.3, 
-        high_eqbound_d = 0.3, 
+        low_eqbound_d = -0.3,
+        high_eqbound_d = 0.3,
         alpha = 0.05)
 
 # l2 use in a normal week toast la vs in
@@ -130,6 +138,6 @@ TOSTtwo(m1 = 64.09, sd1 = 11.51, n1 = 22, # in
 # for example, the United Nations interpreters speak French and use it more often than Spanish
 TOSTtwo(m1 = 31.59, sd1 = 14.59, n1 = 22, # in
         m2 = 27.24, sd2 = 12.91, n2 = 25, # la
-        low_eqbound_d = -0.3, 
-        high_eqbound_d = 0.3, 
+        low_eqbound_d = -0.3,
+        high_eqbound_d = 0.3,
         alpha = 0.05)
