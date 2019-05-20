@@ -10,10 +10,28 @@
 
 
 
-# Load data -------------------------------------------------------------------
+# Load data and models --------------------------------------------------------
 
 source(here::here("scripts", "01_load_data.R"))
 
+prop_0_mod_0     <- readRDS(here("models", "stress", "s3_adv_int_nat",
+                                 "eye_track", "glmm", "0_prop_0_mod_0.rds"))
+prop_0_mod_group <- readRDS(here("models", "stress", "s3_adv_int_nat",
+                                 "eye_track", "glmm", "1_prop_0_mod_group.rds"))
+prop_0_mod_cond  <- readRDS(here("models", "stress", "s3_adv_int_nat",
+                                 "eye_track", "glmm", "2_prop_0_mod_cond.rds"))
+prop_0_mod_coda  <- readRDS(here("models", "stress", "s3_adv_int_nat",
+                                 "eye_track", "glmm", "3_prop_0_mod_coda.rds"))
+prop_0_mod_int1  <- readRDS(here("models", "stress", "s3_adv_int_nat",
+                                 "eye_track", "glmm", "4_prop_0_mod_int1.rds"))
+prop_0_mod_int2  <- readRDS(here("models", "stress", "s3_adv_int_nat",
+                                 "eye_track", "glmm", "5_prop_0_mod_int2.rds"))
+prop_0_mod_int3  <- readRDS(here("models", "stress", "s3_adv_int_nat",
+                                 "eye_track", "glmm", "6_prop_0_mod_int3.rds"))
+prop_0_mod_full  <- readRDS(here("models", "stress", "s3_adv_int_nat",
+                                 "eye_track", "glmm", "7_prop_0_mod_full.rds"))
+prop_0_mod_final <- readRDS(here("models", "stress", "s3_adv_int_nat",
+                                 "eye_track", "glmm", "8_prop_0_mod_final.rds"))
 # -----------------------------------------------------------------------------
 
 
@@ -52,9 +70,11 @@ df_stress <- stress10 %>%
 
 # Random effects building -----------------------------------------------------
 
+if(F) {
+
 prop_0_ranefA <- glmer(cbind(targetCount, 10 - targetCount) ~ 1 +
                     (1 | participant),
-                    data = df_stress, REML = F, family = 'binomial',
+                    data = df_stress, family = 'binomial',
                     control = glmerControl(optimizer = 'bobyqa'))
 
 prop_0_ranefB <- glmer(cbind(targetCount, 10 - targetCount) ~ 1 +
@@ -88,6 +108,7 @@ prop_0_ranefE <- glmer(cbind(targetCount, 10 - targetCount) ~ 1 +
                     control = glmerControl(optimizer = 'bobyqa'))
 
 anova(prop_0_ranefD, prop_0_ranefE, refit = F) # Keep interaction slope
+}
 
 # -----------------------------------------------------------------------------
 
@@ -96,8 +117,13 @@ anova(prop_0_ranefD, prop_0_ranefE, refit = F) # Keep interaction slope
 
 
 
+
+
+
+
 # Test fixed effects ----------------------------------------------------------
 
+if(F) {
 prop_0_mod_0 <- glmer(cbind(targetCount, 10 - targetCount) ~ 1 +
                     (1 + condition_sum * coda_sum | participant) +
                     (1 | target),
@@ -141,6 +167,53 @@ prop_0_mod_final <- glmer(cbind(targetCount, 10 - targetCount) ~ 1 +
                     data = df_stress, family = 'binomial',
                     control = glmerControl(optimizer = 'bobyqa'))
 
+}
+
+# -----------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+# Save models -----------------------------------------------------------------
+
+if(F) {
+
+saveRDS(prop_0_mod_0, here("models", "stress", "s3_adv_int_nat",
+                           "eye_track", "glmm", "0_prop_0_mod_0.rds"))
+saveRDS(prop_0_mod_group, here("models", "stress", "s3_adv_int_nat",
+                               "eye_track", "glmm", "1_prop_0_mod_group.rds"))
+saveRDS(prop_0_mod_cond, here("models", "stress", "s3_adv_int_nat",
+                              "eye_track", "glmm", "2_prop_0_mod_cond.rds"))
+saveRDS(prop_0_mod_coda, here("models", "stress", "s3_adv_int_nat",
+                              "eye_track", "glmm", "3_prop_0_mod_coda.rds"))
+saveRDS(prop_0_mod_int1, here("models", "stress", "s3_adv_int_nat",
+                              "eye_track", "glmm", "4_prop_0_mod_int1.rds"))
+saveRDS(prop_0_mod_int2, here("models", "stress", "s3_adv_int_nat",
+                              "eye_track", "glmm", "5_prop_0_mod_int2.rds"))
+saveRDS(prop_0_mod_int3, here("models", "stress", "s3_adv_int_nat",
+                              "eye_track", "glmm", "6_prop_0_mod_int3.rds"))
+saveRDS(prop_0_mod_full, here("models", "stress", "s3_adv_int_nat",
+                              "eye_track", "glmm", "7_prop_0_mod_full.rds"))
+saveRDS(prop_0_mod_final, here("models", "stress", "s3_adv_int_nat",
+                               "eye_track", "glmm", "8_prop_0_mod_final.rds"))
+}
+
+# -----------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+# Model descriptives ----------------------------------------------------------
+
 MuMIn::r.squaredGLMM(prop_0_mod_final)
 #              R2m  R2c
 # theoretical 0.04 0.57
@@ -155,8 +228,6 @@ MuMIn::r.squaredGLMM(prop_0_mod_final)
 #   groupla      -0.8865     0.3021  -1.48    -0.29  -2.934  0.00334 **
 #   groupint     -1.0232     0.3120  -1.63    -0.41  -3.279  0.00104 **
 #   coda_sum      0.2580     0.1545  -0.04     0.56   1.670  0.09485 .
-
-
 
 
 # Relevel to test lb vs la

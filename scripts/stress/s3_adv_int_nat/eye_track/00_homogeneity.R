@@ -37,12 +37,13 @@ dem_all$wm <- as.numeric(dem_all$wm)
 dem_all %>%
   group_by(., group) %>%
   summarise(., wm = round(mean(wm, na.rm=TRUE),2),
-            wm_sd = round(sd(wm, na.rm=TRUE),2),
-            pstm = round(mean(pstm),2),
-            pstm_sd = round(sd(pstm),2),
-            dele = round(mean(dele),2),
-            dele_sd = round(sd(dele),2),
-            n =  n_distinct(id)) %>% knitr::kable()
+               wm_sd = round(sd(wm, na.rm=TRUE),2),
+               pstm = round(mean(pstm),2),
+               pstm_sd = round(sd(pstm),2),
+               dele = round(mean(dele),2),
+               dele_sd = round(sd(dele),2),
+               n =  n_distinct(id)) %>% knitr::kable()
+
 
 dem_all %>%
   group_by(., group) %>%
