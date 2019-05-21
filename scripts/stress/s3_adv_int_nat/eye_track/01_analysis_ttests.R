@@ -38,7 +38,6 @@ df_short <- stress10 %>%
                                 "LA06", "LA09", "LA14", "LA15", "LA19"),
             time_zero == 20)
 
-
 # Old vector of removed participants
 # c('L01', 'L02', 'L03', 'L04', 'L05',
 #   'L06', 'L07', 'L08', 'L09', 'L10',
@@ -70,7 +69,6 @@ df_short %>%
   group_by(., group, condition) %>%
   summarise(., meanFix = mean(targetProp))
 
-
 # We will test this for each group in each condition (stressed, untressed)
 # using a one-sided t-test. Specifically, we are testing the
 # hypothesis that the proportion of looks is greater than
@@ -84,7 +82,7 @@ stress_ttest <- df_short %>%
   na.omit(.) %>%
   group_by(., group, condition, participant) %>%
   summarise(., meanFix = mean(targetProp)) %>%
-  do(tidy(t.test(.$meanFix, alternative = "greater", mu = 0.5, conf.level = 0.99)))
+  do(tidy(t.test(.$meanFix, alternative = "greater", mu = 0.5, conf.level = 0.95)))
 
 # Convert pvalues from scientific notation
 stress_ttest$p.value <- format(stress_ttest$p.value, scientific = F)
@@ -96,13 +94,13 @@ print(as.data.frame(stress_ttest[, c(1:7, 11)]))
 
 saveRDS(stress_ttest, "./reports/stress/stress_int/mods/stress_ttest.rds", compress = "xz")
 
-# group  condition  estimate  statistic       p.value parameter  conf.low  sig
-#   int   stressed 0.6344643 3.46115554 0.00357388323         9 0.5248527    *
-#   int unstressed 0.6753571 3.37992533 0.00406396949         9 0.5289754    *
-#    la   stressed 0.5022928 0.05122216 0.47976999874        26 0.3913462 N.S.
-#    la unstressed 0.5841931 2.12785440 0.02149710485        26 0.4861208 N.S.
-#    ss   stressed 0.6322078 2.79896749 0.00537726129        21 0.5132880    *
-#    ss unstressed 0.7235390 4.76754875 0.00005197742        21 0.6054925    *
+#   group  condition  estimate  statistic      p.value parameter  conf.low  sig
+# 1   int   stressed 0.4892045 -0.2644177 0.6029820843        21 0.4189513 N.S.
+# 2   int unstressed 0.5738636  1.8925669 0.0361411122        21 0.5067060 N.S.
+# 3    la   stressed 0.5250000  0.6767972 0.2525030221        24 0.4618023 N.S.
+# 4    la unstressed 0.5994286  2.1611355 0.0204408034        24 0.5207151 N.S.
+# 5    ss   stressed 0.6334821  2.7498264 0.0057043367        23 0.5502873    *
+# 6    ss unstressed 0.6763765  4.1900453 0.0001753115        23 0.6042325    *
 
 # -----------------------------------------------------------------------------
 

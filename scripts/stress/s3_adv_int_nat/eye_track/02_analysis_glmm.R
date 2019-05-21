@@ -139,19 +139,19 @@ prop_0_mod_int3  <- update(prop_0_mod_int2,  . ~ . + coda_sum:condition_sum)
 prop_0_mod_full  <- update(prop_0_mod_int3,  . ~ . + group:coda_sum:condition_sum)
 
 
-anova(prop_0_mod_0, prop_0_mod_group)    # main effect of group
-anova(prop_0_mod_group, prop_0_mod_cond) # no effect of condition
-anova(prop_0_mod_group, prop_0_mod_coda) # main effect of coda
-anova(prop_0_mod_coda, prop_0_mod_int1)  # no group x coda interaction
-anova(prop_0_mod_coda, prop_0_mod_int2)  # no group condition interaction
-anova(prop_0_mod_coda, prop_0_mod_int3)  # no condi x coda interaction
-anova(prop_0_mod_coda, prop_0_mod_full)  # no three way interaction
+anova(prop_0_mod_0, prop_0_mod_group, test = "Chisq")    # main effect of group
+anova(prop_0_mod_group, prop_0_mod_cond, test = "Chisq") # no effect of condition
+anova(prop_0_mod_group, prop_0_mod_coda, test = "Chisq") # main effect of coda
+anova(prop_0_mod_coda, prop_0_mod_int1, test = "Chisq")  # no group x coda interaction
+anova(prop_0_mod_coda, prop_0_mod_int2, test = "Chisq")  # no group condition interaction
+anova(prop_0_mod_coda, prop_0_mod_int3, test = "Chisq")  # no condi x coda interaction
+anova(prop_0_mod_coda, prop_0_mod_full, test = "Chisq")  # no three way interaction
 
 
 #    AIC    BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)
 #  11876  11946 -5923.7    11848 12.077      2   0.002386  prop_0_mod_group **
 #  11876  11951 -5923.0    11846 1.4415      1     0.2299  prop_0_mod_cond
-#  11873  11954 -5920.6    11841 6.3035      2    0.04278  prop_0_mod_coda  .
+#  11873  11954 -5920.6    11841 6.3035      2    0.04278  prop_0_mod_coda  *
 #  11876  11966 -5919.9    11840 1.4065      2      0.495  group x coda
 #  11879  11980 -5919.5    11839 2.1075      4      0.716  group x condition
 #  11881  11986 -5919.3    11839 2.5777      5     0.7648  cond x coda
