@@ -12,7 +12,7 @@
 source(here::here("scripts", "01_load_data.R"))
 
 gca_mod_int_3 <- readRDS(here("models", "stress", "s3_adv_int_nat",
-                              "eye_track", "gca", "gca_mod_int_3.rds"))
+                              "eye_track", "gca", "gca_mod_int_6.rds"))
 
 # -----------------------------------------------------------------------------
 
@@ -87,7 +87,7 @@ stress_gca_plot_subset <- df_stress_50 %>%
   poly_add_columns(., time_zero, degree = 3, prefix = "ot")
 
 data.comp <- data.frame(
-  stress_gca_plot_subset, GCA_Full = fitted(gc_mod_int_3))
+  stress_gca_plot_subset, GCA_Full = fitted(gca_mod_full))
 
 
 
@@ -100,13 +100,15 @@ condition_namesGCAMod <- c(
 
 (gca_full <- data.comp %>%
     ggplot(., aes(x = time_zero, y = eLog, color = group, shape = group)) +
-    facet_grid(condition ~ coda, labeller = as_labeller(condition_namesGCAMod)) +
+    facet_grid(coda ~ condition,
+               labeller = as_labeller(condition_namesGCAMod)) +
+    geom_hline(yintercept = 0, color = "white", size = 3) +
+    geom_vline(xintercept = 4, color = "white", size = 3) +
     geom_smooth(method = 'gam', formula = y ~ poly(x, 3), se = F,
                 show.legend = FALSE) +
     #stat_summary(aes(y = GCA_Full, color = group), fun.y = mean,
     #             geom = 'line', size = 1.4) +
-    stat_summary(fun.data = mean_cl_boot, geom = 'pointrange',  size = 0.75,
-                 fun.args = list(conf.int = .95, B = 1000)) +
+    stat_summary(fun.data = mean_se, geom = 'pointrange',  size = 0.75) +
     stat_summary(fun.y = mean, geom = 'point', size = 1.75, color = "white",
                  alpha = 0.3) +
     scale_shape_manual(name = "", values = 17:15,
@@ -126,3 +128,29 @@ condition_namesGCAMod <- c(
 
 # -----------------------------------------------------------------------------
 
+
+
+
+# Individual plots ------------------------------------------------------------
+
+data.comp %>%
+  ggplot(., aes(x = time_zero, y = eLog, color = factor(coda),
+                shape = factor(coda))) +
+  facet_grid(group ~ condition) +
+  geom_hline(yintercept = 0, color = "white", size = 3) +
+  geom_vline(xintercept = 4, color = "white", size = 3) +
+  geom_smooth(method = 'gam', formula = y ~ poly(x, 3), se = F,
+              show.legend = FALSE) +
+  stat_summary(fun.data = mean_se, geom = 'pointrange',  size = 0.75) +
+  stat_summary(fun.y = mean, geom = 'point', size = 1.75, color = "white",
+               alpha = 0.3) +
+  scale_shape_manual(name = "", values = 17:16,
+                     labels = c("CV", "CVC")) +
+  labs(x = "Time (ms) relative to target syllable offset",
+       y = "Fixation empirical logit",
+       caption = "Mean +/- 95% CI") +
+  scale_color_brewer(palette = "Set1", name = "", guide = 'legend',
+                     labels = c("CV", "CVC")) +
+  scale_x_continuous(breaks = c(-4, 0, 4, 8, 12),
+                     labels = c("-200", "0", "200", "400", "600")) +
+  theme_grey(base_size = 15, base_family = "Times New Roman")
