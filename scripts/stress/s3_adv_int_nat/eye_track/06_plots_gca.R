@@ -11,8 +11,8 @@
 
 source(here::here("scripts", "01_load_data.R"))
 
-gca_mod_int_3 <- readRDS(here("models", "stress", "s3_adv_int_nat",
-                              "eye_track", "gca", "gca_mod_int_6.rds"))
+gca_full_mod_full <- readRDS(here("models", "stress", "s3_adv_int_nat",
+                              "eye_track", "gca", "gca_full_mod_full.rds"))
 
 # -----------------------------------------------------------------------------
 
@@ -42,34 +42,27 @@ condition_names <- c(
     na.omit(.) %>%
     filter(., time_zero >= -10, time_zero <= 20) %>%
     mutate(., group = fct_relevel(group, "ss", "la", "int")) %>%
-    ggplot(., aes(x = time_zero, y = targetProp, color = group, shape = group)) +
+    ggplot(., aes(x = time_zero, y = targetProp, fill = group, shape = group)) +
     facet_grid(condition ~ coda, labeller = as_labeller(condition_names)) +
     geom_hline(yintercept = 0.5, color = 'white', size = 3) +
     geom_vline(xintercept = 0, color = 'grey40', lty = 3) +
     geom_vline(xintercept = 4, color = 'grey40', lty = 3) +
-    stat_summary(fun.data = mean_cl_boot, geom = 'pointrange',  size = 0.75,
-                 fun.args = list(conf.int = .95, B = 1000)) +
-    stat_summary(fun.y = mean, geom = 'point', color = 'white',
-                 alpha = 0.3, size = 1.75) +
-    scale_shape_manual(name = "", values = 17:15,
+    stat_summary(fun.data = mean_cl_boot, geom = 'pointrange', size = 0.5,
+                 stroke = 0.5, pch = 21) +
+    scale_fill_brewer(palette = 'Set1', name = "",
                        labels = c("SS", "LA", "INT")) +
-    scale_color_brewer(palette = 'Set1', name = "",
-                       labels = c("SS", "LA", "INT")) +
-    #scale_x_continuous(breaks = c(-4, 1, 6, 11, 16),
-    #                   labels = c("-750", "-500", "-250", "0", "250")) +
+    scale_x_continuous(breaks = c(-10, 0, 10, 20),
+                       labels = c("-500", "0", "500", "1000")) +
     labs(y = 'Proportion of target fixations',
          x = 'Time relative to target syllable offset (ms)',
          caption = "Mean +/- 95% CI") +
-    coord_cartesian(ylim = c(0, 1)) +
-    annotate("text", x = -0.7, y = 0.02, label = 'Target syllable offset',
+    annotate("text", x = 3.3, y = 0.02, label = '200ms',
              angle = 90, size = 3, hjust = 0) +
-    annotate("text", x = 3.3, y = 0.02, label = '200ms after target offset',
-             angle = 90, size = 3, hjust = 0) +
-    theme_grey(base_size = 16, base_family = "Times") -> stressP1)
+    theme_grey(base_size = 12, base_family = "Times") -> stressP1)
 
-# ggsave('stressP1.png', plot = stressP1, dpi = 600, device = "png",
-# path = "./mySources/figs/stress/s3_adv_int_nat/eye_track",
-# height = 4, width = 9, unit = 'in')
+ggsave('stressP1.png', plot = stressP1, dpi = 600, device = "png",
+path = here("figs", "stress", "s3_adv_int_nat", "eye_track"),
+height = 6, width = 9, unit = 'in')
 
 # -----------------------------------------------------------------------------
 
@@ -87,7 +80,7 @@ stress_gca_plot_subset <- df_stress_50 %>%
   poly_add_columns(., time_zero, degree = 3, prefix = "ot")
 
 data.comp <- data.frame(
-  stress_gca_plot_subset, GCA_Full = fitted(gca_mod_full))
+  stress_gca_plot_subset, GCA_Full = fitted(gca_full_mod_int_3))
 
 
 
@@ -104,10 +97,8 @@ condition_namesGCAMod <- c(
                labeller = as_labeller(condition_namesGCAMod)) +
     geom_hline(yintercept = 0, color = "white", size = 3) +
     geom_vline(xintercept = 4, color = "white", size = 3) +
-    geom_smooth(method = 'gam', formula = y ~ poly(x, 3), se = F,
-                show.legend = FALSE) +
-    #stat_summary(aes(y = GCA_Full, color = group), fun.y = mean,
-    #             geom = 'line', size = 1.4) +
+    stat_summary(aes(y = GCA_Full, color = group), fun.y = mean,
+                 geom = 'line', size = 1.4) +
     stat_summary(fun.data = mean_se, geom = 'pointrange',  size = 0.75) +
     stat_summary(fun.y = mean, geom = 'point', size = 1.75, color = "white",
                  alpha = 0.3) +
@@ -126,31 +117,141 @@ condition_namesGCAMod <- c(
 #           path = "./mySources/figs/stress/s3_adv_int_nat/eye_track",
 #           height = 4, width = 9, unit = "in")
 
+new_dat_all <- stress_gc_subset %>%
+  dplyr::select(group, time_zero, ot1:ot3, coda_sum, condition_sum) %>%
+  distinct
+
+# Get models predictions and SE
+fits_all <- predictSE(gca_full_mod_int_3, new_dat_all) %>%
+  as_tibble %>%
+  bind_cols(new_dat_all) %>%
+  rename(se = se.fit) %>%
+  mutate(ymin = fit - se, ymax = fit + se)
+
+filter(fits_all, time_zero == 4) %>%
+  select(group, coda = coda_sum, cond = condition_sum,
+         elog = fit, elog_lb = ymin, elog_ub = ymax) %>%
+  mutate(prob = plogis(elog),
+         prob_lb = plogis(elog_lb),
+         prob_ub = plogis(elog_ub)) %>%
+  arrange(group)
+
+
+# Within group differences
+fits_all %>%
+  mutate(coda = if_else(coda_sum == 1, "CV", "CVC"),
+         condition = if_else(condition_sum == 1, "Paroxytone", "Oxytone"),
+         condition = fct_relevel(condition, "Paroxytone")) %>%
+  ggplot(., aes(x = time_zero, y = fit, ymax = ymax, ymin = ymin,
+                fill = coda, color = coda)) +
+  facet_grid(group ~ condition) +
+  geom_hline(yintercept = 0, lty = 3) +
+  geom_vline(xintercept = 4, lty = 3) +
+  geom_ribbon(alpha = 0.2, color = NA, show.legend = F) +
+  geom_point(aes(shape = coda), size = 3.5, show.legend = F) +
+  geom_line(size = 0.9) +
+  scale_x_continuous(breaks = c(-4, 0, 4, 8, 12),
+                     labels = c("-200", "0", "200", "400", "600")) +
+  scale_color_brewer(palette = "Set1", name = "Lexical stress") +
+  labs(x = "Time (ms) relative to target syllable offset",
+       y = "Empirical logit of looks to target") +
+  theme_big
+
+# Comparisons with natives
+fits_all %>%
+  mutate(coda = if_else(coda_sum == 1, "CV", "CVC"),
+         condition = if_else(condition_sum == 1, "Paroxytone", "Oxytone"),
+         condition = fct_relevel(condition, "Paroxytone")) %>%
+  ggplot(., aes(x = time_zero, y = fit, ymax = ymax, ymin = ymin,
+                fill = group, color = group)) +
+  facet_grid(coda ~ condition) +
+  geom_hline(yintercept = 0, lty = 3) +
+  geom_vline(xintercept = 4, lty = 3) +
+  geom_ribbon(alpha = 0.2, color = NA, show.legend = F) +
+  geom_point(aes(shape = group), size = 3.5, show.legend = F) +
+  geom_line(size = 0.9) +
+  scale_x_continuous(breaks = c(-4, 0, 4, 8, 12),
+                     labels = c("-200", "0", "200", "400", "600")) +
+  scale_color_brewer(palette = "Set1", name = "Group") +
+  labs(x = "Time (ms) relative to target syllable offset",
+       y = "Empirical logit of looks to target") +
+  theme_big
+
+
+
+
 # -----------------------------------------------------------------------------
 
 
 
 
-# Individual plots ------------------------------------------------------------
 
-data.comp %>%
-  ggplot(., aes(x = time_zero, y = eLog, color = factor(coda),
-                shape = factor(coda))) +
-  facet_grid(group ~ condition) +
-  geom_hline(yintercept = 0, color = "white", size = 3) +
-  geom_vline(xintercept = 4, color = "white", size = 3) +
-  geom_smooth(method = 'gam', formula = y ~ poly(x, 3), se = F,
-              show.legend = FALSE) +
-  stat_summary(fun.data = mean_se, geom = 'pointrange',  size = 0.75) +
-  stat_summary(fun.y = mean, geom = 'point', size = 1.75, color = "white",
-               alpha = 0.3) +
-  scale_shape_manual(name = "", values = 17:16,
-                     labels = c("CV", "CVC")) +
-  labs(x = "Time (ms) relative to target syllable offset",
-       y = "Fixation empirical logit",
-       caption = "Mean +/- 95% CI") +
-  scale_color_brewer(palette = "Set1", name = "", guide = 'legend',
-                     labels = c("CV", "CVC")) +
-  scale_x_continuous(breaks = c(-4, 0, 4, 8, 12),
-                     labels = c("-200", "0", "200", "400", "600")) +
-  theme_grey(base_size = 15, base_family = "Times New Roman")
+
+
+
+# Effect size plot ------------------------------------------------------------
+
+bind_rows(
+  data.comp %>%
+    group_by(participant, group, time_zero, coda) %>%
+    summarize(competition = mean(eLog)) %>%
+    spread(coda, competition) %>%
+    mutate(Effect = `1` - `0`,
+           condition_type = "Syllable structure",
+           fit_type = "raw") %>%
+    select(-`0`, -`1`),
+  data.comp %>%
+    group_by(participant, group, time_zero, condition) %>%
+    summarize(competition = mean(eLog)) %>%
+    spread(condition, competition) %>%
+    mutate(Effect = unstressed - stressed,
+           condition_type = "Lexical stress",
+           fit_type = "raw") %>%
+    select(-unstressed, -stressed),
+  data.comp %>%
+    group_by(participant, group, time_zero, coda) %>%
+    summarize(competition = mean(GCA_Full)) %>%
+    spread(coda, competition) %>%
+    mutate(Effect = `1` - `0`,
+           condition_type = "Syllable structure",
+           fit_type = "model") %>%
+    select(-`0`, -`1`),
+  data.comp %>%
+    group_by(participant, group, time_zero, condition) %>%
+    summarize(competition = mean(GCA_Full)) %>%
+    spread(condition, competition) %>%
+    mutate(Effect = unstressed - stressed,
+           condition_type = "Lexical stress",
+           fit_type = "model") %>%
+    select(-unstressed, -stressed)) %>%
+  spread(fit_type, Effect) %>%
+  #filter(time_zero < 10) %>%
+  ggplot(., aes(x = time_zero, y = raw, color = group)) +
+    facet_grid(. ~ condition_type) +
+    geom_hline(yintercept = 0, color = "white", size = 3) +
+    geom_vline(xintercept = 4, color = "white", size = 3) +
+    stat_summary(fun.data = mean_se, geom = "pointrange") +
+    #stat_summary(aes(y = model, color = group), fun.y = mean,
+    #             geom = 'line', size = 1.4) +
+    geom_smooth(method = 'gam', formula = y ~ poly(x, 3), se = F,
+                show.legend = FALSE) +
+    labs(x = "Time (ms) relative to target syllable offset",
+         y = "Effect", caption = "Mean +/- 95% CI") +
+    scale_color_brewer(palette = "Set1", name = "", guide = 'legend',
+                       labels = c("SS", "LA", "INT")) +
+    scale_x_continuous(breaks = c(-4, 0, 4, 8, 12),
+                       labels = c("-200", "0", "200", "400", "600")) +
+    theme_grey(base_size = 15, base_family = "Times New Roman")
+
+# -----------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+

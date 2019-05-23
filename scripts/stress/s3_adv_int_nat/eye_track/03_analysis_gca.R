@@ -71,7 +71,7 @@ stress_gc_subset <- stress50 %>%
             time_zero >= -4 & time_zero <= 12) %>%
   mutate(., group = fct_relevel(group, "ss", "la", "int"),
             condition_sum = if_else(condition == "stressed", 1, -1),
-            coda_sum = if_else(coda == 1, 1, -1)) %>%
+            coda_sum = if_else(coda == 0, 1, -1)) %>%
   poly_add_columns(., time_zero, degree = 3, prefix = "ot")
 
 # -----------------------------------------------------------------------------
@@ -93,7 +93,9 @@ stress_gc_subset <- stress50 %>%
 
 # Random effects structure ----------------------------------------------------
 
+# Build up random effects to test time terms
 if(F){
+
 mod_ot1 <-
   lmer(eLog ~ 1 + ot1 +
       (1 + coda_sum + condition_sum + ot1 | participant),
@@ -110,11 +112,9 @@ mod_ot3 <-
 
 mod_ot4 <- update(mod_ot3, . ~ . + (1 | target))
 
-anova(mod_ot1,
-      mod_ot2,
-      mod_ot3,
-      mod_ot4,
-      test = "Chisq")
+anova(mod_ot1, mod_ot2, mod_ot3, mod_ot4)
+
+}
 
 # -----------------------------------------------------------------------------
 
@@ -131,8 +131,8 @@ anova(mod_ot1,
 gca_mod_ss_base <-
   lmer(eLog ~ 1 + (ot1 + ot2 + ot3) +
          (1 + coda_sum + condition_sum + (ot1 + ot2 + ot3) | participant) +
-         (1 | target),
-       control = lmerControl(optimizer = 'bobyqa'), weights = 1/wts, REML = F,
+         (1 + ot1 + ot2 + ot3 | target),
+       control = lmerControl(optimizer = 'bobyqa'), REML = F,
        data = filter(stress_gc_subset, group == "ss"))
 
 # add coda effect to intercept
@@ -144,13 +144,8 @@ gca_mod_ss_coda_1 <- update(gca_mod_ss_coda_0, . ~ . + ot1:coda_sum)
 gca_mod_ss_coda_2 <- update(gca_mod_ss_coda_1, . ~ . + ot2:coda_sum)
 gca_mod_ss_coda_3 <- update(gca_mod_ss_coda_2, . ~ . + ot3:coda_sum)
 
-anova(
-  gca_mod_ss_base,
-  gca_mod_ss_coda_0,
-  gca_mod_ss_coda_1,
-  gca_mod_ss_coda_2,
-  gca_mod_ss_coda_3
-)
+anova(gca_mod_ss_base, gca_mod_ss_coda_0, gca_mod_ss_coda_1,
+      gca_mod_ss_coda_2, gca_mod_ss_coda_3)
 
 # add condition effect to intercept
 # add condition effect to linear slope
@@ -161,13 +156,8 @@ gca_mod_ss_cond_1 <- update(gca_mod_ss_cond_0,   . ~ . + ot1:condition_sum)
 gca_mod_ss_cond_2 <- update(gca_mod_ss_cond_1,   . ~ . + ot2:condition_sum)
 gca_mod_ss_cond_3 <- update(gca_mod_ss_cond_2,   . ~ . + ot3:condition_sum)
 
-anova(
-  gca_mod_ss_coda_3,
-  gca_mod_ss_cond_0,
-  gca_mod_ss_cond_1,
-  gca_mod_ss_cond_2,
-  gca_mod_ss_cond_3
-)
+anova(gca_mod_ss_coda_3, gca_mod_ss_cond_0, gca_mod_ss_cond_1,
+      gca_mod_ss_cond_2, gca_mod_ss_cond_3)
 
 # add coda x cond int to intercept
 # add coda x cond int to linear slope
@@ -178,13 +168,8 @@ gca_mod_ss_int_1 <- update(gca_mod_ss_int_0,  . ~ . + ot1:coda_sum:condition_sum
 gca_mod_ss_int_2 <- update(gca_mod_ss_int_1,  . ~ . + ot2:coda_sum:condition_sum)
 gca_mod_ss_int_3 <- update(gca_mod_ss_int_2,  . ~ . + ot3:coda_sum:condition_sum)
 
-anova(
-  gca_mod_ss_cond_3,
-  gca_mod_ss_int_0,
-  gca_mod_ss_int_1,
-  gca_mod_ss_int_2,
-  gca_mod_ss_int_3
-)
+anova(gca_mod_ss_cond_3, gca_mod_ss_int_0, gca_mod_ss_int_1,
+      gca_mod_ss_int_2, gca_mod_ss_int_3)
 
 
 
@@ -195,8 +180,8 @@ anova(
 gca_mod_la_base <-
   lmer(eLog ~ 1 + (ot1 + ot2 + ot3) +
          (1 + coda_sum + condition_sum + (ot1 + ot2 + ot3) | participant) +
-         (1 | target),
-       control = lmerControl(optimizer = 'bobyqa'), weights = 1/wts, REML = F,
+         (1 + ot1 + ot2 + ot3 | target),
+       control = lmerControl(optimizer = 'bobyqa'), REML = F,
        data = filter(stress_gc_subset, group == "la"))
 
 # add coda effect to intercept
@@ -208,13 +193,8 @@ gca_mod_la_coda_1 <- update(gca_mod_la_coda_0, . ~ . + ot1:coda_sum)
 gca_mod_la_coda_2 <- update(gca_mod_la_coda_1, . ~ . + ot2:coda_sum)
 gca_mod_la_coda_3 <- update(gca_mod_la_coda_2, . ~ . + ot3:coda_sum)
 
-anova(
-  gca_mod_la_base,
-  gca_mod_la_coda_0,
-  gca_mod_la_coda_1,
-  gca_mod_la_coda_2,
-  gca_mod_la_coda_3
-)
+anova(gca_mod_la_base, gca_mod_la_coda_0, gca_mod_la_coda_1,
+      gca_mod_la_coda_2, gca_mod_la_coda_3)
 
 # add condition effect to intercept
 # add condition effect to linear slope
@@ -225,13 +205,8 @@ gca_mod_la_cond_1 <- update(gca_mod_la_cond_0,   . ~ . + ot1:condition_sum)
 gca_mod_la_cond_2 <- update(gca_mod_la_cond_1,   . ~ . + ot2:condition_sum)
 gca_mod_la_cond_3 <- update(gca_mod_la_cond_2,   . ~ . + ot3:condition_sum)
 
-anova(
-  gca_mod_la_coda_3,
-  gca_mod_la_cond_0,
-  gca_mod_la_cond_1,
-  gca_mod_la_cond_2,
-  gca_mod_la_cond_3
-)
+anova(gca_mod_la_coda_3, gca_mod_la_cond_0, gca_mod_la_cond_1,
+      gca_mod_la_cond_2, gca_mod_la_cond_3)
 
 # add coda x cond int to intercept
 # add coda x cond int to linear slope
@@ -242,13 +217,8 @@ gca_mod_la_int_1 <- update(gca_mod_la_int_0,  . ~ . + ot1:coda_sum:condition_sum
 gca_mod_la_int_2 <- update(gca_mod_la_int_1,  . ~ . + ot2:coda_sum:condition_sum)
 gca_mod_la_int_3 <- update(gca_mod_la_int_2,  . ~ . + ot3:coda_sum:condition_sum)
 
-anova(
-  gca_mod_la_cond_3,
-  gca_mod_la_int_0,
-  gca_mod_la_int_1,
-  gca_mod_la_int_2,
-  gca_mod_la_int_3
-)
+anova(gca_mod_la_cond_3, gca_mod_la_int_0, gca_mod_la_int_1,
+      gca_mod_la_int_2, gca_mod_la_int_3)
 
 
 #
@@ -258,8 +228,8 @@ anova(
 gca_mod_int_base <-
   lmer(eLog ~ 1 + (ot1 + ot2 + ot3) +
          (1 + coda_sum + condition_sum + (ot1 + ot2 + ot3) | participant) +
-         (1 | target),
-       control = lmerControl(optimizer = 'bobyqa'), weights = 1/wts, REML = F,
+         (1 + ot1 + ot2 + ot3 | target),
+       control = lmerControl(optimizer = 'bobyqa'), REML = F,
        data = filter(stress_gc_subset, group == "int"))
 
 # add coda effect to intercept
@@ -271,13 +241,8 @@ gca_mod_int_coda_1 <- update(gca_mod_int_coda_0, . ~ . + ot1:coda_sum)
 gca_mod_int_coda_2 <- update(gca_mod_int_coda_1, . ~ . + ot2:coda_sum)
 gca_mod_int_coda_3 <- update(gca_mod_int_coda_2, . ~ . + ot3:coda_sum)
 
-anova(
-  gca_mod_int_base,
-  gca_mod_int_coda_0,
-  gca_mod_int_coda_1,
-  gca_mod_int_coda_2,
-  gca_mod_int_coda_3
-)
+anova(gca_mod_int_base, gca_mod_int_coda_0, gca_mod_int_coda_1,
+      gca_mod_int_coda_2, gca_mod_int_coda_3)
 
 # add condition effect to intercept
 # add condition effect to linear slope
@@ -288,13 +253,8 @@ gca_mod_int_cond_1 <- update(gca_mod_int_cond_0,   . ~ . + ot1:condition_sum)
 gca_mod_int_cond_2 <- update(gca_mod_int_cond_1,   . ~ . + ot2:condition_sum)
 gca_mod_int_cond_3 <- update(gca_mod_int_cond_2,   . ~ . + ot3:condition_sum)
 
-anova(
-  gca_mod_int_coda_3,
-  gca_mod_int_cond_0,
-  gca_mod_int_cond_1,
-  gca_mod_int_cond_2,
-  gca_mod_int_cond_3
-)
+anova(gca_mod_int_coda_3, gca_mod_int_cond_0, gca_mod_int_cond_1,
+      gca_mod_int_cond_2, gca_mod_int_cond_3)
 
 # add coda x cond int to intercept
 # add coda x cond int to linear slope
@@ -305,13 +265,8 @@ gca_mod_int_int_1 <- update(gca_mod_int_int_0,  . ~ . + ot1:coda_sum:condition_s
 gca_mod_int_int_2 <- update(gca_mod_int_int_1,  . ~ . + ot2:coda_sum:condition_sum)
 gca_mod_int_int_3 <- update(gca_mod_int_int_2,  . ~ . + ot3:coda_sum:condition_sum)
 
-anova(
-  gca_mod_int_cond_3,
-  gca_mod_int_int_0,
-  gca_mod_int_int_1,
-  gca_mod_int_int_2,
-  gca_mod_int_int_3
-)
+anova(gca_mod_int_cond_3, gca_mod_int_int_0, gca_mod_int_int_1,
+      gca_mod_int_int_2, gca_mod_int_int_3)
 
 # -----------------------------------------------------------------------------
 
@@ -329,12 +284,10 @@ if(F){
 gca_full_mod_base <-
   lmer(eLog ~ 1 + (ot1 + ot2 + ot3) * coda_sum * condition_sum +
          (1 + coda_sum + condition_sum + (ot1 + ot2 + ot3) | participant) +
-         (1 | target),
+         (1 + ot1 + ot2 + ot3 | target),
        control = lmerControl(optimizer = 'bobyqa',
                              optCtrl = list(maxfun = 2e4)),
-       data = stress_gc_subset, weights = 1/wts, REML = F)
-
-
+       data = stress_gc_subset, REML = F)
 
 # Add group effect on intercept
 # Add group effect on linear slope
@@ -376,70 +329,7 @@ anova(gca_full_mod_group_3,
 
 
 
-
-
-
-
-
-
-
-
-# Model descriptives ----------------------------------------------------------
-
-# options(scipen = 999)
-# summary(gca_full_mod_int_3)
-# options(scipen = 0)
-
-
-
-# -----------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-# Comparison models -----------------------------------------------------------
-
-# Remove LA
-gca_ss_int <- stress_gc_subset %>%
-  filter(group != "la") %>%
-  mutate(coda = as.factor(coda),
-         group_sum = if_else(group == "ss", 1, -1))
-
-gca_mod_ss_int <-
-  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + group + coda + condition +
-       ot1:group + ot2:group + ot3:group +
-       ot1:coda + ot2:coda + ot3:coda +
-       ot1:condition + ot2:condition + ot3:condition +
-       ot1:group:coda + ot2:group:coda + ot3:group:coda +
-       ot1:group:condition + ot2:group:condition + ot3:group:condition +
-      (1 + coda + condition + (ot1 + ot2 + ot3) | participant),
-       control = lmerControl(optimizer = 'bobyqa'),
-       data = gca_ss_int, weights = 1/wts, REML = F)
-
-
-# Remove INT
-gca_ss_la <- stress_gc_subset %>%
-  filter(group != "int") %>%
-  mutate(group_sum = if_else(group == "ss", 1, -1))
-
-gca_mod_ss_la <-
-  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + group_sum + coda_sum + condition_sum +
-         ot1:group_sum + ot2:group_sum + ot3:group_sum +
-         ot1:coda_sum + ot2:coda_sum + ot3:coda_sum +
-         ot1:condition_sum + ot2:condition_sum + ot3:condition_sum +
-         ot1:group_sum:coda_sum + ot2:group_sum:coda_sum + ot3:group_sum:coda_sum +
-         ot1:group_sum:condition_sum + ot2:group_sum:condition_sum + ot3:group_sum:condition_sum +
-         (1 + coda_sum + condition_sum + (ot1 + ot2 + ot3) | participant),
-       control = lmerControl(optimizer = 'bobyqa'),
-       data = gca_ss_la, weights = 1/wts, REML = F)
-
+# Comparison model ------------------------------------------------------------
 
 # Remove SS
 gca_int_la <- stress_gc_subset %>%
