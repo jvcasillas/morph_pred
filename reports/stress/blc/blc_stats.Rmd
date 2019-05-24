@@ -1,0 +1,246 @@
+---
+author: 
+  - name          : "Nuria Sagarra"
+    affiliation   : "1"
+    corresponding : yes    # Define only one corresponding author
+    address       : "Postal address"
+    email         : "my@email.com"
+  - name          : "Cristina Lozano-Argüelles"
+    affiliation   : "1"
+  - name          : "Joseph V. Casillas"
+    affilitation  : "1"
+
+affiliation:
+  - id            : "1"
+    institution   : "Rutgers University"
+
+
+
+keywords          : ""
+wordcount         : ""
+
+bibliography      : ["r-references.bib"]
+
+floatsintext      : yes
+figurelist        : yes
+tablelist         : yes
+footnotelist      : yes
+linenumbers       : yes
+mask              : yes
+draft             : yes
+
+documentclass     : "apa6"
+classoption       : "man"
+output            : papaja::apa6_word
+---
+
+```{r setup, include = FALSE}
+library("papaja")
+library("officer")
+library("flextable")
+```
+
+```{r analysis-preferences}
+# Seed for random number generation
+set.seed(42)
+knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
+```
+
+```{r, 'source-scripts-models'}
+source(here::here("scripts", "02_load_data.R"))
+
+# Get path to saved models
+gca_mods_path  <- here("models", "stress", "s3_adv_int_nat", 
+                       "eye_track", "gca")
+
+# Load models as list and store full mod to global env
+load(paste0(gca_mods_path, "/model_preds.Rdata"))
+load(paste0(gca_mods_path, "/full_mods.Rdata"))
+
+```
+
+# BLC article (stress, natives, late advanced learners and interpreters)
+
+## Overview
+
+This document contains updates to the statistical analysis for BLC article 
+(3rd revisions). 
+Last udpated on `r Sys.Date()`. 
+The results section can be copied and pasted into the corresponding google doc. 
+The tables can also be copy and pasted where appropriate. 
+
+## Main changes
+
+**Participants**  
+
+The updated analysis includes more participants in the interpreter (IN) group 
+and a few different participants in the monolingual (M) and advanced learner 
+non-interpreter (NIN) groups. 
+
+**Analyses**  
+
+The analysis has been simplified to in 2 major ways: 
+by **removing the t-test and GLMM analyses**. 
+The motivation behind using the t-tests was to see if participants fixated on 
+targets above chance levels (50%) at the offset of the first syllable of the 
+target items. 
+The problem with this analysis is that is reduced a lot of data to 
+approximately 50 data points (and 10ish in the IN group). 
+This forced us to run multiple tests and correct for family-wise error using a 
+Bonferroni adjustment (and killing our power). 
+This was particularly troubling becuase it was apparent that there was a stress 
+effect (oxytones consistently had higher fixation rates), but we refrained 
+from testing syllable structure to avoid (1) futher correcting alpha and (2) 
+harking. 
+In place of the t-tests I have included model estimates from the growth curve 
+analysis at the target syllable offset ± SE. 
+This is not a formal test against chance, but is clearly more reliable than the 
+t-tests. 
+It also includes the 50ms bin, which I believe will make one of the reviewers 
+happy. 
+The downside is that it inevitably includes some acoustic information from 
+slightly after the initial syllable. 
+We don't know how much, but we can examine the time course to see how close 
+taret fixations are to chance before and after the relvant bin (bin #4, 
+4 x 50 = `r 4 * 50` ms). 
+With regard to the GLMMs, I believe we can obtain the same information (and 
+more) from the GCA. 
+
+## Main findings
+
+The most important change regarding the findings is the **significant effect of 
+lexical stress**. 
+I believe the power increase due to additional participants is the principle 
+explanation for this. 
+I was able to get the most complex (maximal) random effects structure to 
+converge. 
+The story seems to be the following: native speakers anticipate target suffixes 
+in all conditions, though certain conditions seem to facilitate processing. 
+Specifically, if we consider paroxytone words with open syllables to be the 
+default (the most common syllable in Spanish), we see earlier target fixations 
+with the addition of the coda and with a shift of stress to the final syllable, 
+but the effects are not compounding. 
+For example, an unstressed penult is associated more looks to target, but the 
+addition of a coda doesn't help that much more. 
+
+
+
+
+# Results
+
+
+
+
+# Plots
+
+```{r, 'plot-ind-preds', echo=FALSE, fig.cap="Growth curve estimates of target fixations as a function of lexical stress and syllable structure for each group during the analysis window. Symbols and lines represent model estimates, and the transparent ribbons represents ±SE. Empirical logit values on y-axis correspond to proportions of 0.12 0.50 0.88 0.98. The horizontal dotted line represents the 50% probability of fixating on the target. The vertical dotted line indicates 200 ms after the offset of the target syllable."}
+knitr::include_graphics(
+  here("figs", "stress", "s3_adv_int_nat", "eye_track", "stress_p2.png")
+)
+```
+
+```{r, 'plot-group-preds', echo=FALSE, fig.cap="Growth curve estimates of target fixations as a function of lexical stress and syllable structure for each group during the analysis window. Symbols and lines represent model estimates, and the transparent ribbons represents ±SE. Empirical logit values on y-axis correspond to proportions of 0.12 0.50 0.88 0.98. The horizontal dotted line represents the 50% probability of fixating on the target. The vertical dotted line indicates 200 ms after the offset of the target syllable."}
+knitr::include_graphics(
+  here("figs", "stress", "s3_adv_int_nat", "eye_track", "stress_p3.png")
+)
+```
+
+# Tables 
+
+```{r, table-target-offset-props, eval=T, echo=F}
+
+my_border <- fp_border(width = 1.5)
+
+model_preds$target_offset_preds %>% 
+  mutate(coda = if_else(coda == 1, "CV", "CVC"), 
+         cond = if_else(cond == 1, "Paroxytone", "Oxytone")) %>% 
+  arrange(group, coda, desc(cond)) %>% 
+  mutate(group = blank_same_as_last(as.character(group)), 
+         coda =  blank_same_as_last(coda)) %>% 
+  select(Group = group, `Syllable structure` = coda, 
+         `Lexical stress` = cond, Probability = prob, LB = prob_lb, 
+         UB = prob_ub) %>% 
+  flextable() %>% 
+  width(., j = c(2, 3, 4), width = c(1.3, 1.1, 1.1)) %>% 
+  font(., fontname = "Times", part = "all") %>%
+  fontsize(., size = 11) %>% 
+  border_remove(.) %>%  
+  border(., part = "header", 
+            border.top = my_border,
+            border.bottom = my_border) %>% 
+  hline_bottom(., part = "body", border = my_border) %>% 
+  set_caption(., caption = "test")
+```
+
+Table 1: Probability of target fixations ±SE at 200 ms after the target 
+syllable offset. 
+
+
+## Fixed effects
+
+
+```{r, warning=F}
+my_order <- 
+  c(1, 2, 3, 4, 5, 9, 13, 17, 6, 7, 8, 10, 11, 12, 21, 14, 18, 15, 19, 
+    16, 20, 22, 23, 24, 25, 29, 26, 30, 27, 31, 28, 32)
+
+pretty_fixed_effects <- full_mods$gca_full_mod_int_3 %>% 
+  tidy_lme4 %>% 
+  mutate(index = my_order) %>% 
+  tibble::rownames_to_column("old_index") %>% 
+  arrange(index) %>% 
+  dplyr::select(-old_index, -index) %>% 
+  mutate(p = format_pval(p), 
+         Parameter = fix_param_names(Parameter)) %>% 
+  mutate_each(funs(format_fixef_num), Estimate:t) %>% 
+  rename(`_t_` = t, `_p_` = p)
+
+# Include gammas (Gij) after each parameter name
+subs <- c(paste0(0:3, 0), paste0(0:3, 1), 
+          paste0(0:3, 2), paste0(0:3, 3), 
+          paste0(0:3, 4), paste0(0:3, 5), 
+          paste0(0:3, 6), paste0(0:3, 7))
+var_labels <- parenthesize(paste0(emphasize("&gamma;"), "~", subs, "~"))
+pretty_fixed_effects$Parameter %<>% paste(., var_labels)
+
+pretty_fixed_effects %>% 
+  select(-effect) %>% 
+  knitr::kable(format = "pandoc", align = str_tokenize("lrrrr")) 
+
+```
+
+Table 2: Growth curve model fixed effects (must reduce font size and single space).
+
+
+
+
+
+
+## Random effects
+
+```{r, 'ranef-table', results = "asis"}
+ranef_table <- full_mods$gca_full_mod_int_3 %>% 
+  tidy_ranef_summary %>% 
+  # Format the numbers
+  mutate_each(funs(format_fixef_num), vcov, sdcor) %>%
+  mutate_each(funs(format_cor), -var1, -grp, -vcov, -sdcor) %>%
+  sort_ranef_grps %>%
+  # Format variable names and group names
+  mutate(var1 = fix_param_names(var1) %>% blank_nas,
+         grp =  blank_same_as_last(grp) %>% fix_param_names) %>% 
+  rename(Group = grp, Parameter = var1, Variance = vcov, SD = sdcor)
+
+# Correlation columns need names with characters so that pandoc can align them
+names(ranef_table)[5:10] <- 
+  c("Correlations", "&nbsp;", " &nbsp;", "  &nbsp;", "  &nbsp;", "  &nbsp;")
+
+ranef_table %>% 
+  knitr::kable(caption = "Model random effects", format = "pandoc", 
+        align = str_tokenize("llrrrrrr"))
+```
+
+
+
+
+
+

@@ -87,11 +87,12 @@ stress_p2 <- model_preds$fits_all %>%
   ggplot(., aes(x = time_zero, y = fit, ymax = ymax, ymin = ymin,
                 fill = coda, color = coda)) +
   facet_grid(group ~ condition) +
-  geom_hline(yintercept = 0, lty = 3) +
-  geom_vline(xintercept = 4, lty = 3) +
+  geom_hline(yintercept = 0, lty = 3, size = 0.4) +
+  geom_vline(xintercept = 4, lty = 3, size = 0.4) +
   geom_ribbon(alpha = 0.2, color = NA, show.legend = F) +
-  geom_point(aes(shape = coda), size = 1.5, show.legend = F) +
   geom_line(size = 0.75) +
+  geom_point(aes(shape = coda), color = "black", size = 1.3, show.legend = F) +
+  geom_point(aes(shape = coda), size = 0.85, show.legend = F) +
   scale_x_continuous(breaks = c(-4, 0, 4, 8, 12),
                      labels = c("-200", "0", "200", "400", "600")) +
   scale_color_brewer(palette = "Set1", name = "Syllable structure") +
@@ -107,11 +108,12 @@ stress_p3 <- model_preds$fits_all %>%
   ggplot(., aes(x = time_zero, y = fit, ymax = ymax, ymin = ymin,
                 fill = group, color = group)) +
   facet_grid(coda ~ condition) +
-  geom_hline(yintercept = 0, lty = 3) +
-  geom_vline(xintercept = 4, lty = 3) +
+  geom_hline(yintercept = 0, lty = 3, size = 0.4) +
+  geom_vline(xintercept = 4, lty = 3, size = 0.4) +
   geom_ribbon(alpha = 0.2, color = NA, show.legend = F) +
-  geom_point(aes(shape = group), size = 1.5, show.legend = F) +
   geom_line(size = 0.75) +
+  geom_point(aes(shape = group), color = "black", size = 1.3, show.legend = F) +
+  geom_point(aes(shape = group), size = 0.85, show.legend = F) +
   scale_x_continuous(breaks = c(-4, 0, 4, 8, 12),
                      labels = c("-200", "0", "200", "400", "600")) +
   scale_color_brewer(palette = "Set1", name = "Group") +
@@ -119,13 +121,13 @@ stress_p3 <- model_preds$fits_all %>%
        y = "Empirical logit of looks to target") +
   theme_big + legend_adj_2
 
-ggsave(paste0(figs_path, "/stress_p2.png"), stress_p2, width = 190,
-       height = 150, units = "mm", dpi = 600)
-ggsave(paste0(figs_path, "/stress_p2.eps"), stress_p2, width = 190,
-       height = 150, units = "mm", dpi = 600, device = cairo_ps)
-ggsave(paste0(figs_path, "/stress_p3.png"), stress_p3, width = 190,
+ggsave(paste0(figs_path, "/stress_p2.png"), stress_p2, width = 150,
        height = 120, units = "mm", dpi = 600)
-ggsave(paste0(figs_path, "/stress_p3.eps"), stress_p3, width = 190,
+ggsave(paste0(figs_path, "/stress_p2.eps"), stress_p2, width = 150,
+       height = 120, units = "mm", dpi = 600, device = cairo_ps)
+ggsave(paste0(figs_path, "/stress_p3.png"), stress_p3, width = 150,
+       height = 120, units = "mm", dpi = 600)
+ggsave(paste0(figs_path, "/stress_p3.eps"), stress_p3, width = 150,
        height = 120, units = "mm", dpi = 600, device = cairo_ps)
 
 # -----------------------------------------------------------------------------

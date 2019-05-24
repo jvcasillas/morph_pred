@@ -70,14 +70,16 @@ tidy_lme4 <- . %>%
 
 # Rename variables from the main model using markdown (COME BACK TO THIS)
 fix_param_names <- . %>%
-  str_replace("Conditionneutral", "Neutral Cond.") %>%
-  str_replace("Conditionfacilitating", "Facilitating Cond.") %>%
-  str_replace("Conditionfiller", "Filler Cond.") %>%
+  str_replace("coda_sum", "Syllable structure") %>%
+  str_replace("condition_sum", "Lexical stress") %>%
+  str_replace("group", "Group") %>%
+  str_replace("Groupint", "Group IN") %>%
+  str_replace("Groupla", "Group NIN") %>%
+  str_replace("Syllable structure:", "Syllable structure &times; ") %>%
+  str_replace("Lexical stress:", "Lexical stress &times; ") %>%
   str_replace("ot(\\d)", "Time^\\1^")  %>%
-  str_replace("Time.1.", "Time")  %>%
-  str_replace(":", " &times; ") %>%
   str_replace(".Intercept.", "Intercept") %>%
-  str_replace("Subj", "Child")
+  str_replace(":", " &times; ")
 
 # Sort random effects groups, and make sure residual comes last
 sort_ranef_grps <- function(df) {
@@ -209,32 +211,36 @@ inset_legend <- theme(
 
 # Adjustments to legend
 legend_adj <- theme(
-  legend.position = c(0.09, 0.94),
+  legend.position = c(0.09, 0.92),
   legend.key = element_blank(),
   legend.background = element_blank(),
   strip.background = element_blank(),
   axis.title.y = element_text(size = rel(.9), hjust = 0.95),
+  axis.title.x = element_text(size = rel(.9)),
   legend.key.size = unit(0.75, 'lines'),
-  legend.title = element_text(size = 10),
+  legend.text = element_text(size = 6),
+  legend.title = element_text(size = 7),
   plot.margin = unit(rep(2, 4), "mm"),
   panel.grid.major = element_line(colour = 'grey90', size = 0.15),
   panel.grid.minor = element_line(colour = 'grey90', size = 0.15)
 )
 
 legend_adj_2 <- theme(
-  legend.position = c(0.07, 0.90),
+  legend.position = c(0.05, 0.90),
   legend.key = element_blank(),
   legend.background = element_blank(),
   strip.background = element_blank(),
   axis.title.y = element_text(size = rel(.9), hjust = 0.95),
+  axis.title.x = element_text(size = rel(.9)),
   legend.key.size = unit(0.75, 'lines'),
-  legend.title = element_text(size = 10),
+  legend.text = element_text(size = 7),
+  legend.title = element_text(size = 8),
   plot.margin = unit(rep(2, 4), "mm"),
   panel.grid.major = element_line(colour = 'grey90', size = 0.15),
   panel.grid.minor = element_line(colour = 'grey90', size = 0.15)
 )
 
 # Theme
-theme_big <- theme_bw(base_size = 12, base_family = "Times")
+theme_big <- theme_bw(base_size = 10, base_family = "Times")
 
 # -----------------------------------------------------------------------------
