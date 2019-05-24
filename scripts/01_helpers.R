@@ -79,7 +79,9 @@ fix_param_names <- . %>%
   str_replace("Lexical stress:", "Lexical stress &times; ") %>%
   str_replace("ot(\\d)", "Time^\\1^")  %>%
   str_replace(".Intercept.", "Intercept") %>%
-  str_replace(":", " &times; ")
+  str_replace(":", " &times; ") %>%
+  str_replace("participant", "Participant") %>%
+  str_replace("target", "Item")
 
 # Sort random effects groups, and make sure residual comes last
 sort_ranef_grps <- function(df) {
@@ -254,7 +256,16 @@ report_fixef_row <- function(df, row) {
 inv_logit <- gtools::inv.logit
 
 
-
+# Printing function for reporting models estimates at target offset
+target_offset_prob <- function(group, coda, cond) {
+  frame <- model_preds$target_offset_preds
+  vals <- frame[frame$group == group & frame$coda == coda & frame$cond == cond,
+                c("prob", "prob_lb", "prob_ub")]
+  vals <- mutate_all(vals, round, digits = 3)
+  output <- paste0("Probability = ", vals$prob, "; LB = ",
+                   vals$prob_lb, "; UB = ", vals$prob_ub)
+  return(output)
+}
 
 
 
