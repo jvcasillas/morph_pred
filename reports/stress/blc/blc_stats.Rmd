@@ -294,11 +294,12 @@ package multcomp (Hothorn, Bretz, & Westfall, 2008).
 
 ```{r, 'write-up-prep', warning=F}
 # Prepare table to support easy in-line printing of equations
-params <- full_mods$gca_full_mod_int_3 %>% 
-  tidy_lme4 %>% rename(B = Estimate)
-params$Parameter %<>% 
-  str_replace(".Intercept.", "Intercept") %>%
-  str_replace(":", "_")
+params <- pretty_fixed_effects %>% 
+  rename(B = Estimate, t = `_t_`, p = `_p_`)
+params$B %<>% str_replace("&minus;", "-")
+params$SE %<>% str_replace("&minus;", "-")
+params$t %<>% str_replace("&minus;", "-")
+params$p %<>% str_replace("< ", "") %>% as.numeric
 
 params$subscript <- 
   c(paste0(0:3, 0), paste0(0:3, 1), 
@@ -306,39 +307,122 @@ params$subscript <-
     paste0(0:3, 4), paste0(0:3, 5), 
     paste0(0:3, 6), paste0(0:3, 7))
 
-params <- tibble::column_to_rownames(params, 'Parameter')
+params <- tibble::column_to_rownames(params, 'subscript')
 
+params$subscript <- 
+  c(paste0(0:3, 0), paste0(0:3, 1), 
+    paste0(0:3, 2), paste0(0:3, 3), 
+    paste0(0:3, 4), paste0(0:3, 5), 
+    paste0(0:3, 6), paste0(0:3, 7))
 
 # Shortcut for inline reporting from the above table
 report_row <- function(row_name) report_fixef_row(params, row_name)
 
 # Pre-calculate intercept as proportion
-b0 <- params["Intercept", "B"]
+b0 <- params$B[params$subscript == "00"] %>% as.numeric
 b0_prop <- b0 %>% inv_logit %>% round(2) %>% remove_leading_zero
 
 # Pre-calculate effect of condition as proportion
-b0_coda <- params["coda_sum", "B"]
+b0_coda <- params$B[params$subscript == "31"] %>% as.numeric
 b0_increase <- inv_logit(b0 + b0_coda) - inv_logit(b0)
 b0_increase %<>% round(2) %>% remove_leading_zero()
+
+
+target_offset_prob <- function(group, coda, cond) {
+  frame <- model_preds$target_offset_preds
+  vals <- frame[frame$group == group & frame$coda == coda & frame$cond == cond, 
+                c("prob", "prob_lb", "prob_ub")] 
+  vals <- mutate_all(vals, round, digits = 3)
+  output <- paste0("Probability = ", vals$prob, "; LB = ", vals$prob_lb, "; UB = ", vals$prob_ub)
+  return(output)
+}
+
 ```
 
-The was a main effect of something on something 
-(`r pretty_chi_result(nested_model_comparisons$full_int_anova, 
-"gca_full_mod_int_3")`).
 
-The effect was awesome (`r report_row("Intercept")`). 
-
-build individual models for each group
-	- model intercept tests if they predict above chance over time course
-	- understand coda x condition interaction for each group
-build big model to test group differences
-	- examine how learners differ from natives
-	- pairwise tests to see how learners differ from each other 
-	- these 4-way interactions are difficult to understand
-	- we can examine stress and syllable structure effect size over time course
+Figure X plots the model estimates from the GCA. 
+The full model summary is available in Appendix X. 
+We report the results for the M group and then provide comparisons with and 
+between the learner groups. 
+The model intercept estimates the log odds of M fixating on the target, 
+averaging over the time course, lexical stress and syllable structure. 
+The log odds were _&gamma;_~00~&nbsp;=&nbsp;`r fixed_digits(b0, 2)` 
+(proportion:&nbsp;`r b0_prop`). 
+The linear, quadratic, and cubic polynomial time terms captured the sigmoid 
+shape of the time course and were retained in the model 
+(`r report_row("10")`; `r report_row("20")`; `r report_row("30")`). 
 
 
-ind_mods$gca_mod_ss_int_3 %>% tidy_lme4 %>% mutate(p = format_pval(p))
+**+++ FIGURE X here +++**  
 
-gca_mod_ss_int_1 %>% tidy_lme4 %>% mutate(p = format_pval(p))
 
+The was a main effect of lexical stress on the quadratic time term 
+(`r pretty_chi_result(nested_model_comparisons$ss_cond_anova, 
+"gca_mod_ss_cond_2")`). 
+Averaging over syllable structure, a change from paroxytonic to oxytonic 
+stress decreased the bowing of the trajectory at the center of the time 
+course (`r report_row("22")`) such that M fixated on oxytonic targets earlier 
+than paroxytonic targets. 
+There was also a main effect of syllable structure on the cubic time term 
+(`r pretty_chi_result(nested_model_comparisons$ss_coda_anova, 
+"gca_mod_ss_coda_3")`), as well as syllable structure &times; lexical stress 
+interaction on the linear time term  
+(`r pretty_chi_result(nested_model_comparisons$ss_int_anova,
+"gca_mod_ss_int_1")`), such that the effect of lexical stress decreased the 
+overall slope (`r report_row("31")`) and the bowing of the inflections points 
+of closed, paroxytonic syllables (`r report_row("15")`).
+
+Focusing on the offset of the target syllable, the model estimated target 
+fixations above 50% in all conditions 
+(Paroxytone CV: `r target_offset_prob(group = "M", coda = 1, cond = 1)`; 
+Paroxytone CVC: `r target_offset_prob(group = "M", coda = -1, cond = 1)`; 
+Oxytone CV: `r target_offset_prob(group = "M", coda = 1, cond = -1)`; 
+Oxytone CVC: `r target_offset_prob(group = "M", coda = -1, cond = -1)`). 
+Table X provides estimates ±SE for all groups in all conditions. 
+Taken together, the analysis indicated that the M group anticipated target 
+suffixes in all conditions, though certain conditions seem to facilitate 
+processing. 
+Specifically, defaulting from a paroxytone with a CV penult, one observes 
+earlier target fixations with the addition of a coda and with a shift of 
+stress to the final syllable, suggesting that marked sequences facilitate 
+lexical access in native speakers. 
+
+
+**+++Table X here +++**  
+
+With regard to the learners, there was a simple interaction of the quadratic 
+time term on the intercept for the NIN group (`r report_row("23")`). 
+That is, the NIN had a more bowed trajectory at the offset of the target 
+syllable, indicating later overall fixations on the target. 
+Additionally, there was a lexical stress &times; syllable structure 
+interaction on the linear slope (`r report_row("23")`), such that NIN had a 
+steeper slope than M in CV syllables of paroxtone words. 
+This indicates that the NIN fixated on targets later the default condition, 
+but earlier in other conditions. 
+For the IN group, there was also a simple interaction of the quadratic time 
+term on the intercept (`r report_row("24")`). 
+Thus, with regard to M, IN also fixated later on targets overall. 
+Finally, there was a lexical stress &times; syllable structure 
+interaction with IN on the cubic time term (`r report_row("37")`), indicative 
+of flater inflection points for CVC oxytone targets. 
+Both learner groups showed later target fixations in the default, CV 
+paroxytone condition. 
+This assertion is corrorborated by examening the NIN and IN's proportion of 
+target fixations at the target syllable offset (see Table XXX).
+Specifically, the model estimates show that NIN did not anticipate with CV 
+paroxytones (`r target_offset_prob(group = "NIN", coda = 1, cond = 1)`), but 
+did so at a higher rate in all other conditions 
+(Paroxytone CVC: `r target_offset_prob(group = "NIN", coda = -1, cond = 1)`; 
+Oxytone CV: `r target_offset_prob(group = "NIN", coda = 1, cond = -1)`; 
+Oxytone CVC: `r target_offset_prob(group = "M", coda = -1, cond = -1)`). 
+The same was true for the IN group 
+(Paroxytone CV: `r target_offset_prob(group = "IN", coda = 1, cond = 1)`; 
+Paroxytone CVC: `r target_offset_prob(group = "IN", coda = -1, cond = 1)`; 
+Oxytone CV: `r target_offset_prob(group = "IN", coda = 1, cond = -1)`; 
+Oxytone CVC: `r target_offset_prob(group = "IN", coda = -1, cond = -1)`)
+
+Thus the learner groups differed from each other in that 
+
+**+++Figure XXX here+++**  
+
+gca_full_mod_int_relevel
