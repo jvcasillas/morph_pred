@@ -72,7 +72,7 @@ load(paste0(gca_mods_path, "/nested_model_comparisons.Rdata"))
 
 This document contains updates to the statistical analysis for BLC article 
 (3rd revisions). 
-Last udpated on `r Sys.Date()`. 
+Last updated on `r Sys.Date()`. 
 The results section can be copied and pasted into the corresponding google doc. 
 The tables can also be copy and pasted where appropriate. 
 
@@ -95,9 +95,9 @@ The problem with this analysis is that is reduced a lot of data to
 approximately 50 data points (and 10ish in the IN group). 
 This forced us to run multiple tests and correct for family-wise error using a 
 Bonferroni adjustment (and killing our power). 
-This was particularly troubling becuase it was apparent that there was a stress 
+This was particularly troubling because it was apparent that there was a stress 
 effect (oxytones consistently had higher fixation rates), but we refrained 
-from testing syllable structure to avoid (1) futher correcting alpha and (2) 
+from testing syllable structure to avoid (1) further correcting alpha and (2) 
 harking. 
 In place of the t-tests I have included model estimates from the growth curve 
 analysis at the target syllable offset ± SE. 
@@ -108,7 +108,7 @@ happy.
 The downside is that it inevitably includes some acoustic information from 
 slightly after the initial syllable. 
 We don't know how much, but we can examine the time course to see how close 
-taret fixations are to chance before and after the relvant bin (bin #4, 
+target fixations are to chance before and after the relevant bin (bin #4, 
 4 x 50 = `r 4 * 50` ms). 
 With regard to the GLMMs, I believe we can obtain the same information (and 
 more) from the GCA. 
@@ -346,7 +346,7 @@ Appendix 3: Pairwise comparisons between learner groups.
 
 # Statistical Analysis
 
-The time course data from the eye-tracking task were analized using growth 
+The time course data from the eye-tracking task were analyzed using growth 
 curve analysis (GCA, Mirman, 2016). 
 We downsampled the data to bins of 50 ms which were centered at the offset of 
 the first syllable of target items.
@@ -374,9 +374,9 @@ effects on all time terms.
 Main effects and higher order interactions were assessed using nested model 
 comparisons. 
 The analysis was conducted in R (R Core Team, 2019) and the GCA models were 
-fit using lme4 (Bates, Mächler, Bolker, & Walker, 2009). 
+fit using `lme4` (Bates, Mächler, Bolker, & Walker, 2009). 
 Pairwise comparisons between learners groups were conducted using the R 
-package multcomp (Hothorn, Bretz, & Westfall, 2008).
+package `multcomp` (Hothorn, Bretz, & Westfall, 2008).
 
 # Results
 
@@ -414,7 +414,7 @@ b0_prop <- b0 %>% inv_logit %>% round(2) %>% remove_leading_zero
 
 
 Figure 1 plots the model estimates from the GCA. 
-The full model summary is available in Appendix X. 
+The full model summary is available in Appendices 1 and 2. 
 We report the results for the M group and then provide comparisons with and 
 between the learner groups. 
 The model intercept estimates the log odds of M fixating on the target, 
@@ -451,7 +451,7 @@ fixations above 50% in all conditions
 Paroxytone CVC: `r target_offset_prob(group = "M", coda = -1, cond = 1)`; 
 Oxytone CV: `r target_offset_prob(group = "M", coda = 1, cond = -1)`; 
 Oxytone CVC: `r target_offset_prob(group = "M", coda = -1, cond = -1)`). 
-Table X provides estimates ±SE for all groups in all conditions. 
+Table 1 provides estimates ±SE for all groups in all conditions. 
 Taken together, the analysis indicated that the M group anticipated target 
 suffixes in all conditions, though certain conditions seem to facilitate 
 processing. 
@@ -486,8 +486,8 @@ of sharper inflection points for CV oxytone targets.
 
 Both learner groups showed later target fixations in the default, CV 
 paroxytone condition. 
-This assertion is corrorborated by examening the NIN and INs' proportion of 
-target fixations at the target syllable offset (see Table XXX).
+This assertion is corroborated by examining the NIN and INs' proportion of 
+target fixations at the target syllable offset (see Table 1).
 Specifically, the model estimates suggest that NIN did not anticipate with CV 
 paroxytones (`r target_offset_prob(group = "NIN", coda = 1, cond = 1)`), but 
 did so at a higher rate in all other conditions 
@@ -499,13 +499,18 @@ The same was true for the IN group
 Paroxytone CVC: `r target_offset_prob(group = "IN", coda = -1, cond = 1)`; 
 Oxytone CV: `r target_offset_prob(group = "IN", coda = 1, cond = -1)`; 
 Oxytone CVC: `r target_offset_prob(group = "IN", coda = -1, cond = -1)`). 
-Pairwise comparisons (see Appendix XXX) showed that the learners groups also 
+Pairwise comparisons (see Appendix 3) showed that the learner groups also 
 differed from each other.
 Specifically, there was a lexical stress &times; syllable structure 
 interaction on the linear and cubic time terms
 (`r report_pairwise(6)`; `r report_pairwise(8)`, respectively). 
-
-Thus the learner groups differed from each other in that 
+Upon inspecting Figure 2 one can observe that the learners have nearly 
+identical trajectories for CV paroxytones. 
+In all other conditions IN have steeper slopes with more bowed inflection 
+points, indicating later target fixations with regard to the NIN. 
+That said, in all conditions the IN group fixate on targets in equal proportion 
+to NIN at the offset of the target syllable (the dotted vertical lines), 
+suggesting IN fixate on targets later but at a faster rate. 
 
 
 
