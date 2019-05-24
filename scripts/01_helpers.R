@@ -183,6 +183,86 @@ subscript <- make_html_tagger("sub")
 
 
 
+# Printers --------------------------------------------------------------------
+
+
+## Pretty Printers
+
+# Given an ANOVA model comparison and a model name, give the model comparison
+# results in the format "chi-square(x) = y, p = z" (as pretty markdown)
+pretty_chi_result <- function(anova_results, model_name) {
+  comparison <- anova_results %>%
+    tidy_anova %>%
+    filter(Model == model_name)
+
+  chi_part <- pretty_chi_df(comparison$Chi_Df, comparison$Chisq)
+  p_part <- pretty_p(comparison$p)
+  paste0(chi_part, ", ", p_part)
+}
+
+
+# Pretty print chi-square test (i.e., chi^2(dfs) = value)
+pretty_chi_df <- function(dfs, chi, html = TRUE) {
+  eq <- ifelse(html, "&nbsp;=&nbsp;", " = ")
+  sprintf("_&chi;_^2^(%s)%s%.2g", dfs, eq, chi)
+}
+
+
+# Pretty print p-value (for in-line reporting)
+pretty_p <- function(p, html = TRUE) {
+  space <- ifelse(html, "&nbsp;", " ")
+  p_char <- format_pval(p, html) %>% remove_trailing_zero
+  p <- ifelse(0.001 <= p, round(p, 3), p)
+  # Don't use " = " if formatted p-value would return " < .001"
+  p_sep <- ifelse(p < 0.001, space, paste0(space, "=", space))
+  sprintf("_p_%s%s", p_sep, p_char)
+}
+
+pretty_t <- function(t, html = TRUE) {
+  t_formatted <- t %>% fixed_digits(2) %>% leading_minus_sign
+  pretty_eq("_t_", t_formatted, html)
+}
+
+pretty_se <- function(se, html = TRUE) {
+  pretty_eq("SE", fixed_digits(se, 2), html)
+}
+
+pretty_eq <- function(lhs, rhs, html = TRUE) {
+  eq <- ifelse(html, "&nbsp;=&nbsp;", " = ")
+  paste0(lhs, eq, rhs)
+}
+
+# Convert a row of fixed effects data-frame to an inline equation sequence:
+# Bij = b; SE = se; t = t; p = p
+report_fixef_row <- function(df, row) {
+  values <- df[row, ]
+
+  # Only B needs special care. Prefix it with an italic gamma and include its
+  # subscript.
+  values$B %<>% fixed_digits(2) %>% leading_minus_sign
+  gamma <- paste0(emphasize("&gamma;"), "~", values$subscript, "~")
+  pretty_eq(gamma, values$B)
+
+  equations <- c(pretty_eq(gamma, values$B), pretty_se(values$SE),
+                 pretty_t(values$t), pretty_p(values$p))
+
+  # Combine with semicolons
+  paste0(equations, collapse = "; ")
+}
+
+# logits to proportions
+inv_logit <- gtools::inv.logit
+
+
+
+
+
+
+
+
+
+
+
 
 
 

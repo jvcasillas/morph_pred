@@ -56,6 +56,7 @@ gca_mods_path  <- here("models", "stress", "s3_adv_int_nat",
 # Load models as list and store full mod to global env
 load(paste0(gca_mods_path, "/model_preds.Rdata"))
 load(paste0(gca_mods_path, "/full_mods.Rdata"))
+load(paste0(gca_mods_path, "/nested_model_comparisons.Rdata"))
 
 ```
 
@@ -123,10 +124,6 @@ but the effects are not compounding.
 For example, an unstressed penult is associated more looks to target, but the 
 addition of a coda doesn't help that much more. 
 
-
-
-
-# Results
 
 
 
@@ -241,6 +238,75 @@ ranef_table %>%
 
 
 
+# Statistical Analyses
+
+The time course data from the eye-tracking task were analized using growth 
+curve analysis (GCA, Mirman, 2016). 
+We downsampled the data to bins of 50 ms which were centered at the offset of 
+the first syllable of target items.
+<!--
+Subsequent analyses focus on the point in the time course 200 ms after the 
+target syllable offset (the time required to launch a saccade, Matin, Shao, & 
+Boff, 1993). 
+-->
+The time course of fixation ranged from 200 ms before target syllable offset 
+to 600 ms after.
+The empirical logit transformation (Barr, 2008) was applied to the binary 
+responses (fixations to the target or the distractor).
+We modeled the time course using linear, quadratic, and cubic orthogonal 
+polynomials with fixed effects of group, lexical stress, and syllable 
+structure on all time terms.
+For the group predictor M was set as the baseline, thus the IN and NIN 
+parameters described how the growth curve of the learners differed from that 
+of the native controls.
+Lexical stress and syllable structure were sum coded such that parameter 
+estimates represent effect sizes of change from CV to CVC syllables and 
+paroxytone to oxytone stress. 
+All models included by-subject random effects on all time terms and the 
+syllable structure and lexical stress predictors, as well as by-item random 
+effects on all time terms.
+Main effects and higher order interactions were assessed using nested model 
+comparisons. 
+The analysis was conducted in R (R Core Team, 2019) and the GCA models were 
+fit using lme4 (Bates, Mächler, Bolker, & Walker, 2009). 
+Pairwise comparisons between learners groups were conducted using the R 
+package multcomp (Hothorn, Bretz, & Westfall, 2008).
+
+# Results
+
+```{r, 'write-up-prep', warning=F}
+# Prepare table to support easy in-line printing of equations
+params <- full_mods$gca_full_mod_int_3 %>% 
+  tidy_lme4 %>% rename(B = Estimate)
+params$Parameter %<>% 
+  str_replace(".Intercept.", "Intercept") %>%
+  str_replace(":", "_")
+
+params$subscript <- 
+  c(paste0(0:3, 0), paste0(0:3, 1), 
+    paste0(0:3, 2), paste0(0:3, 3), 
+    paste0(0:3, 4), paste0(0:3, 5), 
+    paste0(0:3, 6), paste0(0:3, 7))
+
+params <- tibble::column_to_rownames(params, 'Parameter')
 
 
+# Shortcut for inline reporting from the above table
+report_row <- function(row_name) report_fixef_row(params, row_name)
+
+# Pre-calculate intercept as proportion
+b0 <- params["Intercept", "B"]
+b0_prop <- b0 %>% inv_logit %>% round(2) %>% remove_leading_zero
+
+# Pre-calculate effect of condition as proportion
+b0_coda <- params["coda_sum", "B"]
+b0_increase <- inv_logit(b0 + b0_coda) - inv_logit(b0)
+b0_increase %<>% round(2) %>% remove_leading_zero()
+```
+
+The was a main effect of something on something 
+(`r pretty_chi_result(nested_model_comparisons$full_int_anova, 
+"gca_full_mod_int_3")`).
+
+The effect was awesome (`r report_row("Intercept")`). 
 
