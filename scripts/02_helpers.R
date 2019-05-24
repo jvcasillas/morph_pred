@@ -204,6 +204,6 @@ inset_legend <- theme(
   plot.margin = unit(rep(2, 4), "mm")
 )
 
-theme_big <- theme_bw(base_size = 12) + inset_legend
+theme_big <- theme_bw(base_size = 12, base_family = "Times") + inset_legend
 
 # -----------------------------------------------------------------------------

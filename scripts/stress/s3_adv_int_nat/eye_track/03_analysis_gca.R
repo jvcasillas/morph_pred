@@ -17,16 +17,21 @@
 
 # Load data and models --------------------------------------------------------
 
+# Load data
 source(here::here("scripts", "01_load_data.R"))
 
+# Get path to saved models
 gca_mods_path  <- here("models", "stress", "s3_adv_int_nat", "eye_track", "gca")
-gca_mods       <- list.files(gca_mods_path, pattern = ".rds")
-all_gca_mods   <- paste0(gca_mods_path, "/", gca_mods)
-all_rds        <- lapply(all_gca_mods, readRDS)
-names(all_rds) <- gsub(".rds", "",
-                       list.files(gca_mods_path, pattern = ".rds",
-                                  full.names = FALSE), fixed = TRUE)
-list2env(all_rds, globalenv())
+
+# Load models as lists
+load(paste0(gca_mods_path, "/ind_mods.Rdata"))
+load(paste0(gca_mods_path, "/full_mods.Rdata"))
+load(paste0(gca_mods_path, "/nested_model_comparisons.Rdata"))
+
+# Store objects in global env
+list2env(ind_mods, globalenv())
+list2env(full_mods, globalenv())
+list2env(nested_model_comparisons, globalenv())
 
 # -----------------------------------------------------------------------------
 
@@ -82,15 +87,6 @@ stress_gc_subset <- stress50 %>%
 
 
 
-
-
-
-
-
-
-
-
-
 # Random effects structure ----------------------------------------------------
 
 # Build up random effects to test time terms
@@ -135,41 +131,35 @@ gca_mod_ss_base <-
        control = lmerControl(optimizer = 'bobyqa'), REML = F,
        data = filter(stress_gc_subset, group == "ss"))
 
-# add coda effect to intercept
-# add coda effect to linear slope
-# add coda effect to quadratic time term
-# add coda effect to cubic time term
+# add coda effect to intercept, linear slope, quadratic, and cubic time terms
 gca_mod_ss_coda_0 <- update(gca_mod_ss_base,   . ~ . + coda_sum)
 gca_mod_ss_coda_1 <- update(gca_mod_ss_coda_0, . ~ . + ot1:coda_sum)
 gca_mod_ss_coda_2 <- update(gca_mod_ss_coda_1, . ~ . + ot2:coda_sum)
 gca_mod_ss_coda_3 <- update(gca_mod_ss_coda_2, . ~ . + ot3:coda_sum)
 
-anova(gca_mod_ss_base, gca_mod_ss_coda_0, gca_mod_ss_coda_1,
-      gca_mod_ss_coda_2, gca_mod_ss_coda_3)
+ss_coda_anova <-
+  anova(gca_mod_ss_base, gca_mod_ss_coda_0, gca_mod_ss_coda_1,
+        gca_mod_ss_coda_2, gca_mod_ss_coda_3)
 
-# add condition effect to intercept
-# add condition effect to linear slope
-# add condition effect to quadratic time term
-# add condition effect to cubic time term
+# add coda effect to intercept, linear slope, quadratic, and cubic time terms
 gca_mod_ss_cond_0 <- update(gca_mod_ss_coda_3,   . ~ . + condition_sum)
 gca_mod_ss_cond_1 <- update(gca_mod_ss_cond_0,   . ~ . + ot1:condition_sum)
 gca_mod_ss_cond_2 <- update(gca_mod_ss_cond_1,   . ~ . + ot2:condition_sum)
 gca_mod_ss_cond_3 <- update(gca_mod_ss_cond_2,   . ~ . + ot3:condition_sum)
 
-anova(gca_mod_ss_coda_3, gca_mod_ss_cond_0, gca_mod_ss_cond_1,
-      gca_mod_ss_cond_2, gca_mod_ss_cond_3)
+ss_cond_anova <-
+  anova(gca_mod_ss_coda_3, gca_mod_ss_cond_0, gca_mod_ss_cond_1,
+        gca_mod_ss_cond_2, gca_mod_ss_cond_3)
 
-# add coda x cond int to intercept
-# add coda x cond int to linear slope
-# add coda x cond int to quadratic time term
-# add coda x cond int to cubic time term
+# add coda x cond int to intercept, linear slope, quadratic, and cubic terms
 gca_mod_ss_int_0 <- update(gca_mod_ss_cond_3, . ~ . + coda_sum:condition_sum)
 gca_mod_ss_int_1 <- update(gca_mod_ss_int_0,  . ~ . + ot1:coda_sum:condition_sum)
 gca_mod_ss_int_2 <- update(gca_mod_ss_int_1,  . ~ . + ot2:coda_sum:condition_sum)
 gca_mod_ss_int_3 <- update(gca_mod_ss_int_2,  . ~ . + ot3:coda_sum:condition_sum)
 
-anova(gca_mod_ss_cond_3, gca_mod_ss_int_0, gca_mod_ss_int_1,
-      gca_mod_ss_int_2, gca_mod_ss_int_3)
+ss_int_anova <-
+  anova(gca_mod_ss_cond_3, gca_mod_ss_int_0, gca_mod_ss_int_1,
+        gca_mod_ss_int_2, gca_mod_ss_int_3)
 
 
 
@@ -184,42 +174,35 @@ gca_mod_la_base <-
        control = lmerControl(optimizer = 'bobyqa'), REML = F,
        data = filter(stress_gc_subset, group == "la"))
 
-# add coda effect to intercept
-# add coda effect to linear slope
-# add coda effect to quadratic time term
-# add coda effect to cubic time term
+# add coda effect to intercept, linear slope, quadratic, and cubic time terms
 gca_mod_la_coda_0 <- update(gca_mod_la_base,   . ~ . + coda_sum)
 gca_mod_la_coda_1 <- update(gca_mod_la_coda_0, . ~ . + ot1:coda_sum)
 gca_mod_la_coda_2 <- update(gca_mod_la_coda_1, . ~ . + ot2:coda_sum)
 gca_mod_la_coda_3 <- update(gca_mod_la_coda_2, . ~ . + ot3:coda_sum)
 
-anova(gca_mod_la_base, gca_mod_la_coda_0, gca_mod_la_coda_1,
-      gca_mod_la_coda_2, gca_mod_la_coda_3)
+la_coda_anova <-
+  anova(gca_mod_la_base, gca_mod_la_coda_0, gca_mod_la_coda_1,
+        gca_mod_la_coda_2, gca_mod_la_coda_3)
 
-# add condition effect to intercept
-# add condition effect to linear slope
-# add condition effect to quadratic time term
-# add condition effect to cubic time term
+# add coda effect to intercept, linear slope, quadratic, and cubic time terms
 gca_mod_la_cond_0 <- update(gca_mod_la_coda_3,   . ~ . + condition_sum)
 gca_mod_la_cond_1 <- update(gca_mod_la_cond_0,   . ~ . + ot1:condition_sum)
 gca_mod_la_cond_2 <- update(gca_mod_la_cond_1,   . ~ . + ot2:condition_sum)
 gca_mod_la_cond_3 <- update(gca_mod_la_cond_2,   . ~ . + ot3:condition_sum)
 
-anova(gca_mod_la_coda_3, gca_mod_la_cond_0, gca_mod_la_cond_1,
-      gca_mod_la_cond_2, gca_mod_la_cond_3)
+la_cond_anova <-
+  anova(gca_mod_la_coda_3, gca_mod_la_cond_0, gca_mod_la_cond_1,
+        gca_mod_la_cond_2, gca_mod_la_cond_3)
 
-# add coda x cond int to intercept
-# add coda x cond int to linear slope
-# add coda x cond int to quadratic time term
-# add coda x cond int to cubic time term
+# add coda x cond int to intercept, linear slope, quadratic, and cubic terms
 gca_mod_la_int_0 <- update(gca_mod_la_cond_3, . ~ . + coda_sum:condition_sum)
 gca_mod_la_int_1 <- update(gca_mod_la_int_0,  . ~ . + ot1:coda_sum:condition_sum)
 gca_mod_la_int_2 <- update(gca_mod_la_int_1,  . ~ . + ot2:coda_sum:condition_sum)
 gca_mod_la_int_3 <- update(gca_mod_la_int_2,  . ~ . + ot3:coda_sum:condition_sum)
 
-anova(gca_mod_la_cond_3, gca_mod_la_int_0, gca_mod_la_int_1,
-      gca_mod_la_int_2, gca_mod_la_int_3)
-
+la_int_anova <-
+  anova(gca_mod_la_cond_3, gca_mod_la_int_0, gca_mod_la_int_1,
+        gca_mod_la_int_2, gca_mod_la_int_3)
 
 #
 # only int
@@ -232,45 +215,37 @@ gca_mod_int_base <-
        control = lmerControl(optimizer = 'bobyqa'), REML = F,
        data = filter(stress_gc_subset, group == "int"))
 
-# add coda effect to intercept
-# add coda effect to linear slope
-# add coda effect to quadratic time term
-# add coda effect to cubic time term
+# add coda effect to intercept, linear slope, quadratic, and cubic time terms
 gca_mod_int_coda_0 <- update(gca_mod_int_base,   . ~ . + coda_sum)
 gca_mod_int_coda_1 <- update(gca_mod_int_coda_0, . ~ . + ot1:coda_sum)
 gca_mod_int_coda_2 <- update(gca_mod_int_coda_1, . ~ . + ot2:coda_sum)
 gca_mod_int_coda_3 <- update(gca_mod_int_coda_2, . ~ . + ot3:coda_sum)
 
-anova(gca_mod_int_base, gca_mod_int_coda_0, gca_mod_int_coda_1,
-      gca_mod_int_coda_2, gca_mod_int_coda_3)
+int_coda_anova <-
+  anova(gca_mod_int_base, gca_mod_int_coda_0, gca_mod_int_coda_1,
+        gca_mod_int_coda_2, gca_mod_int_coda_3)
 
-# add condition effect to intercept
-# add condition effect to linear slope
-# add condition effect to quadratic time term
-# add condition effect to cubic time term
+# add coda effect to intercept, linear slope, quadratic, and cubic time terms
 gca_mod_int_cond_0 <- update(gca_mod_int_coda_3,   . ~ . + condition_sum)
 gca_mod_int_cond_1 <- update(gca_mod_int_cond_0,   . ~ . + ot1:condition_sum)
 gca_mod_int_cond_2 <- update(gca_mod_int_cond_1,   . ~ . + ot2:condition_sum)
 gca_mod_int_cond_3 <- update(gca_mod_int_cond_2,   . ~ . + ot3:condition_sum)
 
-anova(gca_mod_int_coda_3, gca_mod_int_cond_0, gca_mod_int_cond_1,
-      gca_mod_int_cond_2, gca_mod_int_cond_3)
+int_cond_anova <-
+  anova(gca_mod_int_coda_3, gca_mod_int_cond_0, gca_mod_int_cond_1,
+        gca_mod_int_cond_2, gca_mod_int_cond_3)
 
-# add coda x cond int to intercept
-# add coda x cond int to linear slope
-# add coda x cond int to quadratic time term
-# add coda x cond int to cubic time term
+# add coda x cond int to intercept, linear slope, quadratic, and cubic terms
 gca_mod_int_int_0 <- update(gca_mod_int_cond_3, . ~ . + coda_sum:condition_sum)
 gca_mod_int_int_1 <- update(gca_mod_int_int_0,  . ~ . + ot1:coda_sum:condition_sum)
 gca_mod_int_int_2 <- update(gca_mod_int_int_1,  . ~ . + ot2:coda_sum:condition_sum)
 gca_mod_int_int_3 <- update(gca_mod_int_int_2,  . ~ . + ot3:coda_sum:condition_sum)
 
-anova(gca_mod_int_cond_3, gca_mod_int_int_0, gca_mod_int_int_1,
-      gca_mod_int_int_2, gca_mod_int_int_3)
+int_int_anova <-
+  anova(gca_mod_int_cond_3, gca_mod_int_int_0, gca_mod_int_int_1,
+        gca_mod_int_int_2, gca_mod_int_int_3)
 
 # -----------------------------------------------------------------------------
-
-
 
 
 
@@ -289,68 +264,33 @@ gca_full_mod_base <-
                              optCtrl = list(maxfun = 2e4)),
        data = stress_gc_subset, REML = F)
 
-# Add group effect on intercept
-# Add group effect on linear slope
-# Add group effect on quadratic poly
-# Add group effect of cubic poly
+# add group effect to intercept, linear slope, quadratic, and cubic time terms
 gca_full_mod_group_0 <- update(gca_full_mod_base,    . ~ . + group)
 gca_full_mod_group_1 <- update(gca_full_mod_group_0, . ~ . + ot1:group)
 gca_full_mod_group_2 <- update(gca_full_mod_group_1, . ~ . + ot2:group)
 gca_full_mod_group_3 <- update(gca_full_mod_group_2, . ~ . + ot3:group)
 
-anova(gca_full_mod_base,
-      gca_full_mod_group_0,
-      gca_full_mod_group_1,
-      gca_full_mod_group_2,
-      gca_full_mod_group_3)
+full_group_anova <-
+  anova(gca_full_mod_base, gca_full_mod_group_0, gca_full_mod_group_1,
+        gca_full_mod_group_2, gca_full_mod_group_3)
 
-# Add (group x coda_sum x condition_sum) interaction to intercept
-# Add (group x coda_sum x condition_sum) interaction to linear slope
-# Add (group x coda_sum x condition_sum) interaction to quadratic time term
-# Add (group x coda_sum x condition_sum) interaction to cubic time term
+# add 3-way int to intercept, linear slope, quadratic, and cubic time terms
 gca_full_mod_int_0 <- update(gca_full_mod_group_3, . ~ . + coda_sum:condition_sum:group)
 gca_full_mod_int_1 <- update(gca_full_mod_int_0,   . ~ . + ot1:coda_sum:condition_sum:group)
 gca_full_mod_int_2 <- update(gca_full_mod_int_1,   . ~ . + ot2:coda_sum:condition_sum:group)
 gca_full_mod_int_3 <- update(gca_full_mod_int_2,   . ~ . + ot3:coda_sum:condition_sum:group)
 
-anova(gca_full_mod_group_3,
-      gca_full_mod_int_0,
-      gca_full_mod_int_1,
-      gca_full_mod_int_2,
-      gca_full_mod_int_3)
+full_int_anova <-
+  anova(gca_full_mod_group_3, gca_full_mod_int_0, gca_full_mod_int_1,
+        gca_full_mod_int_2, gca_full_mod_int_3)
+
+# Relevel for pairwise comparisons
+stress_gc_subset %<>% mutate(., group = fct_relevel(group, "int"))
+gca_full_mod_int_relevel <- update(gca_full_mod_int_3)
 
 }
 
 # -----------------------------------------------------------------------------
-
-
-
-
-
-
-
-# Comparison model ------------------------------------------------------------
-
-# Remove SS
-gca_int_la <- stress_gc_subset %>%
-  filter(group != "ss") %>%
-  mutate(group_sum = if_else(group == "int", 1, -1))
-
-gca_mod_int_la <-
-  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + group_sum + coda_sum + condition_sum +
-         ot1:group_sum + ot2:group_sum + ot3:group_sum +
-         ot1:coda_sum + ot2:coda_sum + ot3:coda_sum +
-         ot1:condition_sum + ot2:condition_sum + ot3:condition_sum +
-         ot1:group_sum:coda_sum + ot2:group_sum:coda_sum + ot3:group_sum:coda_sum +
-         ot1:group_sum:condition_sum + ot2:group_sum:condition_sum + ot3:group_sum:condition_sum +
-         (1 + coda_sum + condition_sum + (ot1 + ot2 + ot3) | participant),
-       control = lmerControl(optimizer = 'bobyqa'),
-       data = gca_int_la, weights = 1/wts, REML = F)
-
-# -----------------------------------------------------------------------------
-
-
-
 
 
 
@@ -370,26 +310,32 @@ ind_mods <- mget(c(paste0(mod_type, "ss", mod_spec),
                    paste0(mod_type, "la", mod_spec),
                    paste0(mod_type, "int", mod_spec)))
 
-# Save models as .rds iterating over list
-ind_mods %>%
-  names(.) %>%
-  map(~ saveRDS(ind_mods[[.]], compress = 'xz',
-                file = paste0(here("models", "stress", "s3_adv_int_nat",
-                                   "eye_track", "gca"), "/", ., ".rds")))
-
+save(ind_mods,
+     file = here("models", "stress", "s3_adv_int_nat", "eye_track", "gca",
+                 "ind_mods.Rdata"))
 
 # Store full (ot1, ot2, ot3, group, coda, cond) models in list
 full_mods <- mget(c(
   "gca_full_mod_base", "gca_full_mod_group_0", "gca_full_mod_group_1",
   "gca_full_mod_group_2", "gca_full_mod_group_3", "gca_full_mod_int_0",
-  "gca_full_mod_int_1", "gca_full_mod_int_2", "gca_full_mod_int_3"))
+  "gca_full_mod_int_1", "gca_full_mod_int_2", "gca_full_mod_int_3",
+  "gca_full_mod_int_relevel"))
 
 # Save models as .rds iterating over list
-full_mods %>%
-  names(.) %>%
-  map(~ saveRDS(full_mods[[.]], compress = 'xz',
-                file = paste0(here("models", "stress", "s3_adv_int_nat",
-                                   "eye_track", "gca"), "/", ., ".rds")))
+save(full_mods,
+     file = here("models", "stress", "s3_adv_int_nat", "eye_track", "gca",
+                 "full_mods.Rdata"))
+
+# Save anova model comparisons
+nested_model_comparisons <-
+  mget(c("ss_coda_anova", "ss_cond_anova", "ss_int_anova",
+         "la_coda_anova", "la_cond_anova", "la_int_anova",
+         "int_coda_anova", "int_cond_anova", "int_int_anova",
+         "full_group_anova", "full_int_anova"))
+
+save(nested_model_comparisons,
+     file = here("models", "stress", "s3_adv_int_nat", "eye_track", "gca",
+                 "nested_model_comparisons.Rdata"))
 
 }
 
