@@ -18,7 +18,7 @@
 # Load data and models --------------------------------------------------------
 
 # Load data
-source(here::here("scripts", "01_load_data.R"))
+source(here::here("scripts", "02_load_data.R"))
 
 # Get path to saved models
 gca_mods_path  <- here("models", "stress", "s3_adv_int_nat", "eye_track", "gca")
@@ -27,11 +27,13 @@ gca_mods_path  <- here("models", "stress", "s3_adv_int_nat", "eye_track", "gca")
 load(paste0(gca_mods_path, "/ind_mods.Rdata"))
 load(paste0(gca_mods_path, "/full_mods.Rdata"))
 load(paste0(gca_mods_path, "/nested_model_comparisons.Rdata"))
+load(paste0(gca_mods_path, "/model_preds.Rdata"))
 
 # Store objects in global env
 list2env(ind_mods, globalenv())
 list2env(full_mods, globalenv())
 list2env(nested_model_comparisons, globalenv())
+list2env(model_preds, globalenv())
 
 # -----------------------------------------------------------------------------
 
@@ -296,6 +298,40 @@ gca_full_mod_int_relevel <- update(gca_full_mod_int_3)
 
 
 
+# Model predictions for plottting ---------------------------------------------
+
+# Create design dataframe for predictions
+new_dat_all <- stress_gc_subset %>%
+  dplyr::select(group, time_zero, ot1:ot3, coda_sum, condition_sum) %>%
+  distinct
+
+# Get model predictions and SE
+fits_all <- predictSE(gca_full_mod_int_3, new_dat_all) %>%
+  as_tibble %>%
+  bind_cols(new_dat_all) %>%
+  rename(se = se.fit) %>%
+  mutate(ymin = fit - se, ymax = fit + se,
+         group = fct_recode(group, M = "ss", NIN = "la", IN = "int"))
+
+# Filter preds at target offset
+target_offset_preds <- filter(fits_all, time_zero == 4) %>%
+  select(group, coda = coda_sum, cond = condition_sum,
+         elog = fit, elog_lb = ymin, elog_ub = ymax) %>%
+  mutate(prob = plogis(elog),
+         prob_lb = plogis(elog_lb),
+         prob_ub = plogis(elog_ub)) %>%
+  arrange(group)
+
+# -----------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
 # Save models -----------------------------------------------------------------
 
 if(F) {
@@ -321,7 +357,6 @@ full_mods <- mget(c(
   "gca_full_mod_int_1", "gca_full_mod_int_2", "gca_full_mod_int_3",
   "gca_full_mod_int_relevel"))
 
-# Save models as .rds iterating over list
 save(full_mods,
      file = here("models", "stress", "s3_adv_int_nat", "eye_track", "gca",
                  "full_mods.Rdata"))
@@ -336,6 +371,13 @@ nested_model_comparisons <-
 save(nested_model_comparisons,
      file = here("models", "stress", "s3_adv_int_nat", "eye_track", "gca",
                  "nested_model_comparisons.Rdata"))
+
+# Save models predictions
+model_preds <- mget(c("fits_all", "target_offset_preds"))
+
+save(model_preds,
+     file = here("models", "stress", "s3_adv_int_nat", "eye_track", "gca",
+                 "model_preds.Rdata"))
 
 }
 

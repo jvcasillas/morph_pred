@@ -1,6 +1,6 @@
 # Helper functions ------------------------------------------------------------
 
-
+source(here::here("scripts", "00_load_libs.R"))
 
 # -----------------------------------------------------------------------------
 
@@ -8,8 +8,10 @@
 
 
 
+
+
 # Model helpers ---------------------------------------------------------------
-#
+
 # Workflow adapted from: http://rpubs.com/tjmahr/prettytables_2015
 
 # normal approximation of p-values
@@ -197,13 +199,42 @@ subscript <- make_html_tagger("sub")
 
 # Plots -----------------------------------------------------------------------
 
+# Legends inset
 inset_legend <- theme(
-  legend.position = c(0.015, 0.95),
+  legend.position = c(0.015, 0.98),
   legend.justification = c(0, 1),
   legend.background = element_rect(fill = "white", color = "grey"),
   plot.margin = unit(rep(2, 4), "mm")
 )
 
-theme_big <- theme_bw(base_size = 12, base_family = "Times") + inset_legend
+# Adjustments to legend
+legend_adj <- theme(
+  legend.position = c(0.09, 0.94),
+  legend.key = element_blank(),
+  legend.background = element_blank(),
+  strip.background = element_blank(),
+  axis.title.y = element_text(size = rel(.9), hjust = 0.95),
+  legend.key.size = unit(0.75, 'lines'),
+  legend.title = element_text(size = 10),
+  plot.margin = unit(rep(2, 4), "mm"),
+  panel.grid.major = element_line(colour = 'grey90', size = 0.15),
+  panel.grid.minor = element_line(colour = 'grey90', size = 0.15)
+)
+
+legend_adj_2 <- theme(
+  legend.position = c(0.07, 0.90),
+  legend.key = element_blank(),
+  legend.background = element_blank(),
+  strip.background = element_blank(),
+  axis.title.y = element_text(size = rel(.9), hjust = 0.95),
+  legend.key.size = unit(0.75, 'lines'),
+  legend.title = element_text(size = 10),
+  plot.margin = unit(rep(2, 4), "mm"),
+  panel.grid.major = element_line(colour = 'grey90', size = 0.15),
+  panel.grid.minor = element_line(colour = 'grey90', size = 0.15)
+)
+
+# Theme
+theme_big <- theme_bw(base_size = 12, base_family = "Times")
 
 # -----------------------------------------------------------------------------
