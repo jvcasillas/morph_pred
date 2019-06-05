@@ -183,11 +183,11 @@ model_preds$target_offset_preds %>%
   arrange(group, coda, desc(cond)) %>% 
   mutate(group = blank_same_as_last(as.character(group)), 
          coda =  blank_same_as_last(coda)) %>% 
-  select(Group = group, `Syllable structure` = coda, 
-         `Lexical stress` = cond, Probability = prob, LB = prob_lb, 
+  select(Group = group, `Lexical stress` = cond, 
+         `Syllable structure` = coda, Probability = prob, LB = prob_lb, 
          UB = prob_ub) %>% 
   flextable() %>% 
-  width(., j = c(2, 3, 4), width = c(1.3, 1.1, 1.1)) %>% 
+  width(., j = c(2, 3, 4), width = c(1.1, 1.3, 1.1)) %>% 
   font(., fontname = "Times", part = "all") %>%
   fontsize(., size = 11) %>% 
   border_remove(.) %>%  
@@ -512,11 +512,14 @@ That said, in all conditions the IN group fixate on targets in equal proportion
 to NIN at the offset of the target syllable (the dotted vertical lines), 
 suggesting IN fixate on targets later but at a faster rate. 
 
-
-<!--
-report age models as footntoe
-tidy_anova(int_age_anova)
-pretty_chi_result(int_age_anova, "gca_mod_int_age")
--->
-
+There was no effect of age on the intercept (`r 
+pretty_chi_result(nested_model_comparisons$int_age_anova, 
+"gca_mod_int_age_0")`), nor on any of the orthogonal polynomial time terms 
+(Time^1^ &times; Age: `r 
+pretty_chi_result(nested_model_comparisons$int_age_anova, 
+"gca_mod_int_age_1")`; Time^2^ &times; Age: `r 
+pretty_chi_result(nested_model_comparisons$int_age_anova, 
+"gca_mod_int_age_2")`; Time^3^ &times; Age: `r 
+pretty_chi_result(nested_model_comparisons$int_age_anova, 
+"gca_mod_int_age_3")`)
 
