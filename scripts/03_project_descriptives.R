@@ -1,7 +1,7 @@
 # Project descriptives --------------------------------------------------------
 #
 # Description: get basic project descriptives for sanity checks
-# Last update: 5/17/2019
+# Last update: 6/03/2019
 #
 # -----------------------------------------------------------------------------
 
@@ -26,6 +26,13 @@ stress %>%
 
 demo_data <- read_csv(here("data", "raw", "dur_stress_demographics.csv"))
 
+# Remove participant IN17 because we lost eye-tracking data
+# (file was corrupted)
+# We remove LA09 and LA15 to make the groups homogenous in L2
+# proficiency (DELE)
+
+demo_data <- demo_data %>%
+  filter(., id != "LA09" & id != "LA15" & id != "IN17")
 
 demo_data %>%
   #filter(age < 60) %>%
@@ -51,3 +58,20 @@ demo_data %>%
     geom_histogram(binwidth = 1, fill = "grey60", color = "black")
 
 # -----------------------------------------------------------------------------
+
+
+# language experience (years of exposure to the L2)
+# we calculate it by substracting age of acquistion (aoa_l2) from their actual age (age)
+
+demo_data <- demo_data %>%
+  mutate(., lang_exp = age - aoa_l2)
+
+demo_data %>%
+  group_by(., group) %>%
+  summarise(., mean_lang_exp = mean(lang_exp),
+            sd_lang_exp = sd(lang_exp))
+
+
+
+
+
