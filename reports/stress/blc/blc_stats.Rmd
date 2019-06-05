@@ -513,6 +513,10 @@ to NIN at the offset of the target syllable (the dotted vertical lines),
 suggesting IN fixate on targets later but at a faster rate. 
 
 
-
+<!--
+report age models as footntoe
+tidy_anova(int_age_anova)
+pretty_chi_result(int_age_anova, "gca_mod_int_age")
+-->
 
 

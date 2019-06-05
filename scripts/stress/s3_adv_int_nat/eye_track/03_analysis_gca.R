@@ -247,6 +247,37 @@ int_int_anova <-
   anova(gca_mod_int_cond_3, gca_mod_int_int_0, gca_mod_int_int_1,
         gca_mod_int_int_2, gca_mod_int_int_3)
 
+# Check age
+
+stress_int_age_subset <- stress_gc_subset %>%
+  filter(., group == "int") %>%
+  left_join(.,
+            read_csv(here("data", "raw", "dur_stress_demographics.csv")) %>%
+              filter(group == "in", id != "IN17") %>%
+              mutate(., group = fct_recode(group, int = "in"),
+                        participant = id), by = "participant") %>%
+  mutate(., age_std = (age - mean(age)) / sd(age))
+
+
+gca_mod_int_age <-
+  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) * coda_sum * condition_sum +
+         (1 + coda_sum + condition_sum + (ot1 + ot2 + ot3) | participant) +
+         (1 + ot1 + ot2 + ot3 | target),
+       control = lmerControl(optimizer = 'bobyqa'), REML = F,
+       data = stress_int_age_subset)
+
+gca_mod_int_age_0 <- update(gca_mod_int_age, . ~ . + age_std)
+gca_mod_int_age_1 <- update(gca_mod_int_age_0, . ~ . + ot1:age_std)
+gca_mod_int_age_2 <- update(gca_mod_int_age_1, . ~ . + ot2:age_std)
+gca_mod_int_age_3 <- update(gca_mod_int_age_2, . ~ . + ot3:age_std)
+
+
+
+int_age_anova <- anova(gca_mod_int_age,
+      gca_mod_int_age_1,
+      gca_mod_int_age_2,
+      gca_mod_int_age_3)
+
 # -----------------------------------------------------------------------------
 
 
@@ -346,6 +377,12 @@ ind_mods <- mget(c(paste0(mod_type, "ss", mod_spec),
                    paste0(mod_type, "la", mod_spec),
                    paste0(mod_type, "int", mod_spec)))
 
+# Add age models from interpreters
+ind_mods$gca_mod_int_age_0 <- gca_mod_int_age_0
+ind_mods$gca_mod_int_age_1 <- gca_mod_int_age_1
+ind_mods$gca_mod_int_age_2 <- gca_mod_int_age_2
+ind_mods$gca_mod_int_age_3 <- gca_mod_int_age_3
+
 save(ind_mods,
      file = here("models", "stress", "s3_adv_int_nat", "eye_track", "gca",
                  "ind_mods.Rdata"))
@@ -366,7 +403,7 @@ nested_model_comparisons <-
   mget(c("ss_coda_anova", "ss_cond_anova", "ss_int_anova",
          "la_coda_anova", "la_cond_anova", "la_int_anova",
          "int_coda_anova", "int_cond_anova", "int_int_anova",
-         "full_group_anova", "full_int_anova"))
+         "int_age_anova", "full_group_anova", "full_int_anova"))
 
 save(nested_model_comparisons,
      file = here("models", "stress", "s3_adv_int_nat", "eye_track", "gca",
