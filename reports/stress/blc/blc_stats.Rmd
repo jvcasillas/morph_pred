@@ -453,6 +453,12 @@ stress interaction on the linear time term
 "gca_mod_ss_int_1")`), such that the effect of lexical stress decreased the 
 overall slope (`r report_row("31")`) and the bowing of the vertices (i.e., 
 turning points) of closed, paroxytonic syllables (`r report_row("15")`).
+This indicates that M fixated on the paroxytone targets slightly later in the 
+time course, whereas they fixated on oxytone targets earlier, but at a slower, 
+more steady rate. 
+The presence of the coda increased the rate of target fixation on paroxytone 
+items, but had little effect on oxytone items (see the upper panels of Figure 
+1).
 
 Focusing on the offset of the target syllable, the model estimated target 
 fixations above 50% in all conditions 
@@ -489,6 +495,10 @@ Thus, with regard to M, IN also fixated later on targets overall.
 Finally, there was a lexical stress &times; syllable structure 
 interaction with IN on the cubic time term (`r report_row("37")`), indicative 
 of sharper vertices for CV oxytone targets. 
+Thus, IN fixated on CV oxytones (i.e., laVÓ) at a faster rate than M, though 
+they did so later in the time course. 
+IN also showed a lower proportion of target fixations than M 200 ms after the 
+target syllable offset (see the upper right panel of Figure 2).
 
 
 <INSERT FIGURE 2 HERE>  
