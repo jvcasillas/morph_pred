@@ -480,7 +480,7 @@ syllable than M, indicating that, overall, NIN fixated on targets later than
 M. 
 Additionally, there was a lexical stress &times; syllable structure 
 interaction on the linear slope (`r report_row("23")`), such that NIN had a 
-steeper slope than M in CV syllables of paroxtone words. 
+steeper slope than M in CV syllables of paroxytone words. 
 This indicates that NIN fixated on targets later the default condition 
 (i.e., LAva), but earlier in other conditions (i.e., laVÓ, FIRma, firMÓ). 
 For the IN group, there was also a simple interaction of the quadratic time
