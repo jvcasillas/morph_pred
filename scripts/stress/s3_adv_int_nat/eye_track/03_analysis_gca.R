@@ -273,10 +273,9 @@ gca_mod_int_age_3 <- update(gca_mod_int_age_2, . ~ . + ot3:age_std)
 
 
 
-int_age_anova <- anova(gca_mod_int_age,
-      gca_mod_int_age_1,
-      gca_mod_int_age_2,
-      gca_mod_int_age_3)
+int_age_anova <-
+  anova(gca_mod_int_age, gca_mod_int_age_0, gca_mod_int_age_1,
+        gca_mod_int_age_2,  gca_mod_int_age_3)
 
 # -----------------------------------------------------------------------------
 

@@ -143,13 +143,13 @@ addition of a coda doesn't help that much more.
 
 # Plots
 
-```{r, 'plot-ind-preds', echo=FALSE, fig.cap="Growth curve estimates of target fixations as a function of lexical stress and syllable structure for each group during the analysis window. Symbols and lines represent model estimates, and the transparent ribbons represents ±SE. Empirical logit values on y-axis correspond to proportions of 0.12 0.50 0.88 0.98. The horizontal dotted line represents the 50% probability of fixating on the target. The vertical dotted line indicates 200 ms after the offset of the target syllable."}
+```{r, 'plot-ind-preds', echo=FALSE, fig.cap="Growth curve estimates of target fixations as a function of lexical stress and syllable structure for each group during the analysis window. Symbols and lines represent model estimates, and the transparent ribbons represents ±SE. Empirical logit values on y-axis correspond to proportions of 0.12, 0.50, 0.88, and 0.98. The horizontal dotted line represents the 50% probability of fixating on the target. The vertical dotted line indicates 200 ms after the offset of the target syllable."}
 knitr::include_graphics(
   here("figs", "stress", "s3_adv_int_nat", "eye_track", "stress_p2.png")
 )
 ```
 
-```{r, 'plot-group-preds', echo=FALSE, fig.cap="Growth curve estimates of target fixations as a function of lexical stress and syllable structure for each group during the analysis window. Symbols and lines represent model estimates, and the transparent ribbons represents ±SE. Empirical logit values on y-axis correspond to proportions of 0.12 0.50 0.88 0.98. The horizontal dotted line represents the 50% probability of fixating on the target. The vertical dotted line indicates 200 ms after the offset of the target syllable."}
+```{r, 'plot-group-preds', echo=FALSE, fig.cap="Growth curve estimates of target fixations as a function of lexical stress and syllable structure for each group during the analysis window. Symbols and lines represent model estimates, and the transparent ribbons represents ±SE. Empirical logit values on y-axis correspond to proportions of 0.12, 0.50, 0.88, and 0.98. The horizontal dotted line represents the 50% probability of fixating on the target. The vertical dotted line indicates 200 ms after the offset of the target syllable."}
 knitr::include_graphics(
   here("figs", "stress", "s3_adv_int_nat", "eye_track", "stress_p3.png")
 )
@@ -183,11 +183,11 @@ model_preds$target_offset_preds %>%
   arrange(group, coda, desc(cond)) %>% 
   mutate(group = blank_same_as_last(as.character(group)), 
          coda =  blank_same_as_last(coda)) %>% 
-  select(Group = group, `Syllable structure` = coda, 
-         `Lexical stress` = cond, Probability = prob, LB = prob_lb, 
+  select(Group = group, `Lexical stress` = cond, 
+         `Syllable structure` = coda, Probability = prob, LB = prob_lb, 
          UB = prob_ub) %>% 
   flextable() %>% 
-  width(., j = c(2, 3, 4), width = c(1.3, 1.1, 1.1)) %>% 
+  width(., j = c(2, 3, 4), width = c(1.1, 1.3, 1.1)) %>% 
   font(., fontname = "Times", part = "all") %>%
   fontsize(., size = 11) %>% 
   border_remove(.) %>%  
@@ -346,17 +346,23 @@ Appendix 3: Pairwise comparisons between learner groups.
 
 # Statistical Analysis
 
-The time course data from the eye-tracking task were analyzed using growth 
-curve analysis (GCA, Mirman, 2016). 
+The time course data from the eye-tracking task were analyzed using weighted 
+empirical-logit growth curve analysis (GCA, Mirman, 2016). 
+We used GCA to model how the probability of fixating on target items changed 
+over time and under different suprasegmental and segmental conditions.
 We downsampled the data to bins of 50 ms which were centered at the offset of 
 the first syllable of target items.
+The empirical logit transformation (Barr, 2008) was applied to the binary 
+responses (fixations to the target or the distractor). 
 <!--
 Subsequent analyses focus on the point in the time course 200 ms after the 
 target syllable offset (the time required to launch a saccade, Matin, Shao, & 
 Boff, 1993). 
 -->
 The time course of fixation ranged from 200 ms before target syllable offset 
-to 600 ms after.
+to 600 ms after. 
+We chose this window because it captured the portion of the time course in 
+which target fixations began to steadily increase from chance. 
 The empirical logit transformation (Barr, 2008) was applied to the binary 
 responses (fixations to the target or the distractor).
 We modeled the time course using linear, quadratic, and cubic orthogonal 
@@ -410,11 +416,14 @@ report_row <- function(row_name) report_fixef_row(params, row_name)
 b0 <- params$B[params$subscript == "00"] %>% as.numeric
 b0_prop <- b0 %>% inv_logit %>% round(2) %>% remove_leading_zero
 
+# store int_age_anova as individual object to reduce char count
+int_age_anova <- nested_model_comparisons$int_age_anova
+
 ```
 
 
-Figure 1 plots the model estimates from the GCA. 
-The full model summary is available in Appendices 1 and 2. 
+Figure 1 plots the model estimates from the GCA and the full model summary is 
+available in Appendices 1 and 2. 
 We report the results for the M group and then provide comparisons with and 
 between the learner groups. 
 The model intercept estimates the log odds of M fixating on the target, 
@@ -426,24 +435,24 @@ shape of the time course and were retained in the model
 (`r report_row("10")`; `r report_row("20")`; `r report_row("30")`). 
 
 
-**+++ FIGURE 1 here +++**  
+<INSERT FIGURE 1 HERE>  
 
 
-The was a main effect of lexical stress on the quadratic time term 
+There was a main effect of lexical stress on the quadratic time term 
 (`r pretty_chi_result(nested_model_comparisons$ss_cond_anova, 
 "gca_mod_ss_cond_2")`). 
-Averaging over syllable structure, a change from paroxytonic to oxytonic 
-stress decreased the bowing of the trajectory at the center of the time 
-course (`r report_row("22")`) such that M fixated on oxytonic targets earlier 
-than paroxytonic targets. 
+Averaging over syllable structure, a change from paroxytonic (e.g. LAva) to 
+oxytonic (e.g. laVÓ) stress decreased the bowing of the trajectory at the 
+center of the time course (`r report_row("22")`) indicating that M fixated on 
+oxytonic targets earlier than paroxytonic targets.
 There was also a main effect of syllable structure on the cubic time term 
 (`r pretty_chi_result(nested_model_comparisons$ss_coda_anova, 
-"gca_mod_ss_coda_3")`), as well as syllable structure &times; lexical stress 
-interaction on the linear time term  
+"gca_mod_ss_coda_3")`), as well as a syllable structure &times; lexical 
+stress interaction on the linear time term 
 (`r pretty_chi_result(nested_model_comparisons$ss_int_anova,
 "gca_mod_ss_int_1")`), such that the effect of lexical stress decreased the 
-overall slope (`r report_row("31")`) and the bowing of the inflections points 
-of closed, paroxytonic syllables (`r report_row("15")`).
+overall slope (`r report_row("31")`) and the bowing of the vertices (i.e., 
+turning points) of closed, paroxytonic syllables (`r report_row("15")`).
 
 Focusing on the offset of the target syllable, the model estimated target 
 fixations above 50% in all conditions 
@@ -454,38 +463,39 @@ Oxytone CVC: `r target_offset_prob(group = "M", coda = -1, cond = -1)`).
 Table 1 provides estimates ±SE for all groups in all conditions. 
 Taken together, the analysis indicated that the M group anticipated target 
 suffixes in all conditions, though certain conditions seem to facilitate 
-processing. 
-Specifically, defaulting from a paroxytone with a CV penult, one observes 
-earlier target fixations with the addition of a coda and with a shift of 
-stress to the final syllable, suggesting that marked sequences facilitate 
-lexical access in native speakers. 
+prediction. 
+Specifically, defaulting from a paroxytone with a CV penult (e.g. LAva), 
+one observes earlier target fixations with the addition of a coda and with a 
+shift of stress to the final syllable (e.g. firMÓ), suggesting that marked 
+sequences facilitate lexical access in native speakers.
 
 
-**+++Table 1 here +++**  
+<INSERT TABLE 1 HERE>  
 
 
-With regard to the learners, there was a simple interaction of the quadratic 
+With regard to IN and NIN, there was a simple interaction of the quadratic 
 time term on the intercept for the NIN group (`r report_row("23")`). 
 That is, the NIN had a more bowed trajectory at the offset of the target 
-syllable, indicating later overall fixations on the target. 
+syllable than M, indicating that, overall, NIN fixated on targets later than 
+M. 
 Additionally, there was a lexical stress &times; syllable structure 
 interaction on the linear slope (`r report_row("23")`), such that NIN had a 
 steeper slope than M in CV syllables of paroxtone words. 
-This indicates that the NIN fixated on targets later the default condition, 
-but earlier in other conditions. 
-For the IN group, there was also a simple interaction of the quadratic time 
+This indicates that NIN fixated on targets later the default condition 
+(i.e., LAva), but earlier in other conditions (i.e., laVÓ, FIRma, firMÓ). 
+For the IN group, there was also a simple interaction of the quadratic time
 term on the intercept (`r report_row("24")`). 
 Thus, with regard to M, IN also fixated later on targets overall. 
 Finally, there was a lexical stress &times; syllable structure 
 interaction with IN on the cubic time term (`r report_row("37")`), indicative 
-of sharper inflection points for CV oxytone targets. 
+of sharper vertices for CV oxytone targets. 
 
 
-**+++Figure 2 here+++**  
+<INSERT FIGURE 2 HERE>  
 
 
-Both learner groups showed later target fixations in the default, CV 
-paroxytone condition. 
+To sum up, both learner groups showed later target fixations in the default, 
+CV paroxytone condition (i.e., LAva).
 This assertion is corroborated by examining the NIN and INs' proportion of 
 target fixations at the target syllable offset (see Table 1).
 Specifically, the model estimates suggest that NIN did not anticipate with CV 
@@ -499,24 +509,31 @@ The same was true for the IN group
 Paroxytone CVC: `r target_offset_prob(group = "IN", coda = -1, cond = 1)`; 
 Oxytone CV: `r target_offset_prob(group = "IN", coda = 1, cond = -1)`; 
 Oxytone CVC: `r target_offset_prob(group = "IN", coda = -1, cond = -1)`). 
-Pairwise comparisons (see Appendix 3) showed that the learner groups also 
-differed from each other.
+Importantly, pairwise comparisons (see Appendix 3) showed that the learner 
+groups also differed from each other.
 Specifically, there was a lexical stress &times; syllable structure 
 interaction on the linear and cubic time terms
 (`r report_pairwise(6)`; `r report_pairwise(8)`, respectively). 
-Upon inspecting Figure 2 one can observe that the learners have nearly 
-identical trajectories for CV paroxytones. 
-In all other conditions IN have steeper slopes with more bowed inflection 
-points, indicating later target fixations with regard to the NIN. 
-That said, in all conditions the IN group fixate on targets in equal proportion 
-to NIN at the offset of the target syllable (the dotted vertical lines), 
-suggesting IN fixate on targets later but at a faster rate. 
-
-
-<!--
-report age models as footntoe
-tidy_anova(int_age_anova)
-pretty_chi_result(int_age_anova, "gca_mod_int_age")
--->
-
+Figure 2 shows that the learners have nearly identical trajectories for CV 
+paroxytones.
+In all other conditions IN have steeper slopes with more bowed vertices, 
+indicating later target fixations with regard to NIN. 
+That said, in all conditions the IN group fixated on targets in equal 
+proportion to NIN at the offset of the target syllable (the dotted vertical 
+lines), suggesting IN fixate on targets later but at a faster rate.^[The range 
+of participant ages was wider for IN (see Table 1). 
+Specifically, the three groups were comparable regarding minimum age, but the 
+max age (76) exceeded that of the other groups. 
+To address this possible confound we fit an additional model to the IN data 
+including age as a continuous predictor. 
+There was no effect of age on the intercept
+(`r pretty_chi_result(int_age_anova, "gca_mod_int_age_0")`), nor on any of the 
+orthogonal polynomial time terms (Time^1^ &times; Age:
+`r pretty_chi_result(int_age_anova, "gca_mod_int_age_1")`; Time^2^ &times; Age: 
+`r pretty_chi_result(int_age_anova, "gca_mod_int_age_2")`; Time^3^ &times; Age: 
+`r pretty_chi_result(int_age_anova, "gca_mod_int_age_3")`). 
+Thus, we found no evidence suggesting that the probability of fixating on 
+targets was modulated by age in the IN group, and, to the extent possible, we 
+discard the possibility that variations in the time courses of IN and NIN can 
+be explained by age-related processing differences.]
 
