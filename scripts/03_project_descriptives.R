@@ -72,6 +72,29 @@ demo_data %>%
             sd_lang_exp = sd(lang_exp))
 
 
+# -----------------------------------------------------------------------------
+# time abroad (both learner groups together)
 
+demo_data %>%
+  summarise(., max = max(months_abroad), min = min(months_abroad),
+           mean = round(mean(months_abroad),2),sd = round(sd(months_abroad),2))
+
+  #     max   min  mean    sd
+  # 1   418     0  22.7    60.8
+
+# -----------------------------------------------------------------------------
+# years of work for interpreters
+
+# change , to .
+
+demo_data$years_work_int <- as.numeric(demo_data$years_work_int)
+
+demo_data %>%
+  filter(., group == "in") %>%
+  summarise(., min = min(years_work_int), max = max(years_work_int),
+            mean = mean(years_work_int),sd = round(sd(years_work_int),2))
+
+  # min   max  mean    sd
+  # 2    35   14.2   9.23
 
 

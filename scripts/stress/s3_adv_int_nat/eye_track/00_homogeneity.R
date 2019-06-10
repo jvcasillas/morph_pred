@@ -1,7 +1,13 @@
-library(tidyverse); library("TOSTER")
+library(tidyverse); library("TOSTER"); library(foreign)
+
+
 
 # Load data
 dem_all <- read_csv("./data/raw/dur_stress_demographics.csv")
+# to get wm from mon group
+dataset <- read.spss('./data/raw/gating.sav', to.data.frame=TRUE)
+
+
 
 # Remove participant IN17 because we lost eye-tracking data
 # (file was corrupted)
@@ -43,7 +49,7 @@ dem_all %>%
                dele = round(mean(dele),2),
                dele_sd = round(sd(dele),2),
                n =  n_distinct(id)) %>% knitr::kable()
-
+unique(dem_all$id)
 
 dem_all %>%
   group_by(., group) %>%
@@ -75,6 +81,15 @@ aggregate(aoa_l2 ~ group, data = dem_all, FUN = sd)
   # |la    |  13.72|      3.20|  12.68|     15.13| 72.76| 12.91| 27.24| 12.91| 25|
 
 
+# Get mean and sd for monolingual WM
+dataset %>%
+  filter(., Group == "S") %>%
+  summarise(., wm_mean = mean(WM),
+            wm_sd = round(sd(WM),2),
+            n = n_distinct(ExperimentName))
+
+#   wm_mean   wm_sd  n
+# 1    9.16   1.89  25
 
 ## Homogeneity of variances tests
 ## All seem ok
@@ -94,6 +109,30 @@ TOSTtwo(m1 = 10.27, sd1 = 2.98, n1 = 22, # in
         high_eqbound_d = 0.3,
         alpha = 0.05)
 
+# t(37.72) = 0.639, p = 0.737
+
+# wm toast mon vs in
+# all good
+TOSTtwo(m1 = 10.27, sd1 = 2.98, n1 = 22, # in
+        m2 = 9.16, sd2 = 1.89, n2 = 25, # mon
+        low_eqbound_d = -0.3,
+        high_eqbound_d = 0.3,
+        alpha = 0.05)
+
+#  t(34.69) = 0.489, p = 0.686
+
+# wm toast mon vs la
+# all good
+TOSTtwo(m1 = 9.00, sd1 = 2.15, n1 = 25, # la
+        m2 = 9.16, sd2 = 1.89, n2 = 25, # mon
+        low_eqbound_d = -0.3,
+        high_eqbound_d = 0.3,
+        alpha = 0.05)
+
+# t(47.22) = 0.781, p = 0.219
+
+###########################################
+
 # pstm toast la vs in
 # all good
 TOSTtwo(m1 = 8.59, sd1 = 1.47, n1 = 22, # in
@@ -109,6 +148,8 @@ TOSTtwo(m1 = 48.86, sd1 = 4.32, n1 = 22, # in
         low_eqbound_d = -0.3,
         high_eqbound_d = 0.3,
         alpha = 0.05)
+
+# t(42.36) = 1.887, p = 0.0661
 
 # age of acquistion toast la vs in
 # all good
