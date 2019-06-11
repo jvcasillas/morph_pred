@@ -76,8 +76,8 @@ stress10 <- read_tsv(here("data", "raw", "stress_10ms.txt")) %>%
                        yes = 1, no = 0),
          targetProp = as.numeric(gsub(",", ".", paste(.$targetProp))),
          distractorProp = as.numeric(gsub(",", ".", paste(.$distractorProp))),
-         eLog = log((targetCount + 0.5) / (50 - targetCount + 0.5)),
-         wts = 1 / (targetCount + 0.5) + 1 / (50 - targetCount + 0.5)) %>%
+         eLog = log((targetCount + 0.5) / (10 - targetCount + 0.5)),
+         wts = 1 / (targetCount + 0.5) + 1 / (10 - targetCount + 0.5)) %>%
 
   # Create 'group' column and new 'id'
   # in order to match participant ids with WM df
@@ -120,7 +120,7 @@ stress10 <- read_tsv(here("data", "raw", "stress_10ms.txt")) %>%
 
 # Test plot
 stress10 %>%
-  filter(time_zero > -50) %>%
+  filter(time_zero > -50, time_zero < 100) %>%
   ggplot(., aes(x = time_zero, y = targetProp, color = group)) +
     facet_grid(coda ~ condition) +
     geom_vline(xintercept = 20, lty = 3) +

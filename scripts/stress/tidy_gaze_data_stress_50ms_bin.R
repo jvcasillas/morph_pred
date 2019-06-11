@@ -86,9 +86,9 @@ stress50 <- read_tsv(here("data", "raw", "stress_50ms.txt")) %>%
   # Recode groups that have random labels
   # create new participant id labels
   mutate(., group = recode(group, l = 'lb', s = 'ss', `in` = 'int'),
-         group_temp = recode(group, lb = 'L', ss = "SB", ss = "SBs",
-                             int = "IN", hs = "HS", la = "LA"),
-         target = recode(target, gaba = 'graba')) %>%
+            group_temp = recode(group, lb = 'L', ss = "SB", ss = "SBs",
+                                int = "IN", hs = "HS", la = "LA"),
+            target = recode(target, gaba = 'graba')) %>%
 
   # Combine group_temp and id to
   # complete recode of participant IDs (now consistent with WM)
@@ -120,7 +120,7 @@ stress50 <- read_tsv(here("data", "raw", "stress_50ms.txt")) %>%
 
 # Test plot
 stress50 %>%
-  filter(time_zero > -10) %>%
+  filter(time_zero > -10, time_zero < 20) %>%
   ggplot(., aes(x = time_zero, y = targetProp, color = group)) +
   facet_grid(coda ~ condition) +
   geom_vline(xintercept = 4, lty = 3) +
