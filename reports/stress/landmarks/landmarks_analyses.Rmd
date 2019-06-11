@@ -1049,3 +1049,77 @@ chance at this point in the time course.
 What we need:  
 
 Another plot that shows this same data for all the landmarks. 
+
+
+
+
+
+
+```{r}
+# Monos only, with coda, at coda onset ----------------------------------------
+mono_coda_at_coda <- all_data %>% 
+  filter(., coda == 1 & landmark == 'word3_c2', group == 'ss') %>% 
+  mutate(., freq_cat = if_else(freq_sc <= freq_median, "low", "high"), 
+            phon_cat = if_else(phon_prob_sc <= phon_median, "low", "high")) %>% 
+  na.omit(.)
+
+mono_at_coda_mod_null <- glmer(
+  cbind(targetCount, distractorCount) ~ 1 +
+    (1 | participant) + 
+    (1 | target), 
+  data = mono_coda_at_coda, 
+  control = glmerControl(optimizer = 'bobyqa', optCtrl = list(maxfun = 3e5)),
+  family = 'binomial')
+
+
+# add group:wm interaction
+mono_at_coda_mod_freq <- update(mono_at_coda_mod_null, .~. + freq_sc)
+
+# effect of freq_sc
+anova(mono_at_coda_mod_null, mono_at_coda_mod_freq, test = 'Chisq') # no
+
+# add phon_prob_sc
+mono_at_coda_mod_phon <- update(mono_at_coda_mod_null, .~. + phon_prob_sc)
+
+# effect of phon_prob_sc
+anova(mono_at_coda_mod_null, mono_at_coda_mod_phon, test = 'Chisq') # yes
+
+# additive effect of phon_prob
+mono_at_coda_mod_add <- update(mono_at_coda_mod_freq, .~. + phon_prob_sc)
+
+# additive effect of phon_prob
+anova(mono_at_coda_mod_freq, mono_at_coda_mod_add, test = 'Chisq') # yes
+
+# add group:phon_prob interaction
+mono_at_coda_mod_int <- update(mono_at_coda_mod_add, .~. + freq_sc:phon_prob_sc)
+
+# interaction effect
+anova(mono_at_coda_mod_add, mono_at_coda_mod_int, test = 'Chisq') # yes
+
+
+# update final model with all main effects (this is only for plotting)
+mono_at_coda_mod_final <- update(mono_at_coda_mod_null, .~. + 
+                                        freq_sc + 
+                                        phon_prob_sc + 
+                                        freq_sc:phon_prob_sc)
+
+# summary of final model for reporting (no main effects)
+summary(mono_at_coda_mod_final)
+
+
+mono_coda_at_coda %>% 
+  mutate(., freq_cat = fct_relevel(freq_cat, "low"), 
+            phon_cat = fct_relevel(phon_cat, "low")) %>% 
+  ggplot(., aes(x = freq_cat, y = targetProp, fill = phon_cat, 
+                dodge = phon_cat)) + 
+    stat_summary(fun.data = mean_cl_boot, geom = "pointrange", pch = 21, 
+                 size = 1.5, position = position_dodge(0.5), color = 'black') + 
+    ylim(0, 1) + 
+    scale_fill_brewer(name = "Phonological\nfrequency", palette = "Set1") + 
+    labs(title = "Monolingual Spanish speakers", 
+         subtitle = "Proportion of target looks as a function of lexical and phonological frequency", 
+         caption = "Mean +/- 95% CI", y = "Proportion target looks", 
+         x = "Lexical frequency") + 
+    my_theme()
+# this makes no sense
+```
