@@ -76,8 +76,8 @@ lm10 <- read_tsv(here("data", "raw", "stress_10ms.txt")) %>%
                        yes = 1, no = 0),
          targetProp = as.numeric(gsub(",", ".", paste(.$targetProp))),
          distractorProp = as.numeric(gsub(",", ".", paste(.$distractorProp))),
-         eLog = log((targetCount + 0.5) / (50 - targetCount + 0.5)),
-         wts = 1 / (targetCount + 0.5) + 1 / (50 - targetCount + 0.5)) %>%
+         eLog = log((targetCount + 0.5) / (10 - targetCount + 0.5)),
+         wts = 1 / (targetCount + 0.5) + 1 / (10 - targetCount + 0.5)) %>%
 
   # Create 'group' column and new 'id'
   # in order to match participant ids with WM df
@@ -106,20 +106,46 @@ lm10 <- read_tsv(here("data", "raw", "stress_10ms.txt")) %>%
   # word4_c1v1: Following word          word3_suffix: V2 (suffix)
   #                                     word4_c1v1: Following word
 
+  # Gather landmarks into single column (lm_bin) and add a 'landmark'
+  # column to identify them
+  # Divide lm_bin by 10 to convert time in ms to 10ms bins
+  # Add 20 to lm_bin to adjust for time necessary to launch an eye movement
+  gather(., landmark, lm_bin, c(word3_c1v1, word3_20msafterv1, word3_c2,
+                                word3_c3, word3_suffix, word4_c1v1)) %>%
+  mutate(., lm_bin = (lm_bin / 10) %>% ceiling() + 20) %>%
+
+  # Group by participant and target, add index column to mark cases
+  # where bin is equal to the landmark bin (bin == lm_bin) and then
+  # filter to keep only those cases
+  group_by(participant, target) %>%
+  mutate(index = if_else(bin == lm_bin, 1, 0)) %>%
+  filter(index == 1) %>%
+
+  # Add covariates
+  left_join(.,
+            read_csv(here("data", "raw", "dur_stress_demographics.csv")) %>%
+              mutate(., group = fct_recode(group, int = "in"),
+                        participant = id), by = c("participant", "group")) %>%
+  select(group:targetProp, target, verb, condition, coda, eLog:lm_bin,
+         dele:years_work_int) %>%
   write_csv(here("data", "clean", "stress_landmark_clean.csv"))
 
 # -----------------------------------------------------------------------------
 
 
 
-# Test plot
+# Test plots
 lm10 %>%
-  filter(time_zero > -50) %>%
-  ggplot(., aes(x = time_zero, y = targetProp, color = group)) +
-    facet_grid(coda ~ condition) +
-    geom_vline(xintercept = 20, lty = 3) +
+  filter(coda == 0, landmark != "word3_c3") %>%
+  mutate(., landmark = fct_relevel(landmark, "word3_c1v1")) %>%
+  ggplot(., aes(x = landmark, y = (targetCount / 10), color = group)) +
     geom_hline(yintercept = 0.5, color = "white", size = 3) +
-    stat_summary(fun.y = mean, geom = "line")
+    stat_summary(fun.data = mean_se, geom = "pointrange")
 
 
-
+lm10 %>%
+  filter(coda == 1) %>%
+  mutate(., landmark = fct_relevel(landmark, "word3_c1v1")) %>%
+  ggplot(., aes(x = landmark, y = (targetCount / 10), color = group)) +
+    geom_hline(yintercept = 0.5, color = "white", size = 3) +
+    stat_summary(fun.data = mean_se, geom = "pointrange")
