@@ -363,8 +363,6 @@ The time course of fixation ranged from 200 ms before target syllable offset
 to 600 ms after. 
 We chose this window because it captured the portion of the time course in 
 which target fixations began to steadily increase from chance. 
-The empirical logit transformation (Barr, 2008) was applied to the binary 
-responses (fixations to the target or the distractor).
 We modeled the time course using linear, quadratic, and cubic orthogonal 
 polynomials with fixed effects of group, lexical stress, and syllable 
 structure on all time terms.

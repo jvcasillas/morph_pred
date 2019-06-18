@@ -13,6 +13,7 @@
 # Source libs -----------------------------------------------------------------
 
 source(here::here("scripts", "00_load_libs.R"))
+word3v1 <- readRDS(here("data", "raw", "stress_word3v1_lookup.rds"))
 
 # -----------------------------------------------------------------------------
 
@@ -69,7 +70,7 @@ lm10 <- read_tsv(here("data", "raw", "stress_10ms.txt")) %>%
             coda = ifelse(
               target %in% c('bebe', 'bebió', 'llena', 'llenó', 'sube', 'subió',
                             'come', 'comió', 'saca', 'sacó', 'lava', 'lavó',
-                            'graba', 'grabó'),
+                            'gaba', 'grabó'),
               yes = 0, no = 1),
          corr = ifelse(correctresponse == "Lshift" & KEY_PRESSED == "Lshift" |
                        correctresponse == "Rshift" & KEY_PRESSED == "Rshift",
@@ -100,19 +101,39 @@ lm10 <- read_tsv(here("data", "raw", "stress_10ms.txt")) %>%
   # Filter only landmarks of interest:
   # NO CODA                             CODA
   # word3_c1v1: target word onset       word3_c1v1: target word onset
+  # word3_v1: onset of first vowel      word3_v1: onset of first vowel
   # word3_20msafterv1: 20 ms after v1   word3_20msafterv1: 20 ms after v1
   # word3_c2: syllable 1 offset         word3_c2: coda onset
   # word3_suffix: V2 (suffix)           word3_c3: syllable 1 offset
   # word4_c1v1: Following word          word3_suffix: V2 (suffix)
   #                                     word4_c1v1: Following word
+  # NOTE: the original word3_20msafterv1 was wrong.
+  #       to fix this word3_v1 was measured by hand and is added below using
+  #       a lookup table. word3_20msafterv1 is then calculated manually
+  mutate(., word3_v1 = word3v1[target],
+            word3_20msafterv1 = word3_v1 + 20) %>%
 
   # Gather landmarks into single column (lm_bin) and add a 'landmark'
   # column to identify them
   # Divide lm_bin by 10 to convert time in ms to 10ms bins
   # Add 20 to lm_bin to adjust for time necessary to launch an eye movement
-  gather(., landmark, lm_bin, c(word3_c1v1, word3_20msafterv1, word3_c2,
-                                word3_c3, word3_suffix, word4_c1v1)) %>%
+  gather(., landmark, lm_bin, c(word3_c1v1, word3_v1, word3_20msafterv1,
+                                word3_c2, word3_c3, word3_suffix,
+                                word4_c1v1)) %>%
   mutate(., lm_bin = (lm_bin / 10) %>% ceiling() + 20) %>%
+
+  # Rename landmarks so that they make more sense
+  mutate(., landmark_2 = case_when(
+    landmark == "word3_c1v1" ~ "tw_start",
+    landmark == "word3_v1" ~ "tw_v1_start",
+    landmark == "word3_20msafterv1" ~ "tw_v1_20",
+    landmark == "word3_c2" & coda == 1 ~ "tw_coda_start",
+    landmark == "word3_c2" & coda == 0 ~ "tw_syl1_end",
+    landmark == "word3_c3" & coda == 1 ~ "tw_syl1_end",
+    landmark == "word3_suffix" ~ "tw_suffix_start",
+    landmark == "word4_c1v1" ~ "next_word"),
+    index = if_else(is.na(landmark_2), 1, 0)) %>%
+  filter(index == 0) %>%
 
   # Group by participant and target, add index column to mark cases
   # where bin is equal to the landmark bin (bin == lm_bin) and then
@@ -122,12 +143,13 @@ lm10 <- read_tsv(here("data", "raw", "stress_10ms.txt")) %>%
   filter(index == 1) %>%
 
   # Add covariates
+  # missing frequency for some verbs
   left_join(.,
-            read_csv(here("data", "raw", "dur_stress_demographics.csv")) %>%
-              mutate(., group = fct_recode(group, int = "in"),
-                        participant = id), by = c("participant", "group")) %>%
+            read_csv(here("data", "raw", "phonotactic_frequency.csv")) %>%
+              select(target, phon_prob, biphon_prob, freq),
+            by = "target") %>%
   select(group:targetProp, target, verb, condition, coda, eLog:lm_bin,
-         dele:years_work_int) %>%
+         landmark_2, phon_prob:freq) %>%
   write_csv(here("data", "clean", "stress_landmark_clean.csv"))
 
 # -----------------------------------------------------------------------------
@@ -136,16 +158,21 @@ lm10 <- read_tsv(here("data", "raw", "stress_10ms.txt")) %>%
 
 # Test plots
 lm10 %>%
-  filter(coda == 0, landmark != "word3_c3") %>%
-  mutate(., landmark = fct_relevel(landmark, "word3_c1v1")) %>%
-  ggplot(., aes(x = landmark, y = (targetCount / 10), color = group)) +
+  filter(coda == 0, landmark_2 != "tw_v1_start",
+         !(verb %in% c("grabar", "gritar"))) %>%
+  mutate(., landmark_2 = fct_relevel(landmark_2,
+          "tw_start", "tw_v1_20", "tw_syl1_end", "tw_suffix_start")) %>%
+  ggplot(., aes(x = landmark_2, y = (targetCount / 10), color = group)) +
+    facet_grid(. ~ condition) +
     geom_hline(yintercept = 0.5, color = "white", size = 3) +
     stat_summary(fun.data = mean_se, geom = "pointrange")
 
-
 lm10 %>%
-  filter(coda == 1) %>%
-  mutate(., landmark = fct_relevel(landmark, "word3_c1v1")) %>%
-  ggplot(., aes(x = landmark, y = (targetCount / 10), color = group)) +
+  filter(coda == 1, landmark_2 != "tw_v1_start",
+         !(verb %in% c("grabar", "gritar"))) %>%
+  mutate(., landmark_2 = fct_relevel(landmark_2,
+          "tw_start", "tw_v1_20", "tw_coda_start", "tw_syl1_end", "tw_suffix_start")) %>%
+  ggplot(., aes(x = landmark_2, y = (targetCount / 10), color = group)) +
+    facet_grid(. ~ condition) +
     geom_hline(yintercept = 0.5, color = "white", size = 3) +
     stat_summary(fun.data = mean_se, geom = "pointrange")

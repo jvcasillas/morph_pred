@@ -2,7 +2,7 @@ Phonotactic frequencies
 =======================
 
 - http://www.people.ku.edu/~mvitevit/VLbrmic.pdf
-
+- https://calculator.ku.edu/phonotactic/Spanish/words
 
 - Provides...
 	- position-specific probability for each segment
