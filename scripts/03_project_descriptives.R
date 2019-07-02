@@ -14,7 +14,7 @@ source(here::here("scripts", "00_load_libs.R"))
 
 
 stress <- read_csv(here("data", "clean", "stress_50ms_clean.csv"))
-
+View(stress)
 stress %>%
   group_by(group) %>%
   summarize(n_participant = n_distinct(participant))
@@ -96,5 +96,18 @@ demo_data %>%
 
   # min   max  mean    sd
   # 2    35   14.2   9.23
+
+# -----------------------------------------------------------------------------
+# Table for BLC manuscript with age and DELE
+#
+glimpse(demo_data)
+demo_data$wm <- as.numeric(demo_data$wm)
+demo_data %>%
+  group_by(., group) %>%
+  summarise(.,  n = n_distinct(id),
+            age_mean = round(mean(age),2), age_sd = round(sd(age),2),
+            dele_mean = round(mean(dele),2), dele_sd = round(sd(dele),2),
+            wm_mn = round(mean(wm, na.rm = TRUE),2), wm_sd = round(sd(wm, na.rm = TRUE),2)) %>% knitr::kable()
+
 
 
