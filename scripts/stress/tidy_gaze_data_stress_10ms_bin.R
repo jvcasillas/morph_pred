@@ -79,6 +79,10 @@ stress10 <- read_tsv(here("data", "raw", "stress_10ms.txt")) %>%
          eLog = log((targetCount + 0.5) / (10 - targetCount + 0.5)),
          wts = 1 / (targetCount + 0.5) + 1 / (10 - targetCount + 0.5)) %>%
 
+    # rename participant SS10 to SS31 to avoid having 2 participants with the same code
+
+  mutate(., participant = recode(participant, ss10 = "ss31")) %>%
+
   # Create 'group' column and new 'id'
   # in order to match participant ids with WM df
   separate(., col = participant, into = c("group", "id"), sep = -2, remove = TRUE) %>%
