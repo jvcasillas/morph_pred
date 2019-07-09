@@ -18,8 +18,6 @@ source(here::here("scripts", "00_load_libs.R"))
 
 
 
-
-
 # Tidy data -------------------------------------------------------------------
 
 # Read data
@@ -78,10 +76,15 @@ stress50 <- read_tsv(here("data", "raw", "stress_50ms.txt")) %>%
          distractorProp = as.numeric(gsub(",", ".", paste(.$distractorProp))),
          eLog = log((targetCount + 0.5) / (50 - targetCount + 0.5)),
          wts = 1 / (targetCount + 0.5) + 1 / (50 - targetCount + 0.5)) %>%
+  # rename participant SS10 to SS31 to avoid having 2 participants with the same code
+
+  mutate(., participant = recode(participant, ss10 = "ss31")) %>%
 
   # Create 'group' column and new 'id'
   # in order to match participant ids with WM df
   separate(., col = participant, into = c("group", "id"), sep = -2, remove = TRUE) %>%
+
+
 
   # Recode groups that have random labels
   # create new participant id labels
@@ -115,7 +118,6 @@ stress50 <- read_tsv(here("data", "raw", "stress_50ms.txt")) %>%
   write_csv(here("data", "clean", "stress_50ms_clean.csv"))
 
 # -----------------------------------------------------------------------------
-
 
 
 # Test plot
