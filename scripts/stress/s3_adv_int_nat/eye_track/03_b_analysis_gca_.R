@@ -28,7 +28,7 @@ mem_data <- mem_data %>%
 
 
 stress50 <- stress50 %>%
-  filter(., group %in% c("la", "in", "ss")) %>%
+  filter(., group %in% c("la", "int", "ss")) %>%
   left_join(mem_data, by = "participant")
 
 stress50$wm <- as.numeric(stress50$wm)
@@ -90,9 +90,8 @@ stress_gc_subset <- stress50 %>%
   mutate(., group = fct_relevel(group, "ss", "la", "int"),
          condition_sum = if_else(condition == "stressed", 1, -1),
          coda_sum = if_else(coda == 0, 1, -1),
-         wm_std = na.omit((wm - mean(wm) / sd(wm)))) %>% # NEEDS TO BE FIXED
+         wm_std = (wm - mean(wm, na.rm = T) / sd(wm, na.rm = T))) %>%
   poly_add_columns(., time_zero, degree = 3, prefix = "ot")
-
 
 # -----------------------------------------------------------------------------
 
@@ -176,6 +175,13 @@ ss_int_anova <-
   anova(gca_mod_ss_cond_3, gca_mod_ss_int_0, gca_mod_ss_int_1,
         gca_mod_ss_int_2, gca_mod_ss_int_3)
 
+# add wm effect to intercept, linear slope, quadratic, and cubic time terms
+gca_mod_ss_wm_0 <- update(gca_mod_ss_base,   . ~ . + wm_std)
+gca_mod_ss_wm_1 <- update(gca_mod_ss_wm_0,   . ~ . + ot1:wm_std)
+gca_mod_ss_wm_2 <- update(gca_mod_ss_wm_1,   . ~ . + ot2:wm_std)
+gca_mod_ss_wm_3 <- update(gca_mod_ss_wm_2,   . ~ . + ot3:wm_std)
+
+anova(gca_mod_ss_wm_0, gca_mod_ss_wm_1, gca_mod_ss_wm_2, gca_mod_ss_wm_3)
 
 
 #
@@ -218,6 +224,16 @@ gca_mod_la_int_3 <- update(gca_mod_la_int_2,  . ~ . + ot3:coda_sum:condition_sum
 la_int_anova <-
   anova(gca_mod_la_cond_3, gca_mod_la_int_0, gca_mod_la_int_1,
         gca_mod_la_int_2, gca_mod_la_int_3)
+
+# add wm effect to intercept, linear slope, quadratic, and cubic time terms
+gca_mod_la_wm_0 <- update(gca_mod_la_base,   . ~ . + wm_std)
+gca_mod_la_wm_1 <- update(gca_mod_la_wm_0,   . ~ . + ot1:wm_std)
+gca_mod_la_wm_2 <- update(gca_mod_la_wm_1,   . ~ . + ot2:wm_std)
+gca_mod_la_wm_3 <- update(gca_mod_la_wm_2,   . ~ . + ot3:wm_std) # GAVE A WEIRD WARNING MESSAGE
+
+anova(gca_mod_la_wm_0, gca_mod_la_wm_1, gca_mod_la_wm_2, gca_mod_la_wm_3)
+
+
 
 #
 # only int
@@ -290,6 +306,24 @@ int_age_anova <-
   anova(gca_mod_int_age, gca_mod_int_age_0, gca_mod_int_age_1,
         gca_mod_int_age_2,  gca_mod_int_age_3)
 
+
+# add wm effect to intercept, linear slope, quadratic, and cubic time terms
+
+
+gca_mod_int_base_wm <-
+  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) +
+         (1 + ot1 + ot2 + ot3 | participant) +
+         (1 + ot1 + ot2 + ot3 | target),
+       control = lmerControl(optimizer = 'bobyqa'), REML = F,
+       data = filter(stress_gc_subset, group == "int"))
+
+
+gca_mod_int_wm_0 <- update(gca_mod_int_base_wm,   . ~ . + wm_std)
+gca_mod_int_wm_1 <- update(gca_mod_int_wm_0,   . ~ . + ot1:wm_std)
+gca_mod_int_wm_2 <- update(gca_mod_int_wm_1,   . ~ . + ot2:wm_std)
+gca_mod_int_wm_3 <- update(gca_mod_int_wm_2,   . ~ . + ot3:wm_std)
+
+anova(gca_mod_int_wm_0, gca_mod_int_wm_1, gca_mod_int_wm_2, gca_mod_int_wm_3)
 # -----------------------------------------------------------------------------
 
 
@@ -332,6 +366,14 @@ if(F){
   # Relevel for pairwise comparisons
   stress_gc_subset %<>% mutate(., group = fct_relevel(group, "int"))
   gca_full_mod_int_relevel <- update(gca_full_mod_int_3)
+
+# WM and group interaction
+  gca_mod_full_wm_0 <- update(gca_full_mod_base,   . ~ . + wm_std)
+  gca_mod_full_wm_1 <- update(gca_mod_full_wm_0,   . ~ . + ot1:wm_std)
+  gca_mod_full_wm_2 <- update(gca_mod_full_wm_1,   . ~ . + ot2:wm_std)
+  gca_mod_full_wm_3 <- update(gca_mod_full_wm_2,   . ~ . + ot3:wm_std)
+
+  anova(gca_mod_full_wm_0, gca_mod_full_wm_1, gca_mod_full_wm_2, gca_mod_full_wm_3)
 
 }
 

@@ -118,7 +118,7 @@ stress50 <- read_tsv(here("data", "raw", "stress_50ms.txt")) %>%
   write_csv(here("data", "clean", "stress_50ms_clean.csv"))
 
 # -----------------------------------------------------------------------------
-
+unique(stress50$group)
 
 # Test plot
 stress50 %>%
