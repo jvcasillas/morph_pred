@@ -27,12 +27,17 @@ mem_data <- mem_data %>%
   select(., -group)
 
 
+phon_data <- read_csv(here("data", "raw", "phonotactic_frequency.csv"))
+phon_data <- phon_data %>%
+  select(., -coda)
+
 stress50 <- stress50 %>%
   filter(., group %in% c("la", "int", "ss")) %>%
-  left_join(mem_data, by = "participant")
+  left_join(mem_data, by = "participant") %>%
+  left_join(phon_data, by = "target")
 
 stress50$wm <- as.numeric(stress50$wm)
-
+glimpse(stress50)
 
 # Get path to saved models
 gca_mods_path  <- here("models", "stress", "s3_adv_int_nat", "eye_track", "gca")
@@ -90,7 +95,9 @@ stress_gc_subset <- stress50 %>%
   mutate(., group = fct_relevel(group, "ss", "la", "int"),
          condition_sum = if_else(condition == "stressed", 1, -1),
          coda_sum = if_else(coda == 0, 1, -1),
-         wm_std = (wm - mean(wm, na.rm = T) / sd(wm, na.rm = T))) %>%
+         wm_std = (wm - mean(wm, na.rm = T)) / sd(wm, na.rm = T),
+         phon_std = (phon_prob - mean(phon_prob)) / sd(phon_prob),
+         biphon_std =(biphon_prob - mean(biphon_prob)) / sd(biphon_prob)) %>%
   poly_add_columns(., time_zero, degree = 3, prefix = "ot")
 
 # -----------------------------------------------------------------------------
@@ -181,7 +188,57 @@ gca_mod_ss_wm_1 <- update(gca_mod_ss_wm_0,   . ~ . + ot1:wm_std)
 gca_mod_ss_wm_2 <- update(gca_mod_ss_wm_1,   . ~ . + ot2:wm_std)
 gca_mod_ss_wm_3 <- update(gca_mod_ss_wm_2,   . ~ . + ot3:wm_std)
 
-anova(gca_mod_ss_wm_0, gca_mod_ss_wm_1, gca_mod_ss_wm_2, gca_mod_ss_wm_3)
+
+#                 Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_ss_wm_0 37 33446 33695 -16686    33372
+# gca_mod_ss_wm_1 38 33448 33704 -16686    33372 0.0347      1    0.85226
+# gca_mod_ss_wm_2 39 33448 33710 -16685    33370 2.8118      1    0.09357 .
+# gca_mod_ss_wm_3 40 33450 33719 -16685    33370 0.0895      1    0.76483
+
+# add wm effect to intercept, linear slope, quadratic, and cubic time terms
+gca_mod_ss_wm_0_all <- update(gca_mod_ss_cond_3,   . ~ . + wm_std)
+gca_mod_ss_wm_1_all <- update(gca_mod_ss_wm_0_all,   . ~ . + ot1:wm_std)
+gca_mod_ss_wm_2_all <- update(gca_mod_ss_wm_1_all,   . ~ . + ot2:wm_std)
+gca_mod_ss_wm_3_all <- update(gca_mod_ss_wm_2_all,   . ~ . + ot3:wm_std)
+
+anova(gca_mod_ss_wm_0_all, gca_mod_ss_wm_1_all, gca_mod_ss_wm_2_all, gca_mod_ss_wm_3_all)
+
+#                     Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_ss_wm_0_all 45 33448 33751 -16679    33358
+# gca_mod_ss_wm_1_all 46 33450 33760 -16679    33358 0.0405      1    0.84042
+# gca_mod_ss_wm_2_all 47 33449 33765 -16678    33355 2.7777      1    0.09558 .
+# gca_mod_ss_wm_3_all 48 33451 33774 -16678    33355 0.0738      1    0.78594
+
+# add phonotactic freq as a variable
+
+gca_mod_ss_phon_0 <- update(gca_mod_ss_base,   . ~ . + phon_std)
+gca_mod_ss_phon_1 <- update(gca_mod_ss_phon_0,   . ~ . + ot1:phon_std)
+gca_mod_ss_phon_2 <- update(gca_mod_ss_phon_1,   . ~ . + ot2:phon_std)
+gca_mod_ss_phon_3 <- update(gca_mod_ss_phon_2,   . ~ . + ot3:phon_std)
+
+anova(gca_mod_ss_phon_0, gca_mod_ss_phon_1, gca_mod_ss_phon_2, gca_mod_ss_phon_3)
+
+#                   Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_ss_phon_0 37 34957 35208 -17442    34883
+# gca_mod_ss_phon_1 38 34959 35216 -17442    34883 0.3016      1     0.5829
+# gca_mod_ss_phon_2 39 34959 35223 -17440    34881 2.2483      1     0.1338
+# gca_mod_ss_phon_3 40 34961 35231 -17440    34881 0.2734      1     0.6011
+
+# add biphon freq as a variable
+
+gca_mod_ss_biphon_0 <- update(gca_mod_ss_base,   . ~ . + biphon_std)
+gca_mod_ss_biphon_1 <- update(gca_mod_ss_biphon_0,   . ~ . + ot1:biphon_std)
+gca_mod_ss_biphon_2 <- update(gca_mod_ss_biphon_1,   . ~ . + ot2:biphon_std)
+gca_mod_ss_biphon_3 <- update(gca_mod_ss_biphon_2,   . ~ . + ot3:biphon_std)
+
+anova(gca_mod_ss_biphon_0, gca_mod_ss_biphon_1, gca_mod_ss_biphon_2, gca_mod_ss_biphon_3)
+
+#                     Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_ss_biphon_0 37 34957 35208 -17442    34883
+# gca_mod_ss_biphon_1 38 34957 35215 -17441    34881 1.7941      1     0.1804
+# gca_mod_ss_biphon_2 39 34959 35223 -17441    34881 0.0053      1     0.9419
+# gca_mod_ss_biphon_3 40 34961 35231 -17440    34881 0.7252      1     0.3945
+
 
 
 #
@@ -229,10 +286,71 @@ la_int_anova <-
 gca_mod_la_wm_0 <- update(gca_mod_la_base,   . ~ . + wm_std)
 gca_mod_la_wm_1 <- update(gca_mod_la_wm_0,   . ~ . + ot1:wm_std)
 gca_mod_la_wm_2 <- update(gca_mod_la_wm_1,   . ~ . + ot2:wm_std)
-gca_mod_la_wm_3 <- update(gca_mod_la_wm_2,   . ~ . + ot3:wm_std) # GAVE A WEIRD WARNING MESSAGE
+gca_mod_la_wm_3 <- update(gca_mod_la_wm_2,   . ~ . + ot3:wm_std)
 
 anova(gca_mod_la_wm_0, gca_mod_la_wm_1, gca_mod_la_wm_2, gca_mod_la_wm_3)
 
+#                 Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_la_wm_0 37 34943 35193 -17434    34869
+# gca_mod_la_wm_1 38 34945 35201 -17434    34869 0.1543      1     0.6945
+# gca_mod_la_wm_2 39 34947 35210 -17434    34869 0.2409      1     0.6236
+# gca_mod_la_wm_3 40 34948 35219 -17434    34868 0.0716      1     0.7890
+
+# add phonotactic freq as a variable
+
+gca_mod_la_phon_0 <- update(gca_mod_la_base,   . ~ . + phon_std)
+gca_mod_la_phon_1 <- update(gca_mod_la_phon_0,   . ~ . + ot1:phon_std)
+gca_mod_la_phon_2 <- update(gca_mod_la_phon_1,   . ~ . + ot2:phon_std)
+gca_mod_la_phon_3 <- update(gca_mod_la_phon_2,   . ~ . + ot3:phon_std)
+
+anova(gca_mod_la_phon_0, gca_mod_la_phon_1, gca_mod_la_phon_2, gca_mod_la_phon_3)
+
+#                   Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_la_phon_0 37 36297 36548 -18111    36223
+# gca_mod_la_phon_1 38 36299 36557 -18111    36223 0.0226      1     0.8804
+# gca_mod_la_phon_2 39 36301 36566 -18111    36223 0.0746      1     0.7848
+# gca_mod_la_phon_3 40 36302 36574 -18111    36222 0.5824      1     0.4454
+
+
+# add biphon freq as a variable
+
+gca_mod_la_biphon_0 <- update(gca_mod_la_base,   . ~ . + biphon_std)
+gca_mod_la_biphon_1 <- update(gca_mod_la_biphon_0,   . ~ . + ot1:biphon_std)
+gca_mod_la_biphon_2 <- update(gca_mod_la_biphon_1,   . ~ . + ot2:biphon_std)
+gca_mod_la_biphon_3 <- update(gca_mod_la_biphon_2,   . ~ . + ot3:biphon_std)
+
+anova(gca_mod_la_biphon_0, gca_mod_la_biphon_1, gca_mod_la_biphon_2, gca_mod_la_biphon_3)
+
+#                     Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_la_biphon_0 37 36296 36547 -18111    36222
+# gca_mod_la_biphon_1 38 36297 36555 -18110    36221 1.0234      1     0.3117
+# gca_mod_la_biphon_2 39 36299 36564 -18110    36221 0.0358      1     0.8499
+# gca_mod_la_biphon_3 40 36299 36570 -18109    36219 2.2243      1     0.1359
+
+# Check PSTM
+stress_la_pstm_subset <- stress_gc_subset %>%
+  filter(., group == "la") %>%
+  mutate(., pstm_std = (age - mean(pstm)) / sd(pstm))
+
+gca_mod_la_base_pstm <-
+  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) +
+         (1 + coda_sum + condition_sum + (ot1 + ot2 + ot3) | participant) +
+         (1 + ot1 + ot2 + ot3 | target),
+       control = lmerControl(optimizer = 'bobyqa'), REML = F,
+       data = stress_la_pstm_subset)
+
+gca_mod_la_pstm_0 <- update(gca_mod_la_base_pstm,   . ~ . + pstm_std)
+gca_mod_la_pstm_1 <- update(gca_mod_la_pstm_0,   . ~ . + ot1:pstm_std)
+gca_mod_la_pstm_2 <- update(gca_mod_la_pstm_1,   . ~ . + ot2:pstm_std)
+gca_mod_la_pstm_3 <- update(gca_mod_la_pstm_2,   . ~ . + ot3:pstm_std)
+
+anova(gca_mod_la_pstm_0, gca_mod_la_pstm_1, gca_mod_la_pstm_2, gca_mod_la_pstm_3)
+
+#                   Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_la_pstm_0 37 36300 36552 -18113    36226
+# gca_mod_la_pstm_1 38 36301 36559 -18112    36225 1.5691      1     0.2103
+# gca_mod_la_pstm_2 39 36301 36566 -18111    36223 1.7927      1     0.1806
+# gca_mod_la_pstm_3 40 36303 36574 -18111    36223 0.0264      1     0.8708
 
 
 #
@@ -276,6 +394,84 @@ int_int_anova <-
   anova(gca_mod_int_cond_3, gca_mod_int_int_0, gca_mod_int_int_1,
         gca_mod_int_int_2, gca_mod_int_int_3)
 
+
+# add wm effect to intercept, linear slope, quadratic, and cubic time terms
+
+gca_mod_int_wm_0 <- update(gca_mod_int_base,   . ~ . + wm_std)
+gca_mod_int_wm_1 <- update(gca_mod_int_wm_0,   . ~ . + ot1:wm_std)
+gca_mod_int_wm_2 <- update(gca_mod_int_wm_1,   . ~ . + ot2:wm_std)
+gca_mod_int_wm_3 <- update(gca_mod_int_wm_2,   . ~ . + ot3:wm_std)
+
+anova(gca_mod_int_wm_0, gca_mod_int_wm_1, gca_mod_int_wm_2, gca_mod_int_wm_3)
+
+#                   Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_int_wm_0 37 32834 33081 -16380    32760
+# gca_mod_int_wm_1 38 32835 33089 -16380    32759 0.4050      1     0.5245
+# gca_mod_int_wm_2 39 32837 33098 -16380    32759 0.2694      1     0.6037
+# gca_mod_int_wm_3 40 32838 33105 -16379    32758 1.3810      1     0.2399
+
+
+# add phonotactic freq as a variable
+
+gca_mod_int_phon_0 <- update(gca_mod_int_base,   . ~ . + phon_std)
+# Warning message:
+#   In optwrap(optimizer, devfun, getStart(start, rho$lower, rho$pp),  :
+#                convergence code 1 from bobyqa: bobyqa -- maximum number of function evaluations exceeded
+gca_mod_int_phon_1 <- update(gca_mod_int_phon_0,   . ~ . + ot1:phon_std)
+gca_mod_int_phon_2 <- update(gca_mod_int_phon_1,   . ~ . + ot2:phon_std)
+gca_mod_int_phon_3 <- update(gca_mod_int_phon_2,   . ~ . + ot3:phon_std)
+
+anova(gca_mod_int_phon_0, gca_mod_int_phon_1, gca_mod_int_phon_2, gca_mod_int_phon_3)
+
+#                    Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_int_phon_0 37 32835 33082 -16380    32761
+# gca_mod_int_phon_1 38 32837 33091 -16380    32761 0.0375      1     0.8464
+# gca_mod_int_phon_2 39 32838 33099 -16380    32760 0.6448      1     0.4220
+# gca_mod_int_phon_3 40 32840 33107 -16380    32760 0.4125      1     0.5207
+
+
+
+# add biphon freq as a variable
+
+gca_mod_int_biphon_0 <- update(gca_mod_int_base,   . ~ . + biphon_std)
+gca_mod_int_biphon_1 <- update(gca_mod_int_biphon_0,   . ~ . + ot1:biphon_std)
+gca_mod_int_biphon_2 <- update(gca_mod_int_biphon_1,   . ~ . + ot2:biphon_std)
+gca_mod_int_biphon_3 <- update(gca_mod_int_biphon_2,   . ~ . + ot3:biphon_std)
+
+anova(gca_mod_int_biphon_0, gca_mod_int_biphon_1, gca_mod_int_biphon_2, gca_mod_int_biphon_3)
+
+#                      Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_int_biphon_0 37 32835 33082 -16380    32761
+# gca_mod_int_biphon_1 38 32837 33091 -16380    32761 0.0046      1     0.9460
+# gca_mod_int_biphon_2 39 32837 33098 -16380    32759 1.5273      1     0.2165
+# gca_mod_int_biphon_3 40 32838 33106 -16379    32758 1.0466      1     0.3063
+
+# Check PSTM
+stress_int_pstm_subset <- stress_gc_subset %>%
+  filter(., group == "int") %>%
+  mutate(., pstm_std = (age - mean(pstm)) / sd(pstm))
+
+gca_mod_int_base_pstm <-
+  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) +
+         (1 + coda_sum + condition_sum + (ot1 + ot2 + ot3) | participant) +
+         (1 + ot1 + ot2 + ot3 | target),
+       control = lmerControl(optimizer = 'bobyqa'), REML = F,
+       data = stress_int_pstm_subset)
+
+gca_mod_int_pstm_0 <- update(gca_mod_int_base_pstm,   . ~ . + pstm_std)
+gca_mod_int_pstm_1 <- update(gca_mod_int_pstm_0,   . ~ . + ot1:pstm_std)
+gca_mod_int_pstm_2 <- update(gca_mod_int_pstm_1,   . ~ . + ot2:pstm_std)
+gca_mod_int_pstm_3 <- update(gca_mod_int_pstm_2,   . ~ . + ot3:pstm_std)
+
+anova(gca_mod_int_pstm_0, gca_mod_int_pstm_1, gca_mod_int_pstm_2, gca_mod_int_pstm_3)
+
+#                    Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_int_pstm_0 37 32835 33082 -16380    32761
+# gca_mod_int_pstm_1 38 32837 33091 -16380    32761 0.2361      1     0.6270
+# gca_mod_int_pstm_2 39 32837 33098 -16380    32759 1.4470      1     0.2290
+# gca_mod_int_pstm_3 40 32839 33107 -16380    32759 0.1740      1     0.6766
+
+
 # Check age
 
 stress_int_age_subset <- stress_gc_subset %>%
@@ -306,24 +502,6 @@ int_age_anova <-
   anova(gca_mod_int_age, gca_mod_int_age_0, gca_mod_int_age_1,
         gca_mod_int_age_2,  gca_mod_int_age_3)
 
-
-# add wm effect to intercept, linear slope, quadratic, and cubic time terms
-
-
-gca_mod_int_base_wm <-
-  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) +
-         (1 + ot1 + ot2 + ot3 | participant) +
-         (1 + ot1 + ot2 + ot3 | target),
-       control = lmerControl(optimizer = 'bobyqa'), REML = F,
-       data = filter(stress_gc_subset, group == "int"))
-
-
-gca_mod_int_wm_0 <- update(gca_mod_int_base_wm,   . ~ . + wm_std)
-gca_mod_int_wm_1 <- update(gca_mod_int_wm_0,   . ~ . + ot1:wm_std)
-gca_mod_int_wm_2 <- update(gca_mod_int_wm_1,   . ~ . + ot2:wm_std)
-gca_mod_int_wm_3 <- update(gca_mod_int_wm_2,   . ~ . + ot3:wm_std)
-
-anova(gca_mod_int_wm_0, gca_mod_int_wm_1, gca_mod_int_wm_2, gca_mod_int_wm_3)
 # -----------------------------------------------------------------------------
 
 
@@ -368,10 +546,10 @@ if(F){
   gca_full_mod_int_relevel <- update(gca_full_mod_int_3)
 
 # WM and group interaction
-  gca_mod_full_wm_0 <- update(gca_full_mod_base,   . ~ . + wm_std)
-  gca_mod_full_wm_1 <- update(gca_mod_full_wm_0,   . ~ . + ot1:wm_std)
-  gca_mod_full_wm_2 <- update(gca_mod_full_wm_1,   . ~ . + ot2:wm_std)
-  gca_mod_full_wm_3 <- update(gca_mod_full_wm_2,   . ~ . + ot3:wm_std)
+  gca_mod_full_wm_0 <- update(gca_full_mod_base,   . ~ . + wm_std:group)
+  gca_mod_full_wm_1 <- update(gca_mod_full_wm_0,   . ~ . + ot1:wm_std:group)
+  gca_mod_full_wm_2 <- update(gca_mod_full_wm_1,   . ~ . + ot2:wm_std:group)
+  gca_mod_full_wm_3 <- update(gca_mod_full_wm_2,   . ~ . + ot3:wm_std:group)
 
   anova(gca_mod_full_wm_0, gca_mod_full_wm_1, gca_mod_full_wm_2, gca_mod_full_wm_3)
 
