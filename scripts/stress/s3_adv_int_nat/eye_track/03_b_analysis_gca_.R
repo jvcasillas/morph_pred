@@ -209,6 +209,73 @@ anova(gca_mod_ss_wm_0_all, gca_mod_ss_wm_1_all, gca_mod_ss_wm_2_all, gca_mod_ss_
 # gca_mod_ss_wm_2_all 47 33449 33765 -16678    33355 2.7777      1    0.09558 .
 # gca_mod_ss_wm_3_all 48 33451 33774 -16678    33355 0.0738      1    0.78594
 
+# add wm x coda int to intercept, linear slope, quadratic, and cubic terms
+gca_mod_ss_wm_0_all_int <- update(gca_mod_ss_wm_3_all,   . ~ . + wm_std:coda_sum)
+gca_mod_ss_wm_1_all_int <- update(gca_mod_ss_wm_0_all,   . ~ . + ot1:wm_std:coda_sum)
+gca_mod_ss_wm_2_all_int <- update(gca_mod_ss_wm_1_all,   . ~ . + ot2:wm_std:coda_sum)
+gca_mod_ss_wm_3_all_int <- update(gca_mod_ss_wm_2_all,   . ~ . + ot3:wm_std:coda_sum)
+
+anova(gca_mod_ss_wm_0_all_int, gca_mod_ss_wm_1_all_int, gca_mod_ss_wm_2_all_int, gca_mod_ss_wm_3_all_int)
+
+
+#                         Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_ss_wm_1_all_int 46 33449 33758 -16678    33357
+# gca_mod_ss_wm_2_all_int 47 33452 33768 -16679    33358 0.0000      1    1.00000
+# gca_mod_ss_wm_3_all_int 48 33449 33772 -16676    33353 5.3591      1    0.02061 *
+# gca_mod_ss_wm_0_all_int 49 33452 33782 -16677    33354 0.0000      1    1.00000
+
+# check only interaction between working memory and coda (without condition parox/ox)
+
+gca_mod_ss_base_wm_coda_int <-
+  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + wm_std + coda_sum +
+         (1 + coda_sum + condition_sum + (ot1 + ot2 + ot3) | participant) +
+         (1 + ot1 + ot2 + ot3 | target),
+       control = lmerControl(optimizer = 'bobyqa'), REML = F,
+       data = filter(stress_gc_subset, group == "ss"))
+
+# add coda effect to intercept, linear slope, quadratic, and cubic time terms
+gca_mod_ss_base_wm_coda_int_0 <- update(gca_mod_ss_base_wm_coda_int,   . ~ . + wm_std:coda_sum)
+gca_mod_ss_base_wm_coda_int_1 <- update(gca_mod_ss_coda_0, . ~ . + ot1:wm_std:coda_sum)
+gca_mod_ss_base_wm_coda_int_2 <- update(gca_mod_ss_coda_1, . ~ . + ot2:wm_std:coda_sum)
+gca_mod_ss_base_wm_coda_int_3 <- update(gca_mod_ss_coda_2, . ~ . + ot3:wm_std:coda_sum)
+
+anova(gca_mod_ss_base_wm_coda_int_0, gca_mod_ss_base_wm_coda_int_1,
+      gca_mod_ss_base_wm_coda_int_2, gca_mod_ss_base_wm_coda_int_3)
+
+#                               Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_ss_base_wm_coda_int_1 38 33448 33704 -16686    33372
+# gca_mod_ss_base_wm_coda_int_0 39 33449 33711 -16686    33371 1.1363      1    0.28644
+# gca_mod_ss_base_wm_coda_int_2 39 33450 33712 -16686    33372 0.0000      0    1.00000
+# gca_mod_ss_base_wm_coda_int_3 40 33447 33716 -16684    33367 4.4172      1    0.03558 *
+
+
+
+# check only interaction between working memory and cond parox/ox (without coda)
+
+gca_mod_ss_base_wm_cond_int <-
+  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + wm_std + condition_sum +
+         (1 + coda_sum + condition_sum + (ot1 + ot2 + ot3) | participant) +
+         (1 + ot1 + ot2 + ot3 | target),
+       control = lmerControl(optimizer = 'bobyqa'), REML = F,
+       data = filter(stress_gc_subset, group == "ss"))
+
+# add coda effect to intercept, linear slope, quadratic, and cubic time terms
+gca_mod_ss_base_wm_cond_int_0 <- update(gca_mod_ss_base_wm_cond_int,   . ~ . + wm_std:condition_sum)
+gca_mod_ss_base_wm_cond_int_1 <- update(gca_mod_ss_coda_0, . ~ . + ot1:wm_std:condition_sum)
+gca_mod_ss_base_wm_cond_int_2 <- update(gca_mod_ss_coda_1, . ~ . + ot2:wm_std:condition_sum)
+gca_mod_ss_base_wm_cond_int_3 <- update(gca_mod_ss_coda_2, . ~ . + ot3:wm_std:condition_sum)
+
+anova(gca_mod_ss_base_wm_cond_int_0, gca_mod_ss_base_wm_cond_int_1,
+      gca_mod_ss_base_wm_cond_int_2, gca_mod_ss_base_wm_cond_int_3)
+
+#                               Df   AIC   BIC logLik deviance   Chisq Chi Df Pr(>Chisq)
+# gca_mod_ss_base_wm_cond_int_1 38 33449 33704 -16686    33373
+# gca_mod_ss_base_wm_cond_int_0 39 33448 33711 -16685    33370  2.3885      1     0.1222
+# gca_mod_ss_base_wm_cond_int_2 39 33436 33698 -16679    33358 12.5150      0     <2e-16 ***
+# gca_mod_ss_base_wm_cond_int_3 40 33451 33720 -16685    33371  0.0000      1     1.0000
+
+summary(gca_mod_ss_base_wm_cond_int_2)
+
 # add phonotactic freq as a variable
 
 gca_mod_ss_phon_0 <- update(gca_mod_ss_base,   . ~ . + phon_std)
