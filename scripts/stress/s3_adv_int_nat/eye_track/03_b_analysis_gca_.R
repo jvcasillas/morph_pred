@@ -107,34 +107,6 @@ stress_gc_subset <- stress50 %>%
 
 
 
-# Random effects structure ----------------------------------------------------
-
-# Build up random effects to test time terms
-if(F){
-
-  mod_ot1 <-
-    lmer(eLog ~ 1 + ot1 +
-           (1 + coda_sum + condition_sum + ot1 | participant),
-         control = lmerControl(optimizer = 'bobyqa'),
-         data = stress_gc_subset, weights = 1/wts, REML = F)
-
-  mod_ot2 <-
-    update(mod_ot1, . ~ . -(1 + coda_sum + condition_sum + ot1 | participant) +
-             ot2 + (1 + coda_sum + condition_sum + ot1 + ot2 | participant))
-
-  mod_ot3 <-
-    update(mod_ot2, . ~ . -(1 + coda_sum + condition_sum + ot1 + ot2 | participant) +
-             ot3 + (1 + coda_sum + condition_sum + ot1 + ot2 + ot3 | participant))
-
-  mod_ot4 <- update(mod_ot3, . ~ . + (1 | target))
-
-  anova(mod_ot1, mod_ot2, mod_ot3, mod_ot4)
-
-}
-
-# -----------------------------------------------------------------------------
-
-
 
 
 
@@ -152,38 +124,10 @@ gca_mod_ss_base <-
        control = lmerControl(optimizer = 'bobyqa'), REML = F,
        data = filter(stress_gc_subset, group == "ss"))
 
-# add coda effect to intercept, linear slope, quadratic, and cubic time terms
-gca_mod_ss_coda_0 <- update(gca_mod_ss_base,   . ~ . + coda_sum)
-gca_mod_ss_coda_1 <- update(gca_mod_ss_coda_0, . ~ . + ot1:coda_sum)
-gca_mod_ss_coda_2 <- update(gca_mod_ss_coda_1, . ~ . + ot2:coda_sum)
-gca_mod_ss_coda_3 <- update(gca_mod_ss_coda_2, . ~ . + ot3:coda_sum)
 
-ss_coda_anova <-
-  anova(gca_mod_ss_base, gca_mod_ss_coda_0, gca_mod_ss_coda_1,
-        gca_mod_ss_coda_2, gca_mod_ss_coda_3)
-
-# add coda effect to intercept, linear slope, quadratic, and cubic time terms
-gca_mod_ss_cond_0 <- update(gca_mod_ss_coda_3,   . ~ . + condition_sum)
-gca_mod_ss_cond_1 <- update(gca_mod_ss_cond_0,   . ~ . + ot1:condition_sum)
-gca_mod_ss_cond_2 <- update(gca_mod_ss_cond_1,   . ~ . + ot2:condition_sum)
-gca_mod_ss_cond_3 <- update(gca_mod_ss_cond_2,   . ~ . + ot3:condition_sum)
-
-ss_cond_anova <-
-  anova(gca_mod_ss_coda_3, gca_mod_ss_cond_0, gca_mod_ss_cond_1,
-        gca_mod_ss_cond_2, gca_mod_ss_cond_3)
-
-# add coda x cond int to intercept, linear slope, quadratic, and cubic terms
-gca_mod_ss_int_0 <- update(gca_mod_ss_cond_3, . ~ . + coda_sum:condition_sum)
-gca_mod_ss_int_1 <- update(gca_mod_ss_int_0,  . ~ . + ot1:coda_sum:condition_sum)
-gca_mod_ss_int_2 <- update(gca_mod_ss_int_1,  . ~ . + ot2:coda_sum:condition_sum)
-gca_mod_ss_int_3 <- update(gca_mod_ss_int_2,  . ~ . + ot3:coda_sum:condition_sum)
-
-ss_int_anova <-
-  anova(gca_mod_ss_cond_3, gca_mod_ss_int_0, gca_mod_ss_int_1,
-        gca_mod_ss_int_2, gca_mod_ss_int_3)
 
 # add wm effect to intercept, linear slope, quadratic, and cubic time terms
-gca_mod_ss_wm_0 <- update(gca_mod_ss_base,   . ~ . + wm_std)
+gca_mod_ss_wm_0 <- update(gca_mod_ss_base,   . ~ . + wm_std) # WM as the only fixed effect
 gca_mod_ss_wm_1 <- update(gca_mod_ss_wm_0,   . ~ . + ot1:wm_std)
 gca_mod_ss_wm_2 <- update(gca_mod_ss_wm_1,   . ~ . + ot2:wm_std)
 gca_mod_ss_wm_3 <- update(gca_mod_ss_wm_2,   . ~ . + ot3:wm_std)
@@ -196,7 +140,7 @@ gca_mod_ss_wm_3 <- update(gca_mod_ss_wm_2,   . ~ . + ot3:wm_std)
 # gca_mod_ss_wm_3 40 33450 33719 -16685    33370 0.0895      1    0.76483
 
 # add wm effect to intercept, linear slope, quadratic, and cubic time terms
-gca_mod_ss_wm_0_all <- update(gca_mod_ss_cond_3,   . ~ . + wm_std)
+gca_mod_ss_wm_0_all <- update(gca_mod_ss_cond_3,   . ~ . + wm_std) # Stress + coda + wm as fixed effects
 gca_mod_ss_wm_1_all <- update(gca_mod_ss_wm_0_all,   . ~ . + ot1:wm_std)
 gca_mod_ss_wm_2_all <- update(gca_mod_ss_wm_1_all,   . ~ . + ot2:wm_std)
 gca_mod_ss_wm_3_all <- update(gca_mod_ss_wm_2_all,   . ~ . + ot3:wm_std)
@@ -209,72 +153,127 @@ anova(gca_mod_ss_wm_0_all, gca_mod_ss_wm_1_all, gca_mod_ss_wm_2_all, gca_mod_ss_
 # gca_mod_ss_wm_2_all 47 33449 33765 -16678    33355 2.7777      1    0.09558 .
 # gca_mod_ss_wm_3_all 48 33451 33774 -16678    33355 0.0738      1    0.78594
 
-# add wm x coda int to intercept, linear slope, quadratic, and cubic terms
-gca_mod_ss_wm_0_all_int <- update(gca_mod_ss_wm_3_all,   . ~ . + wm_std:coda_sum)
-gca_mod_ss_wm_1_all_int <- update(gca_mod_ss_wm_0_all,   . ~ . + ot1:wm_std:coda_sum)
-gca_mod_ss_wm_2_all_int <- update(gca_mod_ss_wm_1_all,   . ~ . + ot2:wm_std:coda_sum)
-gca_mod_ss_wm_3_all_int <- update(gca_mod_ss_wm_2_all,   . ~ . + ot3:wm_std:coda_sum)
+# -----------------------------------------------------------------------------
 
-anova(gca_mod_ss_wm_0_all_int, gca_mod_ss_wm_1_all_int, gca_mod_ss_wm_2_all_int, gca_mod_ss_wm_3_all_int)
+###########################
+# Interactions:           #
+# 1. Ox -> WM:coda        #
+# 2. Parox -> WM:coda     #
+# 3. CV -> WM:stress      #
+# 4. CVC -> WM:stress     #
+###########################
+
+# 1. For Paroxytone targets, check interaction of WM:Coda
+
+stress_gc_parox <- stress_gc_subset %>%
+  filter(., condition == "stressed")
 
 
-#                         Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
-# gca_mod_ss_wm_1_all_int 46 33449 33758 -16678    33357
-# gca_mod_ss_wm_2_all_int 47 33452 33768 -16679    33358 0.0000      1    1.00000
-# gca_mod_ss_wm_3_all_int 48 33449 33772 -16676    33353 5.3591      1    0.02061 *
-# gca_mod_ss_wm_0_all_int 49 33452 33782 -16677    33354 0.0000      1    1.00000
-
-# check only interaction between working memory and coda (without condition parox/ox)
-
-gca_mod_ss_base_wm_coda_int <-
+gca_mod_parox_base <-
   lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + wm_std + coda_sum +
-         (1 + coda_sum + condition_sum + (ot1 + ot2 + ot3) | participant) +
+         (1 + ot1 + ot2 + ot3 | participant) +
          (1 + ot1 + ot2 + ot3 | target),
        control = lmerControl(optimizer = 'bobyqa'), REML = F,
-       data = filter(stress_gc_subset, group == "ss"))
+       data = filter(stress_gc_parox, group == "ss"))
 
-# add coda effect to intercept, linear slope, quadratic, and cubic time terms
-gca_mod_ss_base_wm_coda_int_0 <- update(gca_mod_ss_base_wm_coda_int,   . ~ . + wm_std:coda_sum)
-gca_mod_ss_base_wm_coda_int_1 <- update(gca_mod_ss_coda_0, . ~ . + ot1:wm_std:coda_sum)
-gca_mod_ss_base_wm_coda_int_2 <- update(gca_mod_ss_coda_1, . ~ . + ot2:wm_std:coda_sum)
-gca_mod_ss_base_wm_coda_int_3 <- update(gca_mod_ss_coda_2, . ~ . + ot3:wm_std:coda_sum)
+gca_mod_parox_int_0 <- update(gca_mod_parox_base, . ~ . + wm_std:coda_sum)
+gca_mod_parox_int_1 <- update(gca_mod_parox_int_0, . ~ . + ot1:wm_std:coda_sum)
+gca_mod_parox_int_2 <- update(gca_mod_parox_int_1, . ~ . + ot2:wm_std:coda_sum)
+gca_mod_parox_int_3 <- update(gca_mod_parox_int_2, . ~ . + ot3:wm_std:coda_sum)
 
-anova(gca_mod_ss_base_wm_coda_int_0, gca_mod_ss_base_wm_coda_int_1,
-      gca_mod_ss_base_wm_coda_int_2, gca_mod_ss_base_wm_coda_int_3)
+anova(gca_mod_parox_int_0, gca_mod_parox_int_1, gca_mod_parox_int_2, gca_mod_parox_int_3)
 
-#                               Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
-# gca_mod_ss_base_wm_coda_int_1 38 33448 33704 -16686    33372
-# gca_mod_ss_base_wm_coda_int_0 39 33449 33711 -16686    33371 1.1363      1    0.28644
-# gca_mod_ss_base_wm_coda_int_2 39 33450 33712 -16686    33372 0.0000      0    1.00000
-# gca_mod_ss_base_wm_coda_int_3 40 33447 33716 -16684    33367 4.4172      1    0.03558 *
+#                     Df   AIC   BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_parox_int_0 28 16488 16657 -8216.0    16432
+# gca_mod_parox_int_1 29 16483 16658 -8212.4    16425 7.1896      1   0.007333 **
+# gca_mod_parox_int_2 30 16484 16665 -8212.3    16424 0.2518      1   0.615830
+# gca_mod_parox_int_3 31 16485 16672 -8211.6    16423 1.3908      1   0.238273
 
 
 
-# check only interaction between working memory and cond parox/ox (without coda)
 
-gca_mod_ss_base_wm_cond_int <-
+# 2. For Oxytone targets, check interaction of WM:Coda
+
+stress_gc_ox <- stress_gc_subset %>%
+  filter(., condition == "unstressed")
+
+gca_mod_ox_base <-
+  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + wm_std + coda_sum +
+         (1 + coda_sum + (ot1 + ot2 + ot3) | participant) +
+         (1 + ot1 + ot2 + ot3 | target),
+       control = lmerControl(optimizer = 'bobyqa'), REML = F,
+       data = filter(stress_gc_ox, group == "ss"))
+
+gca_mod_ox_int_0 <- update(gca_mod_ox_base, . ~ . + wm_std:coda_sum)
+gca_mod_ox_int_1 <- update(gca_mod_ox_int_0, . ~ . + ot1:wm_std:coda_sum)
+gca_mod_ox_int_2 <- update(gca_mod_ox_int_1, . ~ . + ot2:wm_std:coda_sum)
+gca_mod_ox_int_3 <- update(gca_mod_ox_int_2, . ~ . + ot3:wm_std:coda_sum)
+
+anova(gca_mod_ox_int_0, gca_mod_ox_int_1, gca_mod_ox_int_2, gca_mod_ox_int_3)
+
+#                  Df   AIC   BIC  logLik deviance   Chisq Chi Df Pr(>Chisq)
+# gca_mod_ox_int_0 33 16701 16901 -8317.6    16635
+# gca_mod_ox_int_1 34 16686 16892 -8309.1    16618 17.0229      1  3.693e-05 ***
+# gca_mod_ox_int_2 35 16688 16900 -8309.0    16618  0.1863      1     0.6660
+# gca_mod_ox_int_3 36 16689 16907 -8308.5    16617  0.9879      1     0.3203
+
+
+
+# 3. For CV targets, check interaction of WM:stress
+
+stress_gc_cv <- stress_gc_subset %>%
+  filter(., coda == "0")
+
+gca_mod_cv_base <-
   lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + wm_std + condition_sum +
-         (1 + coda_sum + condition_sum + (ot1 + ot2 + ot3) | participant) +
+         (1 + ot1 + ot2 + ot3 | participant) +
          (1 + ot1 + ot2 + ot3 | target),
        control = lmerControl(optimizer = 'bobyqa'), REML = F,
-       data = filter(stress_gc_subset, group == "ss"))
+       data = filter(stress_gc_cv, group == "ss"))
 
-# add coda effect to intercept, linear slope, quadratic, and cubic time terms
-gca_mod_ss_base_wm_cond_int_0 <- update(gca_mod_ss_base_wm_cond_int,   . ~ . + wm_std:condition_sum)
-gca_mod_ss_base_wm_cond_int_1 <- update(gca_mod_ss_coda_0, . ~ . + ot1:wm_std:condition_sum)
-gca_mod_ss_base_wm_cond_int_2 <- update(gca_mod_ss_coda_1, . ~ . + ot2:wm_std:condition_sum)
-gca_mod_ss_base_wm_cond_int_3 <- update(gca_mod_ss_coda_2, . ~ . + ot3:wm_std:condition_sum)
+gca_mod_cv_int_0 <- update(gca_mod_cv_base, . ~ . + wm_std:condition_sum)
+gca_mod_cv_int_1 <- update(gca_mod_cv_int_0, . ~ . + ot1:wm_std:condition_sum)
+gca_mod_cv_int_2 <- update(gca_mod_cv_int_1, . ~ . + ot2:wm_std:condition_sum)
+gca_mod_cv_int_3 <- update(gca_mod_cv_int_2, . ~ . + ot3:wm_std:condition_sum)
 
-anova(gca_mod_ss_base_wm_cond_int_0, gca_mod_ss_base_wm_cond_int_1,
-      gca_mod_ss_base_wm_cond_int_2, gca_mod_ss_base_wm_cond_int_3)
+anova(gca_mod_cv_int_0, gca_mod_cv_int_1, gca_mod_cv_int_2, gca_mod_cv_int_3)
 
-#                               Df   AIC   BIC logLik deviance   Chisq Chi Df Pr(>Chisq)
-# gca_mod_ss_base_wm_cond_int_1 38 33449 33704 -16686    33373
-# gca_mod_ss_base_wm_cond_int_0 39 33448 33711 -16685    33370  2.3885      1     0.1222
-# gca_mod_ss_base_wm_cond_int_2 39 33436 33698 -16679    33358 12.5150      0     <2e-16 ***
-# gca_mod_ss_base_wm_cond_int_3 40 33451 33720 -16685    33371  0.0000      1     1.0000
+#                  Df   AIC   BIC  logLik deviance   Chisq Chi Df Pr(>Chisq)
+# gca_mod_cv_int_0 28 14138 14302 -7040.9    14082
+# gca_mod_cv_int_1 29 14121 14291 -7031.5    14063 18.7382      1    1.5e-05 ***
+# gca_mod_cv_int_2 30 14120 14296 -7029.9    14060  3.3016      1    0.06921 .
+# gca_mod_cv_int_3 31 14122 14303 -7029.9    14060  0.0109      1    0.91699
 
-summary(gca_mod_ss_base_wm_cond_int_2)
+
+# 4. For CVC targets, check interaction of WM:stress
+
+stress_gc_cvc <- stress_gc_subset %>%
+  filter(., coda == "1")
+
+gca_mod_cvc_base <-
+  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + wm_std + condition_sum +
+         (1 + ot1 + ot2 + ot3 | participant) +
+         (1 + ot1 + ot2 + ot3 | target),
+       control = lmerControl(optimizer = 'bobyqa'), REML = F,
+       data = filter(stress_gc_cvc, group == "ss"))
+
+gca_mod_cvc_int_0 <- update(gca_mod_cvc_base, . ~ . + wm_std:condition_sum)
+gca_mod_cvc_int_1 <- update(gca_mod_cvc_int_0, . ~ . + ot1:wm_std:condition_sum)
+gca_mod_cvc_int_2 <- update(gca_mod_cvc_int_1, . ~ . + ot2:wm_std:condition_sum)
+gca_mod_cvc_int_3 <- update(gca_mod_cvc_int_2, . ~ . + ot3:wm_std:condition_sum)
+
+anova(gca_mod_cvc_int_0, gca_mod_cvc_int_1, gca_mod_cvc_int_2, gca_mod_cvc_int_3)
+
+#                   Df   AIC   BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_cvc_int_0 28 19545 19719 -9744.7    19489
+# gca_mod_cvc_int_1 29 19542 19721 -9742.0    19484 5.4244      1   0.019857 *
+# gca_mod_cvc_int_2 30 19534 19720 -9737.1    19474 9.6971      1   0.001846 **
+# gca_mod_cvc_int_3 31 19536 19728 -9737.1    19474 0.0740      1   0.785545
+
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 # add phonotactic freq as a variable
 
@@ -319,38 +318,9 @@ gca_mod_la_base <-
        control = lmerControl(optimizer = 'bobyqa'), REML = F,
        data = filter(stress_gc_subset, group == "la"))
 
-# add coda effect to intercept, linear slope, quadratic, and cubic time terms
-gca_mod_la_coda_0 <- update(gca_mod_la_base,   . ~ . + coda_sum)
-gca_mod_la_coda_1 <- update(gca_mod_la_coda_0, . ~ . + ot1:coda_sum)
-gca_mod_la_coda_2 <- update(gca_mod_la_coda_1, . ~ . + ot2:coda_sum)
-gca_mod_la_coda_3 <- update(gca_mod_la_coda_2, . ~ . + ot3:coda_sum)
-
-la_coda_anova <-
-  anova(gca_mod_la_base, gca_mod_la_coda_0, gca_mod_la_coda_1,
-        gca_mod_la_coda_2, gca_mod_la_coda_3)
-
-# add coda effect to intercept, linear slope, quadratic, and cubic time terms
-gca_mod_la_cond_0 <- update(gca_mod_la_coda_3,   . ~ . + condition_sum)
-gca_mod_la_cond_1 <- update(gca_mod_la_cond_0,   . ~ . + ot1:condition_sum)
-gca_mod_la_cond_2 <- update(gca_mod_la_cond_1,   . ~ . + ot2:condition_sum)
-gca_mod_la_cond_3 <- update(gca_mod_la_cond_2,   . ~ . + ot3:condition_sum)
-
-la_cond_anova <-
-  anova(gca_mod_la_coda_3, gca_mod_la_cond_0, gca_mod_la_cond_1,
-        gca_mod_la_cond_2, gca_mod_la_cond_3)
-
-# add coda x cond int to intercept, linear slope, quadratic, and cubic terms
-gca_mod_la_int_0 <- update(gca_mod_la_cond_3, . ~ . + coda_sum:condition_sum)
-gca_mod_la_int_1 <- update(gca_mod_la_int_0,  . ~ . + ot1:coda_sum:condition_sum)
-gca_mod_la_int_2 <- update(gca_mod_la_int_1,  . ~ . + ot2:coda_sum:condition_sum)
-gca_mod_la_int_3 <- update(gca_mod_la_int_2,  . ~ . + ot3:coda_sum:condition_sum)
-
-la_int_anova <-
-  anova(gca_mod_la_cond_3, gca_mod_la_int_0, gca_mod_la_int_1,
-        gca_mod_la_int_2, gca_mod_la_int_3)
 
 # add wm effect to intercept, linear slope, quadratic, and cubic time terms
-gca_mod_la_wm_0 <- update(gca_mod_la_base,   . ~ . + wm_std)
+gca_mod_la_wm_0 <- update(gca_mod_la_base,   . ~ . + wm_std) # only WM as fixed effect
 gca_mod_la_wm_1 <- update(gca_mod_la_wm_0,   . ~ . + ot1:wm_std)
 gca_mod_la_wm_2 <- update(gca_mod_la_wm_1,   . ~ . + ot2:wm_std)
 gca_mod_la_wm_3 <- update(gca_mod_la_wm_2,   . ~ . + ot3:wm_std)
@@ -362,6 +332,118 @@ anova(gca_mod_la_wm_0, gca_mod_la_wm_1, gca_mod_la_wm_2, gca_mod_la_wm_3)
 # gca_mod_la_wm_1 38 34945 35201 -17434    34869 0.1543      1     0.6945
 # gca_mod_la_wm_2 39 34947 35210 -17434    34869 0.2409      1     0.6236
 # gca_mod_la_wm_3 40 34948 35219 -17434    34868 0.0716      1     0.7890
+
+# -----------------------------------------------------------------------------
+
+###########################
+# Interactions:           #
+# 1. Ox -> WM:coda        #
+# 2. Parox -> WM:coda     #
+# 3. CV -> WM:stress      #
+# 4. CVC -> WM:stress     #
+###########################
+
+# 1. For Paroxytone targets, check interaction of WM:Coda
+
+
+gca_mod_la_parox_base <-
+  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + wm_std + coda_sum +
+         (1 + ot1 + ot2 + ot3 | participant) +
+         (1 + ot1 + ot2 + ot3 | target),
+       control = lmerControl(optimizer = 'bobyqa'), REML = F,
+       data = filter(stress_gc_parox, group == "la"))
+
+gca_mod_la_parox_int_0 <- update(gca_mod_la_parox_base, . ~ . + wm_std:coda_sum)
+gca_mod_la_parox_int_1 <- update(gca_mod_la_parox_int_0, . ~ . + ot1:wm_std:coda_sum)
+gca_mod_la_parox_int_2 <- update(gca_mod_la_parox_int_1, . ~ . + ot2:wm_std:coda_sum)
+gca_mod_la_parox_int_3 <- update(gca_mod_la_parox_int_2, . ~ . + ot3:wm_std:coda_sum)
+
+anova(gca_mod_la_parox_int_0, gca_mod_la_parox_int_1, gca_mod_la_parox_int_2, gca_mod_la_parox_int_3)
+
+#                        Df   AIC   BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_la_parox_int_0 28 17316 17486 -8630.2    17260
+# gca_mod_la_parox_int_1 29 17318 17494 -8630.1    17260 0.0844      1    0.77136
+# gca_mod_la_parox_int_2 30 17317 17499 -8628.5    17257 3.1663      1    0.07517 .
+# gca_mod_la_parox_int_3 31 17319 17507 -8628.5    17257 0.0448      1    0.83229
+
+
+
+
+# 2. For Oxytone targets, check interaction of WM:Coda
+
+gca_mod_la_ox_base <-
+  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + wm_std + coda_sum +
+         (1 + coda_sum + (ot1 + ot2 + ot3) | participant) +
+         (1 + ot1 + ot2 + ot3 | target),
+       control = lmerControl(optimizer = 'bobyqa'), REML = F,
+       data = filter(stress_gc_ox, group == "la"))
+
+gca_mod_la_ox_int_0 <- update(gca_mod_la_ox_base, . ~ . + wm_std:coda_sum)
+gca_mod_la_ox_int_1 <- update(gca_mod_la_ox_int_0, . ~ . + ot1:wm_std:coda_sum)
+gca_mod_la_ox_int_2 <- update(gca_mod_la_ox_int_1, . ~ . + ot2:wm_std:coda_sum)
+gca_mod_la_ox_int_3 <- update(gca_mod_la_ox_int_2, . ~ . + ot3:wm_std:coda_sum)
+
+anova(gca_mod_la_ox_int_0, gca_mod_la_ox_int_1, gca_mod_la_ox_int_2, gca_mod_la_ox_int_3)
+
+#                     Df   AIC   BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_la_ox_int_0 33 17488 17688 -8711.1    17422
+# gca_mod_la_ox_int_1 34 17490 17696 -8711.0    17422 0.2418      1     0.6229
+# gca_mod_la_ox_int_2 35 17492 17704 -8711.0    17422 0.1043      1     0.7467
+# gca_mod_la_ox_int_3 36 17493 17712 -8710.7    17421 0.4888      1     0.4844
+
+
+# 3. For CV targets, check interaction of WM:stress
+
+gca_mod_la_cv_base <-
+  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + wm_std + condition_sum +
+         (1 + ot1 + ot2 + ot3 | participant) +
+         (1 + ot1 + ot2 + ot3 | target),
+       control = lmerControl(optimizer = 'bobyqa'), REML = F,
+       data = filter(stress_gc_cv, group == "la"))
+
+gca_mod_la_cv_int_0 <- update(gca_mod_la_cv_base, . ~ . + wm_std:condition_sum)
+gca_mod_la_cv_int_1 <- update(gca_mod_la_cv_int_0, . ~ . + ot1:wm_std:condition_sum)
+gca_mod_la_cv_int_2 <- update(gca_mod_la_cv_int_1, . ~ . + ot2:wm_std:condition_sum)
+gca_mod_la_cv_int_3 <- update(gca_mod_la_cv_int_2, . ~ . + ot3:wm_std:condition_sum)
+
+anova(gca_mod_la_cv_int_0, gca_mod_la_cv_int_1, gca_mod_la_cv_int_2, gca_mod_la_cv_int_3)
+
+#                     Df   AIC   BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_la_cv_int_0 28 14541 14705 -7242.6    14485
+# gca_mod_la_cv_int_1 29 14542 14712 -7241.9    14484 1.2715      1    0.25948
+# gca_mod_la_cv_int_2 30 14544 14720 -7241.8    14484 0.2549      1    0.61367
+# gca_mod_la_cv_int_3 31 14542 14724 -7240.1    14480 3.3669      1    0.06652 .
+
+
+# 4. For CVC targets, check interaction of WM:stress
+
+
+gca_mod_la_cvc_base <-
+  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + wm_std + condition_sum +
+         (1 + ot1 + ot2 + ot3 | participant) +
+         (1 + ot1 + ot2 + ot3 | target),
+       control = lmerControl(optimizer = 'bobyqa'), REML = F,
+       data = filter(stress_gc_cvc, group == "la"))
+
+gca_mod_la_cvc_int_0 <- update(gca_mod_la_cvc_base, . ~ . + wm_std:condition_sum)
+gca_mod_la_cvc_int_1 <- update(gca_mod_la_cvc_int_0, . ~ . + ot1:wm_std:condition_sum)
+gca_mod_la_cvc_int_2 <- update(gca_mod_la_cvc_int_1, . ~ . + ot2:wm_std:condition_sum)
+gca_mod_la_cvc_int_3 <- update(gca_mod_la_cvc_int_2, . ~ . + ot3:wm_std:condition_sum)
+
+anova(gca_mod_la_cvc_int_0, gca_mod_la_cvc_int_1, gca_mod_la_cvc_int_2, gca_mod_la_cvc_int_3)
+
+#                      Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_la_cvc_int_0 28 20645 20819 -10294    20589
+# gca_mod_la_cvc_int_1 29 20646 20826 -10294    20588 1.0949      1    0.29539
+# gca_mod_la_cvc_int_2 30 20645 20832 -10293    20585 2.7327      1    0.09831 .
+# gca_mod_la_cvc_int_3 31 20646 20839 -10292    20584 1.2244      1    0.26849
+
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+
 
 # add phonotactic freq as a variable
 
@@ -431,40 +513,11 @@ gca_mod_int_base <-
        control = lmerControl(optimizer = 'bobyqa'), REML = F,
        data = filter(stress_gc_subset, group == "int"))
 
-# add coda effect to intercept, linear slope, quadratic, and cubic time terms
-gca_mod_int_coda_0 <- update(gca_mod_int_base,   . ~ . + coda_sum)
-gca_mod_int_coda_1 <- update(gca_mod_int_coda_0, . ~ . + ot1:coda_sum)
-gca_mod_int_coda_2 <- update(gca_mod_int_coda_1, . ~ . + ot2:coda_sum)
-gca_mod_int_coda_3 <- update(gca_mod_int_coda_2, . ~ . + ot3:coda_sum)
-
-int_coda_anova <-
-  anova(gca_mod_int_base, gca_mod_int_coda_0, gca_mod_int_coda_1,
-        gca_mod_int_coda_2, gca_mod_int_coda_3)
-
-# add coda effect to intercept, linear slope, quadratic, and cubic time terms
-gca_mod_int_cond_0 <- update(gca_mod_int_coda_3,   . ~ . + condition_sum)
-gca_mod_int_cond_1 <- update(gca_mod_int_cond_0,   . ~ . + ot1:condition_sum)
-gca_mod_int_cond_2 <- update(gca_mod_int_cond_1,   . ~ . + ot2:condition_sum)
-gca_mod_int_cond_3 <- update(gca_mod_int_cond_2,   . ~ . + ot3:condition_sum)
-
-int_cond_anova <-
-  anova(gca_mod_int_coda_3, gca_mod_int_cond_0, gca_mod_int_cond_1,
-        gca_mod_int_cond_2, gca_mod_int_cond_3)
-
-# add coda x cond int to intercept, linear slope, quadratic, and cubic terms
-gca_mod_int_int_0 <- update(gca_mod_int_cond_3, . ~ . + coda_sum:condition_sum)
-gca_mod_int_int_1 <- update(gca_mod_int_int_0,  . ~ . + ot1:coda_sum:condition_sum)
-gca_mod_int_int_2 <- update(gca_mod_int_int_1,  . ~ . + ot2:coda_sum:condition_sum)
-gca_mod_int_int_3 <- update(gca_mod_int_int_2,  . ~ . + ot3:coda_sum:condition_sum)
-
-int_int_anova <-
-  anova(gca_mod_int_cond_3, gca_mod_int_int_0, gca_mod_int_int_1,
-        gca_mod_int_int_2, gca_mod_int_int_3)
 
 
 # add wm effect to intercept, linear slope, quadratic, and cubic time terms
 
-gca_mod_int_wm_0 <- update(gca_mod_int_base,   . ~ . + wm_std)
+gca_mod_int_wm_0 <- update(gca_mod_int_base,   . ~ . + wm_std) # only wm as fixed effect
 gca_mod_int_wm_1 <- update(gca_mod_int_wm_0,   . ~ . + ot1:wm_std)
 gca_mod_int_wm_2 <- update(gca_mod_int_wm_1,   . ~ . + ot2:wm_std)
 gca_mod_int_wm_3 <- update(gca_mod_int_wm_2,   . ~ . + ot3:wm_std)
@@ -476,6 +529,113 @@ anova(gca_mod_int_wm_0, gca_mod_int_wm_1, gca_mod_int_wm_2, gca_mod_int_wm_3)
 # gca_mod_int_wm_1 38 32835 33089 -16380    32759 0.4050      1     0.5245
 # gca_mod_int_wm_2 39 32837 33098 -16380    32759 0.2694      1     0.6037
 # gca_mod_int_wm_3 40 32838 33105 -16379    32758 1.3810      1     0.2399
+
+
+# -----------------------------------------------------------------------------
+
+###########################
+# Interactions:           #
+# 1. Ox -> WM:coda        #
+# 2. Parox -> WM:coda     #
+# 3. CV -> WM:stress      #
+# 4. CVC -> WM:stress     #
+###########################
+
+# 1. For Paroxytone targets, check interaction of WM:Coda
+
+
+gca_mod_int_parox_base <-
+  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + wm_std + coda_sum +
+         (1 + ot1 + ot2 + ot3 | participant) +
+         (1 + ot1 + ot2 + ot3 | target),
+       control = lmerControl(optimizer = 'bobyqa'), REML = F,
+       data = filter(stress_gc_parox, group == "int"))
+
+gca_mod_int_parox_int_0 <- update(gca_mod_int_parox_base, . ~ . + wm_std:coda_sum)
+gca_mod_int_parox_int_1 <- update(gca_mod_int_parox_int_0, . ~ . + ot1:wm_std:coda_sum)
+gca_mod_int_parox_int_2 <- update(gca_mod_int_parox_int_1, . ~ . + ot2:wm_std:coda_sum)
+gca_mod_int_parox_int_3 <- update(gca_mod_int_parox_int_2, . ~ . + ot3:wm_std:coda_sum)
+
+anova(gca_mod_int_parox_int_0, gca_mod_int_parox_int_1, gca_mod_int_parox_int_2, gca_mod_int_parox_int_3)
+
+#                         Df   AIC   BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_int_parox_int_0 28 16408 16575 -8175.9    16352
+# gca_mod_int_parox_int_1 29 16408 16582 -8175.1    16350 1.6402      1     0.2003
+# gca_mod_int_parox_int_2 30 16409 16589 -8174.5    16349 1.1957      1     0.2742
+# gca_mod_int_parox_int_3 31 16411 16596 -8174.4    16349 0.2093      1     0.6473
+
+
+# 2. For Oxytone targets, check interaction of WM:Coda
+
+gca_mod_int_ox_base <-
+  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + wm_std + coda_sum +
+         (1 + coda_sum + (ot1 + ot2 + ot3) | participant) +
+         (1 + ot1 + ot2 + ot3 | target),
+       control = lmerControl(optimizer = 'bobyqa'), REML = F,
+       data = filter(stress_gc_ox, group == "int"))
+
+gca_mod_int_ox_int_0 <- update(gca_mod_int_ox_base, . ~ . + wm_std:coda_sum)
+gca_mod_int_ox_int_1 <- update(gca_mod_int_ox_int_0, . ~ . + ot1:wm_std:coda_sum)
+gca_mod_int_ox_int_2 <- update(gca_mod_int_ox_int_1, . ~ . + ot2:wm_std:coda_sum)
+gca_mod_int_ox_int_3 <- update(gca_mod_int_ox_int_2, . ~ . + ot3:wm_std:coda_sum)
+
+anova(gca_mod_int_ox_int_0, gca_mod_int_ox_int_1, gca_mod_int_ox_int_2, gca_mod_int_ox_int_3)
+
+#                     Df   AIC   BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_int_ox_int_0 33 16338 16536 -8135.8    16272
+# gca_mod_int_ox_int_1 34 16339 16543 -8135.3    16271 0.9950      1   0.318522
+# gca_mod_int_ox_int_2 35 16340 16550 -8134.9    16270 0.7917      1   0.373574
+# gca_mod_int_ox_int_3 36 16333 16549 -8130.5    16261 8.8345      1   0.002956 **
+
+
+# 3. For CV targets, check interaction of WM:stress
+
+gca_mod_int_cv_base <-
+  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + wm_std + condition_sum +
+         (1 + ot1 + ot2 + ot3 | participant) +
+         (1 + ot1 + ot2 + ot3 | target),
+       control = lmerControl(optimizer = 'bobyqa'), REML = F,
+       data = filter(stress_gc_cv, group == "int"))
+
+gca_mod_int_cv_int_0 <- update(gca_mod_int_cv_base, . ~ . + wm_std:condition_sum)
+gca_mod_int_cv_int_1 <- update(gca_mod_int_cv_int_0, . ~ . + ot1:wm_std:condition_sum)
+gca_mod_int_cv_int_2 <- update(gca_mod_int_cv_int_1, . ~ . + ot2:wm_std:condition_sum)
+gca_mod_int_cv_int_3 <- update(gca_mod_int_cv_int_2, . ~ . + ot3:wm_std:condition_sum)
+
+anova(gca_mod_int_cv_int_0, gca_mod_int_cv_int_1, gca_mod_int_cv_int_2, gca_mod_int_cv_int_3)
+
+#                     Df   AIC   BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_int_cv_int_0 28 13286 13448 -6614.8    13230
+# gca_mod_int_cv_int_1 29 13276 13444 -6608.9    13218 11.875      1  0.0005688 ***
+# gca_mod_int_cv_int_2 30 13278 13451 -6608.8    13218  0.088      1  0.7667430
+# gca_mod_int_cv_int_3 31 13268 13448 -6603.1    13206 11.355      1  0.0007523 ***
+
+
+# 4. For CVC targets, check interaction of WM:stress
+
+
+gca_mod_int_cvc_base <-
+  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + wm_std + condition_sum +
+         (1 + ot1 + ot2 + ot3 | participant) +
+         (1 + ot1 + ot2 + ot3 | target),
+       control = lmerControl(optimizer = 'bobyqa'), REML = F,
+       data = filter(stress_gc_cvc, group == "int"))
+
+gca_mod_int_cvc_int_0 <- update(gca_mod_int_cvc_base, . ~ . + wm_std:condition_sum)
+gca_mod_int_cvc_int_1 <- update(gca_mod_int_cvc_int_0, . ~ . + ot1:wm_std:condition_sum)
+gca_mod_int_cvc_int_2 <- update(gca_mod_int_cvc_int_1, . ~ . + ot2:wm_std:condition_sum)
+gca_mod_int_cvc_int_3 <- update(gca_mod_int_cvc_int_2, . ~ . + ot3:wm_std:condition_sum)
+
+anova(gca_mod_int_cvc_int_0, gca_mod_int_cvc_int_1, gca_mod_int_cvc_int_2, gca_mod_int_cvc_int_3)
+
+#                       Df   AIC   BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_mod_int_cvc_int_0 28 19671 19843 -9807.4    19615
+# gca_mod_int_cvc_int_1 29 19670 19849 -9805.9    19612 2.8406      1    0.09191 .
+# gca_mod_int_cvc_int_2 30 19668 19854 -9804.2    19608 3.3936      1    0.06545 .
+# gca_mod_int_cvc_int_3 31 19670 19862 -9804.2    19608 0.0102      1    0.91949
+
+# -----------------------------------------------------------------------------
+
 
 
 # add phonotactic freq as a variable
@@ -681,6 +841,67 @@ if(F) {
   ind_mods$gca_mod_int_age_1 <- gca_mod_int_age_1
   ind_mods$gca_mod_int_age_2 <- gca_mod_int_age_2
   ind_mods$gca_mod_int_age_3 <- gca_mod_int_age_3
+
+  ind_mods$gca_mod_parox_int_0 <- gca_mod_parox_int_0
+  ind_mods$gca_mod_parox_int_1 <- gca_mod_parox_int_1
+  ind_mods$gca_mod_parox_int_2 <- gca_mod_parox_int_2
+  ind_mods$gca_mod_parox_int_3 <- gca_mod_parox_int_3
+
+  ind_mods$gca_mod_ox_int_0 <- gca_mod_ox_int_0
+  ind_mods$gca_mod_ox_int_1 <- gca_mod_ox_int_1
+  ind_mods$gca_mod_ox_int_2 <- gca_mod_ox_int_2
+  ind_mods$gca_mod_ox_int_3 <- gca_mod_ox_int_3
+
+  ind_mods$gca_mod_cv_int_0 <- gca_mod_cv_int_0
+  ind_mods$gca_mod_cv_int_1 <- gca_mod_cv_int_1
+  ind_mods$gca_mod_cv_int_2 <- gca_mod_cv_int_2
+  ind_mods$gca_mod_cv_int_3 <- gca_mod_cv_int_3
+
+  ind_mods$gca_mod_cvc_int_0 <- gca_mod_cvc_int_0
+  ind_mods$gca_mod_cvc_int_1 <- gca_mod_cvc_int_1
+  ind_mods$gca_mod_cvc_int_2 <- gca_mod_cvc_int_2
+  ind_mods$gca_mod_cvc_int_3 <- gca_mod_cvc_int_3
+
+  ind_mods$gca_mod_la_parox_int_0 <- gca_mod_la_parox_int_0
+  ind_mods$gca_mod_la_parox_int_1 <- gca_mod_la_parox_int_1
+  ind_mods$gca_mod_la_parox_int_2 <- gca_mod_la_parox_int_2
+  ind_mods$gca_mod_la_parox_int_3 <- gca_mod_la_parox_int_3
+
+  ind_mods$gca_mod_la_ox_int_0 <- gca_mod_la_ox_int_0
+  ind_mods$gca_mod_la_ox_int_1 <- gca_mod_la_ox_int_1
+  ind_mods$gca_mod_la_ox_int_2 <- gca_mod_la_ox_int_2
+  ind_mods$gca_mod_la_ox_int_3 <- gca_mod_la_ox_int_3
+
+  ind_mods$gca_mod_la_cv_int_0 <- gca_mod_la_cv_int_0
+  ind_mods$gca_mod_la_cv_int_1 <- gca_mod_la_cv_int_1
+  ind_mods$gca_mod_la_cv_int_2 <- gca_mod_la_cv_int_2
+  ind_mods$gca_mod_la_cv_int_3 <- gca_mod_la_cv_int_3
+
+  ind_mods$gca_mod_la_cvc_int_0 <- gca_mod_la_cvc_int_0
+  ind_mods$gca_mod_la_cvc_int_1 <- gca_mod_la_cvc_int_1
+  ind_mods$gca_mod_la_cvc_int_2 <- gca_mod_la_cvc_int_2
+  ind_mods$gca_mod_la_cvc_int_3 <- gca_mod_la_cvc_int_3
+
+  ind_mods$gca_mod_int_parox_int_0 <- gca_mod_int_parox_int_0
+  ind_mods$gca_mod_int_parox_int_1 <- gca_mod_int_parox_int_1
+  ind_mods$gca_mod_int_parox_int_2 <- gca_mod_int_parox_int_2
+  ind_mods$gca_mod_int_parox_int_3 <- gca_mod_int_parox_int_3
+
+  ind_mods$gca_mod_int_ox_int_0 <- gca_mod_int_ox_int_0
+  ind_mods$gca_mod_int_ox_int_1 <- gca_mod_int_ox_int_1
+  ind_mods$gca_mod_int_ox_int_2 <- gca_mod_int_ox_int_2
+  ind_mods$gca_mod_int_ox_int_3 <- gca_mod_int_ox_int_3
+
+  ind_mods$gca_mod_int_cv_int_0 <- gca_mod_int_cv_int_0
+  ind_mods$gca_mod_int_cv_int_1 <- gca_mod_int_cv_int_1
+  ind_mods$gca_mod_int_cv_int_2 <- gca_mod_int_cv_int_2
+  ind_mods$gca_mod_int_cv_int_3 <- gca_mod_int_cv_int_3
+
+  ind_mods$gca_mod_int_cvc_int_0 <- gca_mod_int_cvc_int_0
+  ind_mods$gca_mod_int_cvc_int_1 <- gca_mod_int_cvc_int_1
+  ind_mods$gca_mod_int_cvc_int_2 <- gca_mod_int_cvc_int_2
+  ind_mods$gca_mod_int_cvc_int_3 <- gca_mod_int_cvc_int_3
+
 
   save(ind_mods,
        file = here("models", "stress", "s3_adv_int_nat", "eye_track", "gca",
