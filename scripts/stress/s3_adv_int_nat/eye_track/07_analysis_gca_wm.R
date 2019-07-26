@@ -43,11 +43,13 @@ glimpse(stress50)
 gca_mods_path  <- here("models", "stress", "s3_adv_int_nat", "eye_track", "gca")
 
 # Load models as lists
-load(paste0(gca_mods_path, "/ind_mods.Rdata"))
+load(paste0(gca_mods_path, "/ind_mods_wm.Rdata"))
+load(paste0(gca_mods_path, "/nested_model_comparisons_wm.Rdata"))
 load(paste0(gca_mods_path, "/model_preds.Rdata"))
 
 # Store objects in global env
-list2env(ind_mods, globalenv())
+list2env(ind_mods_wm, globalenv())
+list2env(nested_model_comparisons_wm, globalenv())
 list2env(model_preds, globalenv())
 
 # -----------------------------------------------------------------------------
@@ -128,6 +130,8 @@ gca_mod_ss_wm_1 <- update(gca_mod_ss_wm_0,   . ~ . + ot1:wm_std)
 gca_mod_ss_wm_2 <- update(gca_mod_ss_wm_1,   . ~ . + ot2:wm_std)
 gca_mod_ss_wm_3 <- update(gca_mod_ss_wm_2,   . ~ . + ot3:wm_std)
 
+ss_wm_anova <-
+anova(gca_mod_ss_wm_0, gca_mod_ss_wm_1, gca_mod_ss_wm_2, gca_mod_ss_wm_3)
 
 #                 Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
 # gca_mod_ss_wm_0 37 33446 33695 -16686    33372
@@ -151,6 +155,7 @@ gca_mod_ss_wm_1_all <- update(gca_mod_ss_wm_0_all,   . ~ . + ot1:wm_std)
 gca_mod_ss_wm_2_all <- update(gca_mod_ss_wm_1_all,   . ~ . + ot2:wm_std)
 gca_mod_ss_wm_3_all <- update(gca_mod_ss_wm_2_all,   . ~ . + ot3:wm_std)
 
+ss_wm_anova_all <-
 anova(gca_mod_ss_wm_0_all, gca_mod_ss_wm_1_all, gca_mod_ss_wm_2_all, gca_mod_ss_wm_3_all)
 
 #                     Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
@@ -187,6 +192,7 @@ gca_mod_ss_parox_int_1 <- update(gca_mod_ss_parox_int_0, . ~ . + ot1:wm_std:coda
 gca_mod_ss_parox_int_2 <- update(gca_mod_ss_parox_int_1, . ~ . + ot2:wm_std:coda_sum)
 gca_mod_ss_parox_int_3 <- update(gca_mod_ss_parox_int_2, . ~ . + ot3:wm_std:coda_sum)
 
+ss_parox_wm_anova <-
 anova(gca_mod_ss_parox_int_0, gca_mod_ss_parox_int_1, gca_mod_ss_parox_int_2, gca_mod_ss_parox_int_3)
 
 #                     Df   AIC   BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)
@@ -215,6 +221,7 @@ gca_mod_ss_ox_int_1 <- update(gca_mod_ss_ox_int_0, . ~ . + ot1:wm_std:coda_sum)
 gca_mod_ss_ox_int_2 <- update(gca_mod_ss_ox_int_1, . ~ . + ot2:wm_std:coda_sum)
 gca_mod_ss_ox_int_3 <- update(gca_mod_ss_ox_int_2, . ~ . + ot3:wm_std:coda_sum)
 
+ss_ox_wm_anova <-
 anova(gca_mod_ss_ox_int_0, gca_mod_ss_ox_int_1, gca_mod_ss_ox_int_2, gca_mod_ss_ox_int_3)
 
 #                  Df   AIC   BIC  logLik deviance   Chisq Chi Df Pr(>Chisq)
@@ -242,6 +249,7 @@ gca_mod_ss_cv_int_1 <- update(gca_mod_ss_cv_int_0, . ~ . + ot1:wm_std:condition_
 gca_mod_ss_cv_int_2 <- update(gca_mod_ss_cv_int_1, . ~ . + ot2:wm_std:condition_sum)
 gca_mod_ss_cv_int_3 <- update(gca_mod_ss_cv_int_2, . ~ . + ot3:wm_std:condition_sum)
 
+ss_cv_wm_anova <-
 anova(gca_mod_ss_cv_int_0, gca_mod_ss_cv_int_1, gca_mod_ss_cv_int_2, gca_mod_ss_cv_int_3)
 
 #                  Df   AIC   BIC  logLik deviance   Chisq Chi Df Pr(>Chisq)
@@ -268,6 +276,7 @@ gca_mod_ss_cvc_int_1 <- update(gca_mod_ss_cvc_int_0, . ~ . + ot1:wm_std:conditio
 gca_mod_ss_cvc_int_2 <- update(gca_mod_ss_cvc_int_1, . ~ . + ot2:wm_std:condition_sum)
 gca_mod_ss_cvc_int_3 <- update(gca_mod_ss_cvc_int_2, . ~ . + ot3:wm_std:condition_sum)
 
+ss_cvc_wm_anova <-
 anova(gca_mod_ss_cvc_int_0, gca_mod_ss_cvc_int_1, gca_mod_ss_cvc_int_2, gca_mod_ss_cvc_int_3)
 
 #                   Df   AIC   BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)
@@ -302,6 +311,7 @@ gca_mod_la_wm_1 <- update(gca_mod_la_wm_0,   . ~ . + ot1:wm_std)
 gca_mod_la_wm_2 <- update(gca_mod_la_wm_1,   . ~ . + ot2:wm_std)
 gca_mod_la_wm_3 <- update(gca_mod_la_wm_2,   . ~ . + ot3:wm_std)
 
+la_wm_anova <-
 anova(gca_mod_la_wm_0, gca_mod_la_wm_1, gca_mod_la_wm_2, gca_mod_la_wm_3)
 
 #                 Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
@@ -335,6 +345,7 @@ gca_mod_la_parox_int_1 <- update(gca_mod_la_parox_int_0, . ~ . + ot1:wm_std:coda
 gca_mod_la_parox_int_2 <- update(gca_mod_la_parox_int_1, . ~ . + ot2:wm_std:coda_sum)
 gca_mod_la_parox_int_3 <- update(gca_mod_la_parox_int_2, . ~ . + ot3:wm_std:coda_sum)
 
+la_parox_wm_anova <-
 anova(gca_mod_la_parox_int_0, gca_mod_la_parox_int_1, gca_mod_la_parox_int_2, gca_mod_la_parox_int_3)
 
 #                        Df   AIC   BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)
@@ -360,6 +371,7 @@ gca_mod_la_ox_int_1 <- update(gca_mod_la_ox_int_0, . ~ . + ot1:wm_std:coda_sum)
 gca_mod_la_ox_int_2 <- update(gca_mod_la_ox_int_1, . ~ . + ot2:wm_std:coda_sum)
 gca_mod_la_ox_int_3 <- update(gca_mod_la_ox_int_2, . ~ . + ot3:wm_std:coda_sum)
 
+la_ox_wm_anova <-
 anova(gca_mod_la_ox_int_0, gca_mod_la_ox_int_1, gca_mod_la_ox_int_2, gca_mod_la_ox_int_3)
 
 #                     Df   AIC   BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)
@@ -383,6 +395,7 @@ gca_mod_la_cv_int_1 <- update(gca_mod_la_cv_int_0, . ~ . + ot1:wm_std:condition_
 gca_mod_la_cv_int_2 <- update(gca_mod_la_cv_int_1, . ~ . + ot2:wm_std:condition_sum)
 gca_mod_la_cv_int_3 <- update(gca_mod_la_cv_int_2, . ~ . + ot3:wm_std:condition_sum)
 
+la_cv_wm_anova <-
 anova(gca_mod_la_cv_int_0, gca_mod_la_cv_int_1, gca_mod_la_cv_int_2, gca_mod_la_cv_int_3)
 
 #                     Df   AIC   BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)
@@ -407,6 +420,7 @@ gca_mod_la_cvc_int_1 <- update(gca_mod_la_cvc_int_0, . ~ . + ot1:wm_std:conditio
 gca_mod_la_cvc_int_2 <- update(gca_mod_la_cvc_int_1, . ~ . + ot2:wm_std:condition_sum)
 gca_mod_la_cvc_int_3 <- update(gca_mod_la_cvc_int_2, . ~ . + ot3:wm_std:condition_sum)
 
+la_cvc_wm_anova <-
 anova(gca_mod_la_cvc_int_0, gca_mod_la_cvc_int_1, gca_mod_la_cvc_int_2, gca_mod_la_cvc_int_3)
 
 #                      Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
@@ -442,6 +456,7 @@ gca_mod_int_wm_1 <- update(gca_mod_int_wm_0,   . ~ . + ot1:wm_std)
 gca_mod_int_wm_2 <- update(gca_mod_int_wm_1,   . ~ . + ot2:wm_std)
 gca_mod_int_wm_3 <- update(gca_mod_int_wm_2,   . ~ . + ot3:wm_std)
 
+int_wm_anova <-
 anova(gca_mod_int_wm_0, gca_mod_int_wm_1, gca_mod_int_wm_2, gca_mod_int_wm_3)
 
 #                   Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
@@ -476,6 +491,7 @@ gca_mod_int_parox_int_1 <- update(gca_mod_int_parox_int_0, . ~ . + ot1:wm_std:co
 gca_mod_int_parox_int_2 <- update(gca_mod_int_parox_int_1, . ~ . + ot2:wm_std:coda_sum)
 gca_mod_int_parox_int_3 <- update(gca_mod_int_parox_int_2, . ~ . + ot3:wm_std:coda_sum)
 
+int_parox_wm_anova <-
 anova(gca_mod_int_parox_int_0, gca_mod_int_parox_int_1, gca_mod_int_parox_int_2, gca_mod_int_parox_int_3)
 
 #                         Df   AIC   BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)
@@ -499,6 +515,7 @@ gca_mod_int_ox_int_1 <- update(gca_mod_int_ox_int_0, . ~ . + ot1:wm_std:coda_sum
 gca_mod_int_ox_int_2 <- update(gca_mod_int_ox_int_1, . ~ . + ot2:wm_std:coda_sum)
 gca_mod_int_ox_int_3 <- update(gca_mod_int_ox_int_2, . ~ . + ot3:wm_std:coda_sum)
 
+int_ox_wm_anova <-
 anova(gca_mod_int_ox_int_0, gca_mod_int_ox_int_1, gca_mod_int_ox_int_2, gca_mod_int_ox_int_3)
 
 #                     Df   AIC   BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)
@@ -522,6 +539,7 @@ gca_mod_int_cv_int_1 <- update(gca_mod_int_cv_int_0, . ~ . + ot1:wm_std:conditio
 gca_mod_int_cv_int_2 <- update(gca_mod_int_cv_int_1, . ~ . + ot2:wm_std:condition_sum)
 gca_mod_int_cv_int_3 <- update(gca_mod_int_cv_int_2, . ~ . + ot3:wm_std:condition_sum)
 
+int_cv_wm_anova <-
 anova(gca_mod_int_cv_int_0, gca_mod_int_cv_int_1, gca_mod_int_cv_int_2, gca_mod_int_cv_int_3)
 
 #                     Df   AIC   BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)
@@ -546,6 +564,7 @@ gca_mod_int_cvc_int_1 <- update(gca_mod_int_cvc_int_0, . ~ . + ot1:wm_std:condit
 gca_mod_int_cvc_int_2 <- update(gca_mod_int_cvc_int_1, . ~ . + ot2:wm_std:condition_sum)
 gca_mod_int_cvc_int_3 <- update(gca_mod_int_cvc_int_2, . ~ . + ot3:wm_std:condition_sum)
 
+int_cvc_wm_anova <-
 anova(gca_mod_int_cvc_int_0, gca_mod_int_cvc_int_1, gca_mod_int_cvc_int_2, gca_mod_int_cvc_int_3)
 
 #                       Df   AIC   BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)
@@ -622,91 +641,21 @@ if(F) {
                    "ind_mods_wm.Rdata"))
 
 
-  # Add age models from interpreters
 
-  # ind_mods_wm$gca_mod_ss_parox_int_0 <- gca_mod_ss_parox_int_0
-  # ind_mods_wm$gca_mod_ss_parox_int_1 <- gca_mod_ss_parox_int_1
-  # ind_mods_wm$gca_mod_ss_parox_int_2 <- gca_mod_ss_parox_int_2
-  # ind_mods_wm$gca_mod_ss_parox_int_3 <- gca_mod_ss_parox_int_3
-  #
-  # ind_mods_wm$gca_mod_ss_ox_int_0 <- gca_mod_ss_ox_int_0
-  # ind_mods_wm$gca_mod_ss_ox_int_1 <- gca_mod_ss_ox_int_1
-  # ind_mods_wm$gca_mod_ss_ox_int_2 <- gca_mod_ss_ox_int_2
-  # ind_mods_wm$gca_mod_ss_ox_int_3 <- gca_mod_ss_ox_int_3
-  #
-  # ind_mods_wm$gca_mod_ss_cv_int_0 <- gca_mod_ss_cv_int_0
-  # ind_mods_wm$gca_mod_ss_cv_int_1 <- gca_mod_ss_cv_int_1
-  # ind_mods_wm$gca_mod_ss_cv_int_2 <- gca_mod_ss_cv_int_2
-  # ind_mods_wm$gca_mod_ss_cv_int_3 <- gca_mod_ss_cv_int_3
-  #
-  # ind_mods_wm$gca_mod_ss_cvc_int_0 <- gca_mod_ss_cvc_int_0
-  # ind_mods_wm$gca_mod_ss_cvc_int_1 <- gca_mod_ss_cvc_int_1
-  # ind_mods_wm$gca_mod_ss_cvc_int_2 <- gca_mod_ss_cvc_int_2
-  # ind_mods_wm$gca_mod_ss_cvc_int_3 <- gca_mod_ss_cvc_int_3
-  #
-  # ind_mods_wm$gca_mod_la_parox_int_0 <- gca_mod_la_parox_int_0
-  # ind_mods_wm$gca_mod_la_parox_int_1 <- gca_mod_la_parox_int_1
-  # ind_mods_wm$gca_mod_la_parox_int_2 <- gca_mod_la_parox_int_2
-  # ind_mods_wm$gca_mod_la_parox_int_3 <- gca_mod_la_parox_int_3
-  #
-  # ind_mods_wm$gca_mod_la_ox_int_0 <- gca_mod_la_ox_int_0
-  # ind_mods_wm$gca_mod_la_ox_int_1 <- gca_mod_la_ox_int_1
-  # ind_mods_wm$gca_mod_la_ox_int_2 <- gca_mod_la_ox_int_2
-  # ind_mods_wm$gca_mod_la_ox_int_3 <- gca_mod_la_ox_int_3
-  #
-  # ind_mods_wm$gca_mod_la_cv_int_0 <- gca_mod_la_cv_int_0
-  # ind_mods_wm$gca_mod_la_cv_int_1 <- gca_mod_la_cv_int_1
-  # ind_mods_wm$gca_mod_la_cv_int_2 <- gca_mod_la_cv_int_2
-  # ind_mods_wm$gca_mod_la_cv_int_3 <- gca_mod_la_cv_int_3
-  #
-  # ind_mods_wm$gca_mod_la_cvc_int_0 <- gca_mod_la_cvc_int_0
-  # ind_mods_wm$gca_mod_la_cvc_int_1 <- gca_mod_la_cvc_int_1
-  # ind_mods_wm$gca_mod_la_cvc_int_2 <- gca_mod_la_cvc_int_2
-  # ind_mods_wm$gca_mod_la_cvc_int_3 <- gca_mod_la_cvc_int_3
-  #
-  # ind_mods_wm$gca_mod_int_parox_int_0 <- gca_mod_int_parox_int_0
-  # ind_mods_wm$gca_mod_int_parox_int_1 <- gca_mod_int_parox_int_1
-  # ind_mods_wm$gca_mod_int_parox_int_2 <- gca_mod_int_parox_int_2
-  # ind_mods_wm$gca_mod_int_parox_int_3 <- gca_mod_int_parox_int_3
-  #
-  # ind_mods_wm$gca_mod_int_ox_int_0 <- gca_mod_int_ox_int_0
-  # ind_mods_wm$gca_mod_int_ox_int_1 <- gca_mod_int_ox_int_1
-  # ind_mods_wm$gca_mod_int_ox_int_2 <- gca_mod_int_ox_int_2
-  # ind_mods_wm$gca_mod_int_ox_int_3 <- gca_mod_int_ox_int_3
-  #
-  # ind_mods_wm$gca_mod_int_cv_int_0 <- gca_mod_int_cv_int_0
-  # ind_mods_wm$gca_mod_int_cv_int_1 <- gca_mod_int_cv_int_1
-  # ind_mods_wm$gca_mod_int_cv_int_2 <- gca_mod_int_cv_int_2
-  # ind_mods_wm$gca_mod_int_cv_int_3 <- gca_mod_int_cv_int_3
-  #
-  # ind_mods_wm$gca_mod_int_cvc_int_0 <- gca_mod_int_cvc_int_0
-  # ind_mods_wm$gca_mod_int_cvc_int_1 <- gca_mod_int_cvc_int_1
-  # ind_mods_wm$gca_mod_int_cvc_int_2 <- gca_mod_int_cvc_int_2
-  # ind_mods_wm$gca_mod_int_cvc_int_3 <- gca_mod_int_cvc_int_3
+
+   # Save anova model comparisons
+  nested_model_comparisons_wm <-
+    mget(c("ss_wm_anova", "ss_wm_anova_all", "ss_parox_wm_anova", "ss_ox_wm_anova",
+      "ss_cv_wm_anova", "ss_cvc_wm_anova", "la_wm_anova", "la_parox_wm_anova",
+      "la_ox_wm_anova", "la_cv_wm_anova", "la_cvc_wm_anova", "int_wm_anova",
+      "int_parox_wm_anova", "int_ox_wm_anova", "int_cv_wm_anova", "int_cvc_wm_anova"))
 
 
 
-  # Store full (ot1, ot2, ot3, group, coda, cond) models in list
-  full_mods <- mget(c(
-    "gca_full_mod_base", "gca_full_mod_group_0", "gca_full_mod_group_1",
-    "gca_full_mod_group_2", "gca_full_mod_group_3", "gca_full_mod_int_0",
-    "gca_full_mod_int_1", "gca_full_mod_int_2", "gca_full_mod_int_3",
-    "gca_full_mod_int_relevel"))
 
-  save(full_mods,
+  save(nested_model_comparisons_wm,
        file = here("models", "stress", "s3_adv_int_nat", "eye_track", "gca",
-                   "full_mods.Rdata"))
-
-  # Save anova model comparisons
-  nested_model_comparisons <-
-    mget(c("ss_coda_anova", "ss_cond_anova", "ss_int_anova",
-           "la_coda_anova", "la_cond_anova", "la_int_anova",
-           "int_coda_anova", "int_cond_anova", "int_int_anova",
-           "int_age_anova", "full_group_anova", "full_int_anova"))
-
-  save(nested_model_comparisons,
-       file = here("models", "stress", "s3_adv_int_nat", "eye_track", "gca",
-                   "nested_model_comparisons.Rdata"))
+                   "nested_model_comparisons_wm.Rdata"))
 
   # Save models predictions
   model_preds <- mget(c("fits_all", "target_offset_preds"))

@@ -43,15 +43,13 @@ glimpse(stress50)
 gca_mods_path  <- here("models", "stress", "s3_adv_int_nat", "eye_track", "gca")
 
 # Load models as lists
-load(paste0(gca_mods_path, "/ind_mods.Rdata"))
-load(paste0(gca_mods_path, "/full_mods.Rdata"))
-load(paste0(gca_mods_path, "/nested_model_comparisons.Rdata"))
+load(paste0(gca_mods_path, "/ind_mods_phon.Rdata"))
+load(paste0(gca_mods_path, "/nested_model_comparisons_phon.Rdata"))
 load(paste0(gca_mods_path, "/model_preds.Rdata"))
 
 # Store objects in global env
-list2env(ind_mods, globalenv())
-list2env(full_mods, globalenv())
-list2env(nested_model_comparisons, globalenv())
+list2env(ind_mods_phon, globalenv())
+list2env(nested_model_comparisons_phon, globalenv())
 list2env(model_preds, globalenv())
 
 # -----------------------------------------------------------------------------
@@ -142,6 +140,15 @@ anova(gca_mod_ss_phon_0, gca_mod_ss_phon_1, gca_mod_ss_phon_2, gca_mod_ss_phon_3
 # gca_mod_ss_phon_3 40 34961 35231 -17440    34881 0.2734      1     0.6011
 
 # add phonotactic frequency effect to intercept, linear slope, quadratic, and cubic time terms
+
+gca_mod_ss_cond_3 <-
+  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + condition_sum + coda_sum +
+         (1 + coda_sum + condition_sum + (ot1 + ot2 + ot3) | participant) +
+         (1 + ot1 + ot2 + ot3 | target),
+       control = lmerControl(optimizer = 'bobyqa'), REML = F,
+       data = filter(stress_gc_subset, group == "ss"))
+
+
 gca_mod_ss_phon_0_all <- update(gca_mod_ss_cond_3,   . ~ . + phon_std) # Stress + coda + phon as fixed effects
 gca_mod_ss_phon_1_all <- update(gca_mod_ss_phon_0_all,   . ~ . + ot1:phon_std)
 gca_mod_ss_phon_2_all <- update(gca_mod_ss_phon_1_all,   . ~ . + ot2:phon_std)
@@ -151,10 +158,10 @@ ss_phon_anova_all <-
 anova(gca_mod_ss_phon_0_all, gca_mod_ss_phon_1_all, gca_mod_ss_phon_2_all, gca_mod_ss_phon_3_all)
 
 #                       Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
-# gca_mod_ss_phon_0_all 45 34958 35263 -17434    34868
-# gca_mod_ss_phon_1_all 46 34960 35271 -17434    34868 0.0736      1     0.7862
-# gca_mod_ss_phon_2_all 47 34960 35279 -17433    34866 1.4385      1     0.2304
-# gca_mod_ss_phon_3_all 48 34962 35287 -17433    34866 0.1211      1     0.7278
+# gca_mod_ss_phon_0_all 39 34959 35224 -17441    34881
+# gca_mod_ss_phon_1_all 40 34961 35232 -17441    34881 0.3052      1     0.5806
+# gca_mod_ss_phon_2_all 41 34961 35239 -17440    34879 2.2295      1     0.1354
+# gca_mod_ss_phon_3_all 42 34963 35247 -17439    34879 0.2729      1     0.6014
 
 # -----------------------------------------------------------------------------
 
@@ -172,20 +179,20 @@ stress_gc_parox <- stress_gc_subset %>%
   filter(., condition == "stressed")
 
 
-gca_mod_parox_phon_base <-
+gca_mod_ss_parox_phon_base <-
   lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + phon_std + coda_sum +
          (1 + ot1 + ot2 + ot3 | participant) +
          (1 + ot1 + ot2 + ot3 | target),
        control = lmerControl(optimizer = 'bobyqa'), REML = F,
        data = filter(stress_gc_parox, group == "ss"))
 
-gca_mod_parox_phon_int_0 <- update(gca_mod_parox_phon_base, . ~ . + phon_std:coda_sum)
-gca_mod_parox_phon_int_1 <- update(gca_mod_parox_phon_int_0, . ~ . + ot1:phon_std:coda_sum)
-gca_mod_parox_phon_int_2 <- update(gca_mod_parox_phon_int_1, . ~ . + ot2:phon_std:coda_sum)
-gca_mod_parox_phon_int_3 <- update(gca_mod_parox_phon_int_2, . ~ . + ot3:phon_std:coda_sum)
+gca_mod_ss_parox_phon_int_0 <- update(gca_mod_ss_parox_phon_base, . ~ . + phon_std:coda_sum)
+gca_mod_ss_parox_phon_int_1 <- update(gca_mod_ss_parox_phon_int_0, . ~ . + ot1:phon_std:coda_sum)
+gca_mod_ss_parox_phon_int_2 <- update(gca_mod_ss_parox_phon_int_1, . ~ . + ot2:phon_std:coda_sum)
+gca_mod_ss_parox_phon_int_3 <- update(gca_mod_ss_parox_phon_int_2, . ~ . + ot3:phon_std:coda_sum)
 
 ss_parox_phon_anova <-
-anova(gca_mod_parox_phon_int_0, gca_mod_parox_phon_int_1, gca_mod_parox_phon_int_2, gca_mod_parox_phon_int_3)
+anova(gca_mod_ss_parox_phon_int_0, gca_mod_ss_parox_phon_int_1, gca_mod_ss_parox_phon_int_2, gca_mod_ss_parox_phon_int_3)
 
 #                          Df   AIC   BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)
 # gca_mod_parox_phon_int_0 28 17313 17483 -8628.7    17257
@@ -201,20 +208,20 @@ anova(gca_mod_parox_phon_int_0, gca_mod_parox_phon_int_1, gca_mod_parox_phon_int
 stress_gc_ox <- stress_gc_subset %>%
   filter(., condition == "unstressed")
 
-gca_mod_ox_phon_base <-
+gca_mod_ss_ox_phon_base <-
   lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + phon_std + coda_sum +
          (1 + coda_sum + (ot1 + ot2 + ot3) | participant) +
          (1 + ot1 + ot2 + ot3 | target),
        control = lmerControl(optimizer = 'bobyqa'), REML = F,
        data = filter(stress_gc_ox, group == "ss"))
 
-gca_mod_ox_phon_int_0 <- update(gca_mod_ox_phon_base, . ~ . + phon_std:coda_sum)
-gca_mod_ox_phon_int_1 <- update(gca_mod_ox_phon_int_0, . ~ . + ot1:phon_std:coda_sum)
-gca_mod_ox_phon_int_2 <- update(gca_mod_ox_phon_int_1, . ~ . + ot2:phon_std:coda_sum)
-gca_mod_ox_phon_int_3 <- update(gca_mod_ox_phon_int_2, . ~ . + ot3:phon_std:coda_sum)
+gca_mod_ss_ox_phon_int_0 <- update(gca_mod_ss_ox_phon_base, . ~ . + phon_std:coda_sum)
+gca_mod_ss_ox_phon_int_1 <- update(gca_mod_ss_ox_phon_int_0, . ~ . + ot1:phon_std:coda_sum)
+gca_mod_ss_ox_phon_int_2 <- update(gca_mod_ss_ox_phon_int_1, . ~ . + ot2:phon_std:coda_sum)
+gca_mod_ss_ox_phon_int_3 <- update(gca_mod_ss_ox_phon_int_2, . ~ . + ot3:phon_std:coda_sum)
 
 ss_ox_phon_anova <-
-anova(gca_mod_ox_phon_int_0, gca_mod_ox_phon_int_1, gca_mod_ox_phon_int_2, gca_mod_ox_phon_int_3)
+anova(gca_mod_ss_ox_phon_int_0, gca_mod_ss_ox_phon_int_1, gca_mod_ss_ox_phon_int_2, gca_mod_ss_ox_phon_int_3)
 
 #                       Df   AIC   BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)
 # gca_mod_ox_phon_int_0 33 17431 17632 -8682.3    17365
@@ -229,20 +236,20 @@ anova(gca_mod_ox_phon_int_0, gca_mod_ox_phon_int_1, gca_mod_ox_phon_int_2, gca_m
 stress_gc_cv <- stress_gc_subset %>%
   filter(., coda == "0")
 
-gca_mod_cv_phon_base <-
+gca_mod_ss_cv_phon_base <-
   lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + phon_std + condition_sum +
          (1 + ot1 + ot2 + ot3 | participant) +
          (1 + ot1 + ot2 + ot3 | target),
        control = lmerControl(optimizer = 'bobyqa'), REML = F,
        data = filter(stress_gc_cv, group == "ss"))
 
-gca_mod_cv_phon_int_0 <- update(gca_mod_cv_phon_base, . ~ . + phon_std:condition_sum)
-gca_mod_cv_phon_int_1 <- update(gca_mod_cv_phon_int_0, . ~ . + ot1:phon_std:condition_sum)
-gca_mod_cv_phon_int_2 <- update(gca_mod_cv_phon_int_1, . ~ . + ot2:phon_std:condition_sum)
-gca_mod_cv_phon_int_3 <- update(gca_mod_cv_phon_int_2, . ~ . + ot3:phon_std:condition_sum)
+gca_mod_ss_cv_phon_int_0 <- update(gca_mod_ss_cv_phon_base, . ~ . + phon_std:condition_sum)
+gca_mod_ss_cv_phon_int_1 <- update(gca_mod_ss_cv_phon_int_0, . ~ . + ot1:phon_std:condition_sum)
+gca_mod_ss_cv_phon_int_2 <- update(gca_mod_ss_cv_phon_int_1, . ~ . + ot2:phon_std:condition_sum)
+gca_mod_ss_cv_phon_int_3 <- update(gca_mod_ss_cv_phon_int_2, . ~ . + ot3:phon_std:condition_sum)
 
 ss_cv_phon_anova <-
-anova(gca_mod_cv_phon_int_0, gca_mod_cv_phon_int_1, gca_mod_cv_phon_int_2, gca_mod_cv_phon_int_3)
+anova(gca_mod_ss_cv_phon_int_0, gca_mod_ss_cv_phon_int_1, gca_mod_ss_cv_phon_int_2, gca_mod_ss_cv_phon_int_3)
 
 #                       Df   AIC   BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)
 # gca_mod_cv_phon_int_0 28 14718 14883 -7331.0    14662
@@ -256,20 +263,20 @@ anova(gca_mod_cv_phon_int_0, gca_mod_cv_phon_int_1, gca_mod_cv_phon_int_2, gca_m
 stress_gc_cvc <- stress_gc_subset %>%
   filter(., coda == "1")
 
-gca_mod_cvc_phon_base <-
+gca_mod_ss_cvc_phon_base <-
   lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + phon_std + condition_sum +
          (1 + ot1 + ot2 + ot3 | participant) +
          (1 + ot1 + ot2 + ot3 | target),
        control = lmerControl(optimizer = 'bobyqa'), REML = F,
        data = filter(stress_gc_cvc, group == "ss"))
 
-gca_mod_cvc_phon_int_0 <- update(gca_mod_cvc_phon_base, . ~ . + phon_std:condition_sum)
-gca_mod_cvc_phon_int_1 <- update(gca_mod_cvc_phon_int_0, . ~ . + ot1:phon_std:condition_sum)
-gca_mod_cvc_phon_int_2 <- update(gca_mod_cvc_phon_int_1, . ~ . + ot2:phon_std:condition_sum)
-gca_mod_cvc_phon_int_3 <- update(gca_mod_cvc_phon_int_2, . ~ . + ot3:phon_std:condition_sum)
+gca_mod_ss_cvc_phon_int_0 <- update(gca_mod_ss_cvc_phon_base, . ~ . + phon_std:condition_sum)
+gca_mod_ss_cvc_phon_int_1 <- update(gca_mod_ss_cvc_phon_int_0, . ~ . + ot1:phon_std:condition_sum)
+gca_mod_ss_cvc_phon_int_2 <- update(gca_mod_ss_cvc_phon_int_1, . ~ . + ot2:phon_std:condition_sum)
+gca_mod_ss_cvc_phon_int_3 <- update(gca_mod_ss_cvc_phon_int_2, . ~ . + ot3:phon_std:condition_sum)
 
 ss_cvc_phon_anova <-
-anova(gca_mod_cvc_phon_int_0, gca_mod_cvc_phon_int_1, gca_mod_cvc_phon_int_2, gca_mod_cvc_phon_int_3)
+anova(gca_mod_ss_cvc_phon_int_0, gca_mod_ss_cvc_phon_int_1, gca_mod_ss_cvc_phon_int_2, gca_mod_ss_cvc_phon_int_3)
 
 #                        Df   AIC   BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
 # gca_mod_cvc_phon_int_0 28 20563 20737 -10253    20507
@@ -445,6 +452,10 @@ gca_mod_int_base <-
 # add phon effect to intercept, linear slope, quadratic, and cubic time terms
 
 gca_mod_int_phon_0 <- update(gca_mod_int_base,   . ~ . + phon_std) # only phon as fixed effect
+# This model gives the following message
+# Warning message:
+#   In optwrap(optimizer, devfun, getStart(start, rho$lower, rho$pp),  :
+#                convergence code 1 from bobyqa: bobyqa -- maximum number of function evaluations exceeded
 gca_mod_int_phon_1 <- update(gca_mod_int_phon_0,   . ~ . + ot1:phon_std)
 gca_mod_int_phon_2 <- update(gca_mod_int_phon_1,   . ~ . + ot2:phon_std)
 gca_mod_int_phon_3 <- update(gca_mod_int_phon_2,   . ~ . + ot3:phon_std)
@@ -613,104 +624,18 @@ target_offset_preds <- filter(fits_all, time_zero == 4) %>%
 
 if(F) {
 
-ind_mods_phon <- as.data.frame(ind_mods_phon)
+  # Build model names programatically
+  mod_type <- "gca_mod_"
+  mod_spec <- c("_base", "_parox_phon_base", "_parox_phon_int_0", "_parox_phon_int_1",
+              "_parox_phon_int_2", "_parox_phon_int_3", "_ox_phon_int_0", "_ox_phon_int_1",
+              "_ox_phon_int_2", "_ox_phon_int_3", "_cv_phon_int_0", "_cv_phon_int_1",
+              "_cv_phon_int_2", "_cv_phon_int_3", "_cvc_phon_int_0", "_cvc_phon_int_1",
+              "_cvc_phon_int_2", "_cvc_phon_int_3")
 
-  # Safe independent models
-
-ind_mods_phon$gca_mod_ss_phon_0 <- gca_mod_ss_phon_0
-ind_mods_phon$gca_mod_ss_phon_1 <- gca_mod_ss_phon_1
-ind_mods_phon$gca_mod_ss_phon_2 <- gca_mod_ss_phon_2
-ind_mods_phon$gca_mod_ss_phon_3 <- gca_mod_ss_phon_3
-
-ind_mods_phon$gca_mod_ss_phon_0_all <- gca_mod_ss_phon_0_all
-ind_mods_phon$gca_mod_ss_phon_1_all <- gca_mod_ss_phon_1_all
-ind_mods_phon$gca_mod_ss_phon_2_all <- gca_mod_ss_phon_2_all
-ind_mods_phon$gca_mod_ss_phon_3_all <- gca_mod_ss_phon_3_all
-
-
-ind_mods_phon$gca_mod_parox_phon_base <- gca_mod_parox_phon_base
-
-  ind_mods_phon$gca_mod_parox_phon_int_0 <- gca_mod_parox_phon_int_0
-  ind_mods_phon$gca_mod_parox_phon_int_1 <- gca_mod_parox_phon_int_1
-  ind_mods_phon$gca_mod_parox_phon_int_2 <- gca_mod_parox_phon_int_2
-  ind_mods_phon$gca_mod_parox_phon_int_3 <- gca_mod_parox_phon_int_3
-
-ind_mods_phon$gca_mod_ox_phon_base <- gca_mod_ox_phon_base
-
-  ind_mods_phon$gca_mod_ox_phon_int_0 <- gca_mod_ox_phon_int_0
-  ind_mods_phon$gca_mod_ox_phon_int_1 <- gca_mod_ox_phon_int_1
-  ind_mods_phon$gca_mod_ox_phon_int_2 <- gca_mod_ox_phon_int_2
-  ind_mods_phon$gca_mod_ox_phon_int_3 <- gca_mod_ox_phon_int_3
-
-ind_mods_phon$gca_mod_cv_phon_base <- gca_mod_cv_phon_base
-
-  ind_mods_phon$gca_mod_cv_phon_int_0 <- gca_mod_cv_phon_int_0
-  ind_mods_phon$gca_mod_cv_phon_int_1 <- gca_mod_cv_phon_int_1
-  ind_mods_phon$gca_mod_cv_phon_int_2 <- gca_mod_cv_phon_int_2
-  ind_mods_phon$gca_mod_cv_phon_int_3 <- gca_mod_cv_phon_int_3
-
-ind_mods_phon$gca_mod_cvc_phon_base <- gca_mod_cvc_phon_base
-
-  ind_mods_phon$gca_mod_cvc_phon_int_0 <- gca_mod_cvc_phon_int_0
-  ind_mods_phon$gca_mod_cvc_phon_int_1 <- gca_mod_cvc_phon_int_1
-  ind_mods_phon$gca_mod_cvc_phon_int_2 <- gca_mod_cvc_phon_int_2
-  ind_mods_phon$gca_mod_cvc_phon_int_3 <- gca_mod_cvc_phon_int_3
-
-ind_mods_phon$gca_mod_la_parox_phon_base <- gca_mod_la_parox_phon_base
-
-  ind_mods_phon$gca_mod_la_parox_phon_int_0 <- gca_mod_la_parox_phon_int_0
-  ind_mods_phon$gca_mod_la_parox_phon_int_1 <- gca_mod_la_parox_phon_int_1
-  ind_mods_phon$gca_mod_la_parox_phon_int_2 <- gca_mod_la_parox_phon_int_2
-  ind_mods_phon$gca_mod_la_parox_phon_int_3 <- gca_mod_la_parox_phon_int_3
-
-ind_mods_phon$gca_mod_la_ox_phon_base <- gca_mod_la_ox_phon_base
-
-  ind_mods_phon$gca_mod_la_ox_phon_int_0 <- gca_mod_la_ox_phon_int_0
-  ind_mods_phon$gca_mod_la_ox_phon_int_1 <- gca_mod_la_ox_phon_int_1
-  ind_mods_phon$gca_mod_la_ox_phon_int_2 <- gca_mod_la_ox_phon_int_2
-  ind_mods_phon$gca_mod_la_ox_phon_int_3 <- gca_mod_la_ox_phon_int_3
-
-ind_mods_phon$gca_mod_la_cv_phon_base <- gca_mod_la_cv_phon_base
-
-  ind_mods_phon$gca_mod_la_cv_phon_int_0 <- gca_mod_la_cv_phon_int_0
-  ind_mods_phon$gca_mod_la_cv_phon_int_1 <- gca_mod_la_cv_phon_int_1
-  ind_mods_phon$gca_mod_la_cv_phon_int_2 <- gca_mod_la_cv_phon_int_2
-  ind_mods_phon$gca_mod_la_cv_phon_int_3 <- gca_mod_la_cv_phon_int_3
-
-ind_mods_phon$gca_mod_la_cvc_phon_base <- gca_mod_la_cvc_phon_base
-
-  ind_mods_phon$gca_mod_la_cvc_phon_int_0 <- gca_mod_la_cvc_phon_int_0
-  ind_mods_phon$gca_mod_la_cvc_phon_int_1 <- gca_mod_la_cvc_phon_int_1
-  ind_mods_phon$gca_mod_la_cvc_phon_int_2 <- gca_mod_la_cvc_phon_int_2
-  ind_mods_phon$gca_mod_la_cvc_phon_int_3 <- gca_mod_la_cvc_phon_int_3
-
-ind_mods_phon$gca_mod_int_parox_phon_base <- gca_mod_int_parox_phon_base
-
-  ind_mods_phon$gca_mod_int_parox_phon_int_0 <- gca_mod_int_parox_phon_int_0
-  ind_mods_phon$gca_mod_int_parox_phon_int_1 <- gca_mod_int_parox_phon_int_1
-  ind_mods_phon$gca_mod_int_parox_phon_int_2 <- gca_mod_int_parox_phon_int_2
-  ind_mods_phon$gca_mod_int_parox_phon_int_3 <- gca_mod_int_parox_phon_int_3
-
-ind_mods_phon$gca_mod_int_ox_phon_base <- gca_mod_int_ox_phon_base
-
-  ind_mods_phon$gca_mod_int_ox_phon_int_0 <- gca_mod_int_ox_phon_int_0
-  ind_mods_phon$gca_mod_int_ox_phon_int_1 <- gca_mod_int_ox_phon_int_1
-  ind_mods_phon$gca_mod_int_ox_phon_int_2 <- gca_mod_int_ox_phon_int_2
-  ind_mods_phon$gca_mod_int_ox_phon_int_3 <- gca_mod_int_ox_phon_int_3
-
-ind_mods_phon$gca_mod_int_cv_phon_base <- gca_mod_int_cv_phon_base
-
-  ind_mods_phon$gca_mod_int_cv_phon_int_0 <- gca_mod_int_cv_phon_int_0
-  ind_mods_phon$gca_mod_int_cv_phon_int_1 <- gca_mod_int_cv_phon_int_1
-  ind_mods_phon$gca_mod_int_cv_phon_int_2 <- gca_mod_int_cv_phon_int_2
-  ind_mods_phon$gca_mod_int_cv_phon_int_3 <- gca_mod_int_cv_phon_int_3
-
-ind_mods_phon$gca_mod_int_cvc_phon_base <- gca_mod_int_cvc_phon_base
-
-  ind_mods_phon$gca_mod_int_cvc_phon_int_0 <- gca_mod_int_cvc_phon_int_0
-  ind_mods_phon$gca_mod_int_cvc_phon_int_1 <- gca_mod_int_cvc_phon_int_1
-  ind_mods_phon$gca_mod_int_cvc_phon_int_2 <- gca_mod_int_cvc_phon_int_2
-  ind_mods_phon$gca_mod_int_cvc_phon_int_3 <- gca_mod_int_cvc_phon_int_3
+  # Store ind models in list
+  ind_mods_phon <- mget(c(paste0(mod_type, "ss", mod_spec),
+                        paste0(mod_type, "la", mod_spec),
+                        paste0(mod_type, "int", mod_spec)))
 
 
   save(ind_mods_phon,
@@ -719,8 +644,10 @@ ind_mods_phon$gca_mod_int_cvc_phon_base <- gca_mod_int_cvc_phon_base
 
 
 
+
+
   # Save anova model comparisons
-  nested_model_comparisons <-
+  nested_model_comparisons_phon <-
     mget(c("ss_phon_anova", "ss_phon_anova_all", "ss_parox_phon_anova", "ss_ox_phon_anova",
       "ss_cv_phon_anova", "ss_cvc_phon_anova", "la_phon_anova", "la_parox_phon_anova",
       "la_ox_phon_anova", "la_cv_phon_anova", "la_cvc_phon_anova", "int_phon_anova",
@@ -729,9 +656,9 @@ ind_mods_phon$gca_mod_int_cvc_phon_base <- gca_mod_int_cvc_phon_base
 
 
 
-  save(nested_model_comparisons,
+  save(nested_model_comparisons_phon,
        file = here("models", "stress", "s3_adv_int_nat", "eye_track", "gca",
-                   "nested_model_comparisons.Rdata"))
+                   "nested_model_comparisons_phon.Rdata"))
 
   # Save models predictions
   model_preds <- mget(c("fits_all", "target_offset_preds"))
