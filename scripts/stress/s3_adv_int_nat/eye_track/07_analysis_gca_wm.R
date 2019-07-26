@@ -44,14 +44,10 @@ gca_mods_path  <- here("models", "stress", "s3_adv_int_nat", "eye_track", "gca")
 
 # Load models as lists
 load(paste0(gca_mods_path, "/ind_mods.Rdata"))
-load(paste0(gca_mods_path, "/full_mods.Rdata"))
-load(paste0(gca_mods_path, "/nested_model_comparisons.Rdata"))
 load(paste0(gca_mods_path, "/model_preds.Rdata"))
 
 # Store objects in global env
 list2env(ind_mods, globalenv())
-list2env(full_mods, globalenv())
-list2env(nested_model_comparisons, globalenv())
 list2env(model_preds, globalenv())
 
 # -----------------------------------------------------------------------------
@@ -138,6 +134,16 @@ gca_mod_ss_wm_3 <- update(gca_mod_ss_wm_2,   . ~ . + ot3:wm_std)
 # gca_mod_ss_wm_1 38 33448 33704 -16686    33372 0.0347      1    0.85226
 # gca_mod_ss_wm_2 39 33448 33710 -16685    33370 2.8118      1    0.09357 .
 # gca_mod_ss_wm_3 40 33450 33719 -16685    33370 0.0895      1    0.76483
+
+gca_mod_ss_cond_3 <-
+  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) + condition_sum + coda_sum +
+         (1 + coda_sum + condition_sum + (ot1 + ot2 + ot3) | participant) +
+         (1 + ot1 + ot2 + ot3 | target),
+       control = lmerControl(optimizer = 'bobyqa'), REML = F,
+       data = filter(stress_gc_subset, group == "ss"))
+
+
+
 
 # add wm effect to intercept, linear slope, quadratic, and cubic time terms
 gca_mod_ss_wm_0_all <- update(gca_mod_ss_cond_3,   . ~ . + wm_std) # Stress + coda + wm as fixed effects
@@ -610,72 +616,75 @@ if(F) {
                      paste0(mod_type, "la", mod_spec),
                      paste0(mod_type, "int", mod_spec)))
 
-  # Add age models from interpreters
-
-  ind_mods_wm$gca_mod_ss_parox_int_0 <- gca_mod_ss_parox_int_0
-  ind_mods_wm$gca_mod_ss_parox_int_1 <- gca_mod_ss_parox_int_1
-  ind_mods_wm$gca_mod_ss_parox_int_2 <- gca_mod_ss_parox_int_2
-  ind_mods_wm$gca_mod_ss_parox_int_3 <- gca_mod_ss_parox_int_3
-
-  ind_mods_wm$gca_mod_ss_ox_int_0 <- gca_mod_ss_ox_int_0
-  ind_mods_wm$gca_mod_ss_ox_int_1 <- gca_mod_ss_ox_int_1
-  ind_mods_wm$gca_mod_ss_ox_int_2 <- gca_mod_ss_ox_int_2
-  ind_mods_wm$gca_mod_ss_ox_int_3 <- gca_mod_ss_ox_int_3
-
-  ind_mods_wm$gca_mod_ss_cv_int_0 <- gca_mod_ss_cv_int_0
-  ind_mods_wm$gca_mod_ss_cv_int_1 <- gca_mod_ss_cv_int_1
-  ind_mods_wm$gca_mod_ss_cv_int_2 <- gca_mod_ss_cv_int_2
-  ind_mods_wm$gca_mod_ss_cv_int_3 <- gca_mod_ss_cv_int_3
-
-  ind_mods_wm$gca_mod_ss_cvc_int_0 <- gca_mod_ss_cvc_int_0
-  ind_mods_wm$gca_mod_ss_cvc_int_1 <- gca_mod_ss_cvc_int_1
-  ind_mods_wm$gca_mod_ss_cvc_int_2 <- gca_mod_ss_cvc_int_2
-  ind_mods_wm$gca_mod_ss_cvc_int_3 <- gca_mod_ss_cvc_int_3
-
-  ind_mods_wm$gca_mod_la_parox_int_0 <- gca_mod_la_parox_int_0
-  ind_mods_wm$gca_mod_la_parox_int_1 <- gca_mod_la_parox_int_1
-  ind_mods_wm$gca_mod_la_parox_int_2 <- gca_mod_la_parox_int_2
-  ind_mods_wm$gca_mod_la_parox_int_3 <- gca_mod_la_parox_int_3
-
-  ind_mods_wm$gca_mod_la_ox_int_0 <- gca_mod_la_ox_int_0
-  ind_mods_wm$gca_mod_la_ox_int_1 <- gca_mod_la_ox_int_1
-  ind_mods_wm$gca_mod_la_ox_int_2 <- gca_mod_la_ox_int_2
-  ind_mods_wm$gca_mod_la_ox_int_3 <- gca_mod_la_ox_int_3
-
-  ind_mods_wm$gca_mod_la_cv_int_0 <- gca_mod_la_cv_int_0
-  ind_mods_wm$gca_mod_la_cv_int_1 <- gca_mod_la_cv_int_1
-  ind_mods_wm$gca_mod_la_cv_int_2 <- gca_mod_la_cv_int_2
-  ind_mods_wm$gca_mod_la_cv_int_3 <- gca_mod_la_cv_int_3
-
-  ind_mods_wm$gca_mod_la_cvc_int_0 <- gca_mod_la_cvc_int_0
-  ind_mods_wm$gca_mod_la_cvc_int_1 <- gca_mod_la_cvc_int_1
-  ind_mods_wm$gca_mod_la_cvc_int_2 <- gca_mod_la_cvc_int_2
-  ind_mods_wm$gca_mod_la_cvc_int_3 <- gca_mod_la_cvc_int_3
-
-  ind_mods_wm$gca_mod_int_parox_int_0 <- gca_mod_int_parox_int_0
-  ind_mods_wm$gca_mod_int_parox_int_1 <- gca_mod_int_parox_int_1
-  ind_mods_wm$gca_mod_int_parox_int_2 <- gca_mod_int_parox_int_2
-  ind_mods_wm$gca_mod_int_parox_int_3 <- gca_mod_int_parox_int_3
-
-  ind_mods_wm$gca_mod_int_ox_int_0 <- gca_mod_int_ox_int_0
-  ind_mods_wm$gca_mod_int_ox_int_1 <- gca_mod_int_ox_int_1
-  ind_mods_wm$gca_mod_int_ox_int_2 <- gca_mod_int_ox_int_2
-  ind_mods_wm$gca_mod_int_ox_int_3 <- gca_mod_int_ox_int_3
-
-  ind_mods_wm$gca_mod_int_cv_int_0 <- gca_mod_int_cv_int_0
-  ind_mods_wm$gca_mod_int_cv_int_1 <- gca_mod_int_cv_int_1
-  ind_mods_wm$gca_mod_int_cv_int_2 <- gca_mod_int_cv_int_2
-  ind_mods_wm$gca_mod_int_cv_int_3 <- gca_mod_int_cv_int_3
-
-  ind_mods_wm$gca_mod_int_cvc_int_0 <- gca_mod_int_cvc_int_0
-  ind_mods_wm$gca_mod_int_cvc_int_1 <- gca_mod_int_cvc_int_1
-  ind_mods_wm$gca_mod_int_cvc_int_2 <- gca_mod_int_cvc_int_2
-  ind_mods_wm$gca_mod_int_cvc_int_3 <- gca_mod_int_cvc_int_3
-
 
   save(ind_mods_wm,
        file = here("models", "stress", "s3_adv_int_nat", "eye_track", "gca",
                    "ind_mods_wm.Rdata"))
+
+
+  # Add age models from interpreters
+
+  # ind_mods_wm$gca_mod_ss_parox_int_0 <- gca_mod_ss_parox_int_0
+  # ind_mods_wm$gca_mod_ss_parox_int_1 <- gca_mod_ss_parox_int_1
+  # ind_mods_wm$gca_mod_ss_parox_int_2 <- gca_mod_ss_parox_int_2
+  # ind_mods_wm$gca_mod_ss_parox_int_3 <- gca_mod_ss_parox_int_3
+  #
+  # ind_mods_wm$gca_mod_ss_ox_int_0 <- gca_mod_ss_ox_int_0
+  # ind_mods_wm$gca_mod_ss_ox_int_1 <- gca_mod_ss_ox_int_1
+  # ind_mods_wm$gca_mod_ss_ox_int_2 <- gca_mod_ss_ox_int_2
+  # ind_mods_wm$gca_mod_ss_ox_int_3 <- gca_mod_ss_ox_int_3
+  #
+  # ind_mods_wm$gca_mod_ss_cv_int_0 <- gca_mod_ss_cv_int_0
+  # ind_mods_wm$gca_mod_ss_cv_int_1 <- gca_mod_ss_cv_int_1
+  # ind_mods_wm$gca_mod_ss_cv_int_2 <- gca_mod_ss_cv_int_2
+  # ind_mods_wm$gca_mod_ss_cv_int_3 <- gca_mod_ss_cv_int_3
+  #
+  # ind_mods_wm$gca_mod_ss_cvc_int_0 <- gca_mod_ss_cvc_int_0
+  # ind_mods_wm$gca_mod_ss_cvc_int_1 <- gca_mod_ss_cvc_int_1
+  # ind_mods_wm$gca_mod_ss_cvc_int_2 <- gca_mod_ss_cvc_int_2
+  # ind_mods_wm$gca_mod_ss_cvc_int_3 <- gca_mod_ss_cvc_int_3
+  #
+  # ind_mods_wm$gca_mod_la_parox_int_0 <- gca_mod_la_parox_int_0
+  # ind_mods_wm$gca_mod_la_parox_int_1 <- gca_mod_la_parox_int_1
+  # ind_mods_wm$gca_mod_la_parox_int_2 <- gca_mod_la_parox_int_2
+  # ind_mods_wm$gca_mod_la_parox_int_3 <- gca_mod_la_parox_int_3
+  #
+  # ind_mods_wm$gca_mod_la_ox_int_0 <- gca_mod_la_ox_int_0
+  # ind_mods_wm$gca_mod_la_ox_int_1 <- gca_mod_la_ox_int_1
+  # ind_mods_wm$gca_mod_la_ox_int_2 <- gca_mod_la_ox_int_2
+  # ind_mods_wm$gca_mod_la_ox_int_3 <- gca_mod_la_ox_int_3
+  #
+  # ind_mods_wm$gca_mod_la_cv_int_0 <- gca_mod_la_cv_int_0
+  # ind_mods_wm$gca_mod_la_cv_int_1 <- gca_mod_la_cv_int_1
+  # ind_mods_wm$gca_mod_la_cv_int_2 <- gca_mod_la_cv_int_2
+  # ind_mods_wm$gca_mod_la_cv_int_3 <- gca_mod_la_cv_int_3
+  #
+  # ind_mods_wm$gca_mod_la_cvc_int_0 <- gca_mod_la_cvc_int_0
+  # ind_mods_wm$gca_mod_la_cvc_int_1 <- gca_mod_la_cvc_int_1
+  # ind_mods_wm$gca_mod_la_cvc_int_2 <- gca_mod_la_cvc_int_2
+  # ind_mods_wm$gca_mod_la_cvc_int_3 <- gca_mod_la_cvc_int_3
+  #
+  # ind_mods_wm$gca_mod_int_parox_int_0 <- gca_mod_int_parox_int_0
+  # ind_mods_wm$gca_mod_int_parox_int_1 <- gca_mod_int_parox_int_1
+  # ind_mods_wm$gca_mod_int_parox_int_2 <- gca_mod_int_parox_int_2
+  # ind_mods_wm$gca_mod_int_parox_int_3 <- gca_mod_int_parox_int_3
+  #
+  # ind_mods_wm$gca_mod_int_ox_int_0 <- gca_mod_int_ox_int_0
+  # ind_mods_wm$gca_mod_int_ox_int_1 <- gca_mod_int_ox_int_1
+  # ind_mods_wm$gca_mod_int_ox_int_2 <- gca_mod_int_ox_int_2
+  # ind_mods_wm$gca_mod_int_ox_int_3 <- gca_mod_int_ox_int_3
+  #
+  # ind_mods_wm$gca_mod_int_cv_int_0 <- gca_mod_int_cv_int_0
+  # ind_mods_wm$gca_mod_int_cv_int_1 <- gca_mod_int_cv_int_1
+  # ind_mods_wm$gca_mod_int_cv_int_2 <- gca_mod_int_cv_int_2
+  # ind_mods_wm$gca_mod_int_cv_int_3 <- gca_mod_int_cv_int_3
+  #
+  # ind_mods_wm$gca_mod_int_cvc_int_0 <- gca_mod_int_cvc_int_0
+  # ind_mods_wm$gca_mod_int_cvc_int_1 <- gca_mod_int_cvc_int_1
+  # ind_mods_wm$gca_mod_int_cvc_int_2 <- gca_mod_int_cvc_int_2
+  # ind_mods_wm$gca_mod_int_cvc_int_3 <- gca_mod_int_cvc_int_3
+
+
 
   # Store full (ot1, ot2, ot3, group, coda, cond) models in list
   full_mods <- mget(c(
