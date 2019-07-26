@@ -16,6 +16,7 @@ library(lme4)
 library(AICcmodavg)
 library(foreign)
 library(patchwork)
+library(readxl)
 
 # -----------------------------------------------------------------------------
 
