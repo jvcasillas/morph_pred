@@ -23,6 +23,32 @@ source(here::here("scripts", "02_load_data.R"))
 # Get path to saved models
 gca_mods_path  <- here("models", "stress", "s3_adv_int_nat", "eye_track", "gca")
 
+mem_data <- read_csv(here("data", "raw", "dur_stress_demographics.csv"))
+mem_data$id <- toupper(mem_data$id)
+mem_data <- mem_data %>%
+  rename(participant = "id") %>%
+  select(., -group)
+
+
+phon_data <- read_csv(here("data", "raw", "phonotactic_frequency.csv"))
+phon_data <- phon_data %>%
+  select(., -coda, -freq)
+
+freq_data <- read_excel(here("data", "raw", "lex_freq_stress.xlsx"))
+
+
+
+stress50 <- stress50 %>%
+  filter(., group %in% c("la", "int", "ss")) %>%
+  left_join(mem_data, by = "participant") %>%
+  left_join(phon_data, by = "target") %>%
+  left_join(freq_data, by = "target")
+
+stress50$wm <- as.numeric(stress50$wm)
+glimpse(stress50)
+
+
+
 # Load models as lists
 load(paste0(gca_mods_path, "/ind_mods.Rdata"))
 load(paste0(gca_mods_path, "/full_mods.Rdata"))
@@ -78,7 +104,12 @@ stress_gc_subset <- stress50 %>%
             time_zero >= -4 & time_zero <= 12) %>%
   mutate(., group = fct_relevel(group, "ss", "la", "int"),
             condition_sum = if_else(condition == "stressed", 1, -1),
-            coda_sum = if_else(coda == 0, 1, -1)) %>%
+            coda_sum = if_else(coda == 0, 1, -1),
+            wm_std = (wm - mean(wm, na.rm = T)) / sd(wm, na.rm = T),
+            phon_std = (phon_prob - mean(phon_prob)) / sd(phon_prob),
+            biphon_std = (biphon_prob - mean(biphon_prob)) / sd(biphon_prob),
+            nim_std = (freq_nim - mean(freq_nim)) / sd(freq_nim),
+            davies_std = (freq_davies - mean(freq_davies)) / sd(freq_davies)) %>%
   poly_add_columns(., time_zero, degree = 3, prefix = "ot")
 
 # -----------------------------------------------------------------------------
@@ -324,9 +355,39 @@ gca_full_mod_int_relevel <- update(gca_full_mod_int_3)
 
 # -----------------------------------------------------------------------------
 
+## Adding WM to full model
+gca_wm_mod_int_0 <- update(gca_full_mod_int_3, . ~ . + wm_std)
+gca_wm_mod_int_1 <- update(gca_wm_mod_int_0, . ~ . + ot1:wm_std)
+gca_wm_mod_int_2 <- update(gca_wm_mod_int_1, . ~ . + ot2:wm_std)
+gca_wm_mod_int_3 <- update(gca_wm_mod_int_2, . ~ . + ot3:wm_std)
+
+full_wm_anova <-
+anova(gca_wm_mod_int_0, gca_wm_mod_int_1, gca_wm_mod_int_2, gca_wm_mod_int_3)
+# -----------------------------------------------------------------------------
+
+## Adding lexical frequency to full model
+gca_lex_mod_int_0 <- update(gca_full_mod_int_3, . ~ . + nim_std)
+gca_lex_mod_int_1 <- update(gca_lex_mod_int_0, . ~ . + ot1:nim_std)
+gca_lex_mod_int_2 <- update(gca_lex_mod_int_1, . ~ . + ot2:nim_std)
+gca_lex_mod_int_3 <- update(gca_lex_mod_int_2, . ~ . + ot3:nim_std)
+
+full_lex_anova <-
+  anova(gca_lex_mod_int_0, gca_lex_mod_int_1, gca_lex_mod_int_2, gca_lex_mod_int_3)
+
+# -----------------------------------------------------------------------------
+
+## Adding phonotactic frequency to full model
+gca_phon_mod_int_0 <- update(gca_full_mod_int_3, . ~ . + phon_std)
+gca_phon_mod_int_1 <- update(gca_phon_mod_int_0, . ~ . + ot1:phon_std)
+gca_phon_mod_int_2 <- update(gca_phon_mod_int_1, . ~ . + ot2:phon_std)
+gca_phon_mod_int_3 <- update(gca_phon_mod_int_2, . ~ . + ot3:phon_std)
+
+full_phon_anova <-
+  anova(gca_phon_mod_int_0, gca_phon_mod_int_1, gca_phon_mod_int_2, gca_phon_mod_int_3)
 
 
 
+# -----------------------------------------------------------------------------
 
 # Model predictions for plottting ---------------------------------------------
 
@@ -397,12 +458,22 @@ save(full_mods,
      file = here("models", "stress", "s3_adv_int_nat", "eye_track", "gca",
                  "full_mods.Rdata"))
 
+full_mods_lang_learn <- mget(c(
+  "gca_wm_mod_int_0", "gca_wm_mod_int_1", "gca_wm_mod_int_2", "gca_wm_mod_int_3",
+  "gca_lex_mod_int_0", "gca_lex_mod_int_1", "gca_lex_mod_int_2", "gca_lex_mod_int_3",
+  "gca_phon_mod_int_0", "gca_phon_mod_int_1", "gca_phon_mod_int_2", "gca_phon_mod_int_3"))
+
+save(full_mods_lang_learn,
+     file = here("models", "stress", "s3_adv_int_nat", "eye_track", "gca",
+                 "full_mods_lang_learn.Rdata"))
+
 # Save anova model comparisons
 nested_model_comparisons <-
   mget(c("ss_coda_anova", "ss_cond_anova", "ss_int_anova",
          "la_coda_anova", "la_cond_anova", "la_int_anova",
          "int_coda_anova", "int_cond_anova", "int_int_anova",
-         "int_age_anova", "full_group_anova", "full_int_anova"))
+         "int_age_anova", "full_group_anova", "full_int_anova",
+         "full_wm_anova", "full_lex_anova", "full_phon_anova"))
 
 save(nested_model_comparisons,
      file = here("models", "stress", "s3_adv_int_nat", "eye_track", "gca",
