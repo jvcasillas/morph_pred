@@ -52,12 +52,14 @@ glimpse(stress50)
 # Load models as lists
 load(paste0(gca_mods_path, "/ind_mods.Rdata"))
 load(paste0(gca_mods_path, "/full_mods.Rdata"))
+load(paste0(gca_mods_path, "/full_mods_lang_learn.Rdata"))
 load(paste0(gca_mods_path, "/nested_model_comparisons.Rdata"))
 load(paste0(gca_mods_path, "/model_preds.Rdata"))
 
 # Store objects in global env
 list2env(ind_mods, globalenv())
 list2env(full_mods, globalenv())
+list2env(full_mods_lang_learn, globalenv())
 list2env(nested_model_comparisons, globalenv())
 list2env(model_preds, globalenv())
 
