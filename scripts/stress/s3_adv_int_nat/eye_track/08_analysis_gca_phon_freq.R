@@ -13,6 +13,63 @@
 
 
 
+# -----------------------------------------------------------------------------
+
+## Adding phonotactic frequency to full model
+gca_phon_mod_int_0 <- update(gca_full_mod_int_3, . ~ . + phon_std)
+gca_phon_mod_int_1 <- update(gca_phon_mod_int_0, . ~ . + ot1:phon_std)
+gca_phon_mod_int_2 <- update(gca_phon_mod_int_1, . ~ . + ot2:phon_std)
+gca_phon_mod_int_3 <- update(gca_phon_mod_int_2, . ~ . + ot3:phon_std)
+
+full_phon_anova <-
+  anova(gca_phon_mod_int_0, gca_phon_mod_int_1, gca_phon_mod_int_2, gca_phon_mod_int_3)
+
+
+## Interactions
+# phon freq x Group
+gca_phon_group_mod_int_0 <- update(gca_full_mod_int_3, . ~ . + phon_std:group)
+gca_phon_group_mod_int_1 <- update(gca_phon_group_mod_int_0, . ~ . + ot1:phon_std:group)
+gca_phon_group_mod_int_2 <- update(gca_phon_group_mod_int_1, . ~ . + ot2:phon_std:group)
+gca_phon_group_mod_int_3 <- update(gca_phon_group_mod_int_2, . ~ . + ot3:phon_std:group)
+
+full_phon_group_anova <-
+  anova(gca_phon_group_mod_int_0, gca_phon_group_mod_int_1, gca_phon_group_mod_int_2, gca_phon_group_mod_int_3)
+
+#                         Df    AIC    BIC logLik deviance   Chisq Chi Df Pr(>Chisq)
+# gca_phon_group_mod_int_0 67 104299 104825 -52083   104165
+# gca_phon_group_mod_int_1 70 104303 104853 -52082   104163  1.6792      3    0.64156
+# gca_phon_group_mod_int_2 73 104299 104872 -52076   104153 10.5332      3    0.01454 *
+# gca_phon_group_mod_int_3 76 104302 104899 -52075   104150  2.5327      3    0.46941
+
+
+# Nothing significant here
+
+# phon freq x Stress
+
+gca_phon_stress_mod_int_0 <- update(gca_phon_group_mod_int_3, . ~ . + phon_std:condition_sum)
+gca_phon_stress_mod_int_1 <- update(gca_phon_stress_mod_int_0, . ~ . + ot1:phon_std:condition_sum)
+gca_phon_stress_mod_int_2 <- update(gca_phon_stress_mod_int_1, . ~ . + ot2:phon_std:condition_sum)
+gca_phon_stress_mod_int_3 <- update(gca_phon_stress_mod_int_2, . ~ . + ot3:phon_std:condition_sum)
+
+full_phon_stress_anova <-
+  anova(gca_phon_stress_mod_int_0, gca_phon_stress_mod_int_1, gca_phon_stress_mod_int_2, gca_phon_stress_mod_int_3)
+
+#                           Df    AIC    BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_phon_stress_mod_int_0 77 104304 104908 -52075   104150
+# gca_phon_stress_mod_int_1 78 104302 104915 -52073   104146 3.4957      1    0.06153 .
+# gca_phon_stress_mod_int_2 79 104304 104924 -52073   104146 0.1150      1    0.73454
+# gca_phon_stress_mod_int_3 80 104300 104928 -52070   104140 5.8724      1    0.01538 *
+
+# phon freq x Coda
+gca_phon_coda_mod_int_0 <- update(gca_phon_stress_mod_int_3, . ~ . + phon_std:coda_sum)
+gca_phon_coda_mod_int_1 <- update(gca_phon_coda_mod_int_0, . ~ . + ot1:phon_std:coda_sum)
+gca_phon_coda_mod_int_2 <- update(gca_phon_coda_mod_int_1, . ~ . + ot2:phon_std:coda_sum)
+gca_phon_coda_mod_int_3 <- update(gca_phon_coda_mod_int_2, . ~ . + ot3:phon_std:coda_sum)
+
+full_phon_coda_anova <-
+  anova(gca_phon_coda_mod_int_0, gca_phon_coda_mod_int_1, gca_phon_coda_mod_int_2, gca_phon_coda_mod_int_3)
+#Nothing significant
+
 
 
 # Load data and models --------------------------------------------------------

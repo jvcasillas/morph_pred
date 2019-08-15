@@ -43,11 +43,15 @@ glimpse(stress50)
 gca_mods_path  <- here("models", "stress", "s3_adv_int_nat", "eye_track", "gca")
 
 # Load models as lists
+load(paste0(gca_mods_path, "/full_mods.Rdata"))
+load(paste0(gca_mods_path, "/full_mods_lang_learn.Rdata"))
 load(paste0(gca_mods_path, "/ind_mods_wm.Rdata"))
 load(paste0(gca_mods_path, "/nested_model_comparisons_wm.Rdata"))
 load(paste0(gca_mods_path, "/model_preds.Rdata"))
 
 # Store objects in global env
+list2env(full_mods, globalenv())
+list2env(full_mods_lang_learn, globalenv())
 list2env(ind_mods_wm, globalenv())
 list2env(nested_model_comparisons_wm, globalenv())
 list2env(model_preds, globalenv())
@@ -99,6 +103,62 @@ stress_gc_subset <- stress50 %>%
   poly_add_columns(., time_zero, degree = 3, prefix = "ot")
 
 # -----------------------------------------------------------------------------
+
+
+
+
+## Adding WM to full model from BLC <gca_full_mod_int_3>
+gca_wm_mod_int_0 <- update(gca_full_mod_int_3, . ~ . + wm_std)
+gca_wm_mod_int_1 <- update(gca_wm_mod_int_0, . ~ . + ot1:wm_std)
+gca_wm_mod_int_2 <- update(gca_wm_mod_int_1, . ~ . + ot2:wm_std)
+gca_wm_mod_int_3 <- update(gca_wm_mod_int_2, . ~ . + ot3:wm_std)
+
+full_wm_anova <-
+  anova(gca_wm_mod_int_0, gca_wm_mod_int_1, gca_wm_mod_int_2, gca_wm_mod_int_3)
+# Nothing significant here
+
+## Interactions
+# WM x Group
+gca_wm_group_mod_int_0 <- update(gca_full_mod_int_3, . ~ . + wm_std:group)
+gca_wm_group_mod_int_1 <- update(gca_wm_group_mod_int_0, . ~ . + ot1:wm_std:group)
+gca_wm_group_mod_int_2 <- update(gca_wm_group_mod_int_1, . ~ . + ot2:wm_std:group)
+gca_wm_group_mod_int_3 <- update(gca_wm_group_mod_int_2, . ~ . + ot3:wm_std:group)
+
+full_wm_group_anova <-
+  anova(gca_wm_group_mod_int_0, gca_wm_group_mod_int_1, gca_wm_group_mod_int_2, gca_wm_group_mod_int_3)
+# Nothing significant here
+
+# WM x Stress
+
+gca_wm_stress_mod_int_0 <- update(gca_full_mod_int_3, . ~ . + wm_std:condition_sum)
+gca_wm_stress_mod_int_1 <- update(gca_wm_stress_mod_int_0, . ~ . + ot1:wm_std:condition_sum)
+gca_wm_stress_mod_int_2 <- update(gca_wm_stress_mod_int_1, . ~ . + ot2:wm_std:condition_sum)
+gca_wm_stress_mod_int_3 <- update(gca_wm_stress_mod_int_2, . ~ . + ot3:wm_std:condition_sum)
+
+full_wm_stress_anova <-
+  anova(gca_wm_stress_mod_int_0, gca_wm_stress_mod_int_1, gca_wm_stress_mod_int_2, gca_wm_stress_mod_int_3)
+
+#                         Df    AIC    BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_wm_stress_mod_int_0 65 101471 101980 -50671   101341
+# gca_wm_stress_mod_int_1 66 101468 101984 -50668   101336 5.4179      1    0.01993 *
+# gca_wm_stress_mod_int_2 67 101464 101988 -50665   101330 5.7151      1    0.01682 *
+# gca_wm_stress_mod_int_3 68 101466 101998 -50665   101330 0.0840      1    0.77193
+
+# WM x Coda
+gca_wm_coda_mod_int_0 <- update(gca_wm_stress_mod_int_3, . ~ . + wm_std:coda_sum)
+gca_wm_coda_mod_int_1 <- update(gca_wm_coda_mod_int_0, . ~ . + ot1:wm_std:coda_sum)
+gca_wm_coda_mod_int_2 <- update(gca_wm_coda_mod_int_1, . ~ . + ot2:wm_std:coda_sum)
+gca_wm_coda_mod_int_3 <- update(gca_wm_coda_mod_int_2, . ~ . + ot3:wm_std:coda_sum)
+
+full_wm_coda_anova <-
+  anova(gca_wm_coda_mod_int_0, gca_wm_coda_mod_int_1, gca_wm_coda_mod_int_2, gca_wm_coda_mod_int_3)
+
+#                       Df    AIC    BIC logLik deviance  Chisq Chi Df Pr(>Chisq)
+# gca_wm_coda_mod_int_0 69 101468 102008 -50665   101330
+# gca_wm_coda_mod_int_1 70 101466 102014 -50663   101326 4.1895      1    0.04067 *
+# gca_wm_coda_mod_int_2 71 101467 102023 -50663   101325 0.4635      1    0.49600
+# gca_wm_coda_mod_int_3 72 101467 102030 -50661   101323 2.8061      1    0.09391 .
+
 
 
 
@@ -624,6 +684,22 @@ target_offset_preds <- filter(fits_all, time_zero == 4) %>%
 # Save models -----------------------------------------------------------------
 
 if(F) {
+
+  # Save full models with WM
+
+  full_mods_lang_learn <- mget(c(
+    "gca_wm_mod_int_0", "gca_wm_mod_int_1", "gca_wm_mod_int_2", "gca_wm_mod_int_3",
+    "gca_wm_group_mod_int_0", "gca_wm_group_mod_int_1", "gca_wm_group_mod_int_2", "gca_wm_group_mod_int_3",
+    "gca_wm_stress_mod_int_0", "gca_wm_stress_mod_int_1", "gca_wm_stress_mod_int_2", "gca_wm_stress_mod_int_3",
+    "gca_wm_coda_mod_int_0", "gca_wm_coda_mod_int_1", "gca_wm_coda_mod_int_2", "gca_wm_coda_mod_int_3",
+    "gca_lex_mod_int_0", "gca_lex_mod_int_1", "gca_lex_mod_int_2", "gca_lex_mod_int_3",
+    "gca_phon_mod_int_0", "gca_phon_mod_int_1", "gca_phon_mod_int_2", "gca_phon_mod_int_3"))
+
+  save(full_mods_lang_learn,
+       file = here("models", "stress", "s3_adv_int_nat", "eye_track", "gca",
+                   "full_mods_lang_learn.Rdata"))
+
+
   # Build model names programatically
   mod_type <- "gca_mod_"
   mod_spec <- c("_base", "_parox_base", "_parox_int_0", "_parox_int_1", "_parox_int_2", "_parox_int_3",
@@ -648,7 +724,9 @@ if(F) {
     mget(c("ss_wm_anova", "ss_wm_anova_all", "ss_parox_wm_anova", "ss_ox_wm_anova",
       "ss_cv_wm_anova", "ss_cvc_wm_anova", "la_wm_anova", "la_parox_wm_anova",
       "la_ox_wm_anova", "la_cv_wm_anova", "la_cvc_wm_anova", "int_wm_anova",
-      "int_parox_wm_anova", "int_ox_wm_anova", "int_cv_wm_anova", "int_cvc_wm_anova"))
+      "int_parox_wm_anova", "int_ox_wm_anova", "int_cv_wm_anova", "int_cvc_wm_anova",
+      "full_wm_anova", "full_lex_anova", "full_phon_anova",
+      "full_wm_group_anova", "full_wm_stress_anova", "full_wm_coda_anova"))
 
 
 
@@ -656,6 +734,10 @@ if(F) {
   save(nested_model_comparisons_wm,
        file = here("models", "stress", "s3_adv_int_nat", "eye_track", "gca",
                    "nested_model_comparisons_wm.Rdata"))
+
+
+
+
 
   # Save models predictions
   model_preds <- mget(c("fits_all", "target_offset_preds"))

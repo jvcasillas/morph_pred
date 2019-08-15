@@ -108,6 +108,48 @@ stress_gc_subset <- stress50 %>%
 # -----------------------------------------------------------------------------
 
 
+# -----------------------------------------------------------------------------
+
+## Adding lexical frequency to full model
+gca_lex_mod_int_0 <- update(gca_full_mod_int_3, . ~ . + nim_std)
+gca_lex_mod_int_1 <- update(gca_lex_mod_int_0, . ~ . + ot1:nim_std)
+gca_lex_mod_int_2 <- update(gca_lex_mod_int_1, . ~ . + ot2:nim_std)
+gca_lex_mod_int_3 <- update(gca_lex_mod_int_2, . ~ . + ot3:nim_std)
+
+full_lex_anova <-
+  anova(gca_lex_mod_int_0, gca_lex_mod_int_1, gca_lex_mod_int_2, gca_lex_mod_int_3)
+
+## Interactions
+# lex freq x Group
+gca_lex_group_mod_int_0 <- update(gca_full_mod_int_3, . ~ . + nim_std:group)
+gca_lex_group_mod_int_1 <- update(gca_lex_group_mod_int_0, . ~ . + ot1:nim_std:group)
+gca_lex_group_mod_int_2 <- update(gca_lex_group_mod_int_1, . ~ . + ot2:nim_std:group)
+gca_lex_group_mod_int_3 <- update(gca_lex_group_mod_int_2, . ~ . + ot3:nim_std:group)
+
+full_lex_group_anova <-
+  anova(gca_lex_group_mod_int_0, gca_lex_group_mod_int_1, gca_lex_group_mod_int_2, gca_lex_group_mod_int_3)
+# Nothing significant here
+
+# lex freq x Stress
+
+gca_lex_stress_mod_int_0 <- update(gca_full_mod_int_3, . ~ . + nim_std:condition_sum)
+gca_lex_stress_mod_int_1 <- update(gca_lex_stress_mod_int_0, . ~ . + ot1:nim_std:condition_sum)
+gca_lex_stress_mod_int_2 <- update(gca_lex_stress_mod_int_1, . ~ . + ot2:nim_std:condition_sum)
+gca_lex_stress_mod_int_3 <- update(gca_lex_stress_mod_int_2, . ~ . + ot3:nim_std:condition_sum)
+
+full_lex_stress_anova <-
+  anova(gca_lex_stress_mod_int_0, gca_lex_stress_mod_int_1, gca_lex_stress_mod_int_2, gca_lex_stress_mod_int_3)
+
+
+
+# lex freq x Coda
+gca_lex_coda_mod_int_0 <- update(gca_full_mod_int_3, . ~ . + nim_std:coda_sum)
+gca_lex_coda_mod_int_1 <- update(gca_lex_coda_mod_int_0, . ~ . + ot1:nim_std:coda_sum)
+gca_lex_coda_mod_int_2 <- update(gca_lex_coda_mod_int_1, . ~ . + ot2:nim_std:coda_sum)
+gca_lex_coda_mod_int_3 <- update(gca_lex_coda_mod_int_2, . ~ . + ot3:nim_std:coda_sum)
+
+full_lex_coda_anova <-
+  anova(gca_lex_coda_mod_int_0, gca_lex_coda_mod_int_1, gca_lex_coda_mod_int_2, gca_lex_coda_mod_int_3)
 
 
 
