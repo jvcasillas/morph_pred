@@ -201,7 +201,7 @@ anova(gca_mod_ss_parox_int_0, gca_mod_ss_parox_int_1, gca_mod_ss_parox_int_2, gc
 # gca_mod_parox_int_2 30 16484 16665 -8212.3    16424 0.2518      1   0.615830
 # gca_mod_parox_int_3 31 16485 16672 -8211.6    16423 1.3908      1   0.238273
 
-
+summary(gca_mod_parox_int_1)
 
 
 # 2. For Oxytone targets, check interaction of WM:Coda
@@ -230,7 +230,7 @@ anova(gca_mod_ss_ox_int_0, gca_mod_ss_ox_int_1, gca_mod_ss_ox_int_2, gca_mod_ss_
 # gca_mod_ox_int_2 35 16688 16900 -8309.0    16618  0.1863      1     0.6660
 # gca_mod_ox_int_3 36 16689 16907 -8308.5    16617  0.9879      1     0.3203
 
-
+summary(gca_mod_ss_ox_int_1)
 
 # 3. For CV targets, check interaction of WM:stress
 
