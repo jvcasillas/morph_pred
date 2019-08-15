@@ -180,7 +180,7 @@ border_2 <- fp_border(width = 0.75)
 model_preds$target_offset_preds %>% 
   mutate(coda = if_else(coda == 1, "CV", "CVC"), 
          cond = if_else(cond == 1, "Paroxytone", "Oxytone")) %>% 
-  arrange(group, coda, desc(cond)) %>% 
+  arrange(group, desc(cond), coda) %>% 
   mutate(group = blank_same_as_last(as.character(group)), 
          coda =  blank_same_as_last(coda)) %>% 
   select(Group = group, `Lexical stress` = cond, 
@@ -422,7 +422,7 @@ int_age_anova <- nested_model_comparisons$int_age_anova
 ```
 
 
-Figure 1 plots the model estimates from the GCA and the full model summary is 
+Figure 1 plots the model estimates from the GCA, and the full model summary is 
 available in Appendices 1 and 2. 
 We report the results for the M group and then provide comparisons with and 
 between the learner groups. 
@@ -484,9 +484,9 @@ time term on the intercept for the NIN group (`r report_row("23")`).
 That is, the NIN had a more bowed trajectory at the offset of the target 
 syllable than M, indicating that, overall, NIN fixated on targets later than 
 M. 
-Additionally, there was a lexical stress &times; syllable structure 
-interaction on the linear slope (`r report_row("23")`), such that NIN had a 
-steeper slope than M in CV syllables of paroxytone words. 
+Additionally, there was a lexical stress &times; syllable structure &times; 
+group NIN interaction on the linear slope (`r report_row("16")`), such that 
+NIN had a steeper slope than M in CV syllables of paroxytone words.
 This indicates that NIN fixated on targets later the default condition 
 (i.e., LAva), but earlier in other conditions (i.e., laVÓ, FIRma, firMÓ). 
 For the IN group, there was also a simple interaction of the quadratic time
