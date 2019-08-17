@@ -331,6 +331,19 @@ legend_adj_2 <- theme(
   panel.grid.minor = element_line(colour = 'grey90', size = 0.15)
 )
 
+legend_adj_3 <- theme(
+  legend.position = "bottom",
+  legend.key = element_blank(),
+  legend.background = element_blank(),
+  strip.background = element_blank(),
+  axis.title.y = element_text(size = rel(.9), hjust = 0.95),
+  axis.title.x = element_text(size = rel(.9)),
+  legend.key.size = unit(1.2, 'lines'),
+  legend.text = element_text(size = 7),
+  legend.title = element_text(size = 8),
+  plot.margin = unit(rep(2, 4), "mm")
+)
+
 # Theme
 theme_big <- theme_bw(base_size = 10, base_family = "Times")
 
