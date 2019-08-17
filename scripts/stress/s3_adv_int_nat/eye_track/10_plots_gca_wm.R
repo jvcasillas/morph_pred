@@ -78,6 +78,7 @@ stress_p2 <- model_preds_wm$fits_all_wm %>%
   scale_x_continuous(breaks = c(-4, 0, 4, 8, 12),
                      labels = c("-200", "0", "200", "400", "600")) +
   scale_color_brewer(palette = "Dark2", name = "Group") +
+  scale_fill_brewer(palette = "Dark2", name = "Group") +
   labs(x = "Time (ms) relative to target syllable offset",
        y = "Empirical logit of looks to target") +
   theme_grey(base_size = 10, base_family = "Times") + legend_adj_3
