@@ -9,6 +9,9 @@
 #     - test oxytone vs. paroxytone for each group
 #     - hypothesis: steeper slope/earlier break in oxytone condition
 #
+#
+# Consider updating here to reflect the specific questions of this paper
+#
 # -----------------------------------------------------------------------------
 
 
@@ -47,14 +50,14 @@ load(paste0(gca_mods_path, "/full_mods.Rdata"))
 load(paste0(gca_mods_path, "/full_mods_lang_learn.Rdata"))
 load(paste0(gca_mods_path, "/ind_mods_wm.Rdata"))
 load(paste0(gca_mods_path, "/nested_model_comparisons_wm.Rdata"))
-load(paste0(gca_mods_path, "/model_preds.Rdata"))
+load(paste0(gca_mods_path, "/model_preds_wm.Rdata"))
 
 # Store objects in global env
 list2env(full_mods, globalenv())
 list2env(full_mods_lang_learn, globalenv())
 list2env(ind_mods_wm, globalenv())
 list2env(nested_model_comparisons_wm, globalenv())
-list2env(model_preds, globalenv())
+list2env(model_preds_wm, globalenv())
 
 # -----------------------------------------------------------------------------
 
@@ -650,21 +653,39 @@ anova(gca_mod_int_cvc_int_0, gca_mod_int_cvc_int_1, gca_mod_int_cvc_int_2, gca_m
 # Model predictions for plottting ---------------------------------------------
 
 # Create design dataframe for predictions
-new_dat_all <- stress_gc_subset %>%
+new_dat_wm_minus1 <- stress_gc_subset %>%
   dplyr::select(group, time_zero, ot1:ot3, coda_sum, condition_sum, wm_std) %>%
-  distinct
+  distinct(.) %>%
+  mutate(wm_std = -1)
+new_dat_wm_0 <- stress_gc_subset %>%
+  dplyr::select(group, time_zero, ot1:ot3, coda_sum, condition_sum, wm_std) %>%
+  distinct(.) %>%
+  mutate(wm_std = 0)
+new_dat_wm_1 <- stress_gc_subset %>%
+  dplyr::select(group, time_zero, ot1:ot3, coda_sum, condition_sum, wm_std) %>%
+  distinct(.) %>%
+  mutate(wm_std = 1)
 
 # Get model predictions and SE
-fits_all <- predictSE(gca_full_mod_int_3, new_dat_all) %>%
-  as_tibble %>%
-  bind_cols(new_dat_all) %>%
+fits_all_wm <-
+  bind_rows(
+    predictSE(gca_wm_coda_mod_int_3, new_dat_wm_minus1) %>%
+    as_tibble %>%
+    bind_cols(new_dat_wm_minus1),
+    predictSE(gca_wm_coda_mod_int_3, new_dat_wm_0) %>%
+    as_tibble %>%
+    bind_cols(new_dat_wm_0),
+    predictSE(gca_wm_coda_mod_int_3, new_dat_wm_1) %>%
+    as_tibble %>%
+    bind_cols(new_dat_wm_1)
+  ) %>%
   rename(se = se.fit) %>%
   mutate(ymin = fit - se, ymax = fit + se,
          group = fct_recode(group, M = "ss", NIN = "la", IN = "int"))
 
 # Filter preds at target offset
-target_offset_preds <- filter(fits_all, time_zero == 4) %>%
-  select(group, coda = coda_sum, cond = condition_sum,
+target_offset_wm_preds <- filter(fits_all_wm, time_zero == 4) %>%
+  select(group, coda = coda_sum, cond = condition_sum, wm = wm_std,
          elog = fit, elog_lb = ymin, elog_ub = ymax) %>%
   mutate(prob = plogis(elog),
          prob_lb = plogis(elog_lb),
@@ -740,11 +761,11 @@ if(F) {
 
 
   # Save models predictions
-  model_preds <- mget(c("fits_all", "target_offset_preds"))
+  model_preds_wm <- mget(c("fits_all_wm", "target_offset_wm_preds"))
 
-  save(model_preds,
+  save(model_preds_wm,
        file = here("models", "stress", "s3_adv_int_nat", "eye_track", "gca",
-                   "model_preds.Rdata"))
+                   "model_preds_wm.Rdata"))
 
 }
 
