@@ -224,3 +224,59 @@ Appendix 2: Growth curve model random effects
 
 # Statistical Analysis
 
+```{r, 'write-up-prep', warning=F}
+# Prepare table to support easy in-line printing of equations
+params <- pretty_fixed_effects %>% 
+  rename(B = Estimate, t = `_t_`, p = `_p_`)
+params$B %<>% str_replace("&minus;", "-")
+params$SE %<>% str_replace("&minus;", "-")
+params$t %<>% str_replace("&minus;", "-")
+params$p %<>% str_replace("< ", "") %>% as.numeric
+
+params$subscript <- 
+  c(paste0(0:3, 0), paste0(0:3, 1), 
+    paste0(0:3, 2), paste0(0:3, 3), 
+    paste0(0:3, 4), paste0(0:3, 5), 
+    paste0(0:3, 6), paste0(0:3, 7), 
+    paste0(0:3, 8), paste0(0:3, 9))
+
+params <- tibble::column_to_rownames(params, 'subscript')
+
+params$subscript <- 
+  c(paste0(0:3, 0), paste0(0:3, 1), 
+    paste0(0:3, 2), paste0(0:3, 3), 
+    paste0(0:3, 4), paste0(0:3, 5), 
+    paste0(0:3, 6), paste0(0:3, 7), 
+    paste0(0:3, 8), paste0(0:3, 9))
+
+# Shortcut for inline reporting from the above table
+report_row <- function(row_name) report_fixef_row(params, row_name)
+
+# Pre-calculate intercept as proportion
+b0 <- params$B[params$subscript == "00"] %>% as.numeric
+b0_prop <- b0 %>% inv_logit %>% round(2) %>% remove_leading_zero
+
+```
+
+Example write up (must be rewritten)  
+
+(Reporting rows from final model)  
+
+Figure 1 plots the model estimates from the GCA, and the full model summary is 
+available in Appendices 1 and 2. 
+We report the results for the M group and then provide comparisons with and 
+between the learner groups. 
+The model intercept estimates the log odds of M fixating on the target, 
+averaging over the time course, lexical stress, and syllable structure, at the 
+mean working memory (XXX). 
+The log odds were _&gamma;_~00~&nbsp;=&nbsp;`r fixed_digits(b0, 2)` 
+(proportion:&nbsp;`r b0_prop`). 
+The linear, quadratic, and cubic polynomial time terms captured the sigmoid 
+shape of the time course and were retained in the model 
+(`r report_row("10")`; `r report_row("20")`; `r report_row("30")`). 
+
+(Reporting nested model comparisons)  
+
+There was (was not) a main effect of XXX on the quadratic time term 
+(`r pretty_chi_result(nested_model_comparisons_wm$ss_wm_anova, 
+"gca_mod_ss_wm_1")`). 
