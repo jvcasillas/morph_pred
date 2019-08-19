@@ -151,11 +151,15 @@ model_preds_wm$target_offset_wm_preds %>%
 ## Fixed effects
 
 ```{r, warning=F, eval=T}
+fixef_order <- c(1, 2, 3, 4, 5, 9, 13, 17, 6, 7, 8, 10, 11, 12, 21, 14, 18, 
+                 15, 19, 16, 20, 25, 29, 22, 23, 24, 33, 37, 26, 27, 28, 30, 
+                 31, 32, 34, 38, 35, 39, 36, 40)
 
 pretty_fixed_effects <- gca_wm_coda_mod_int_3 %>% 
   tidy_lme4 %>% 
-  #tibble::rownames_to_column("old_index") %>% 
-  #arrange(index) %>% 
+  mutate(index = fixef_order) %>% 
+  arrange(index) %>% 
+  select(-index) %>% 
   mutate(p = format_pval(p), 
          Parameter = fix_param_names(Parameter)) %>% 
   mutate_each(funs(format_fixef_num), Estimate:t) %>% 
@@ -165,9 +169,11 @@ pretty_fixed_effects <- gca_wm_coda_mod_int_3 %>%
 subs <- c(paste0(0:3, 0), paste0(0:3, 1), 
           paste0(0:3, 2), paste0(0:3, 3), 
           paste0(0:3, 4), paste0(0:3, 5), 
-          paste0(0:3, 6), paste0(0:3, 7))
+          paste0(0:3, 6), paste0(0:3, 7), 
+          paste0(0:3, 8), paste0(0:3, 9))
 var_labels <- parenthesize(paste0(emphasize("&gamma;"), "~", subs, "~"))
 pretty_fixed_effects$Parameter %<>% paste(., var_labels)
+pretty_fixed_effects$Parameter %<>% str_replace("wm_std", "Working memory")
 
 pretty_fixed_effects %>% 
   select(-effect) %>% 
@@ -205,8 +211,6 @@ ranef_table %>%
 ```
 
 Appendix 2: Growth curve model random effects
-
-
 
 
 
