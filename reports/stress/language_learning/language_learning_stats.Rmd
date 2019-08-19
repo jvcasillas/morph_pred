@@ -184,8 +184,8 @@ Appendix 1: Growth curve model fixed effects
 
 ## Random effects
 
-```{r, 'ranef-table', results = "asis", eval=F}
-ranef_table <- full_mods$gca_full_mod_int_3 %>% 
+```{r, 'ranef-table', results = "asis", eval=T}
+ranef_table <- gca_wm_coda_mod_int_3 %>% 
   tidy_ranef_summary %>% 
   # Format the numbers
   mutate_each(funs(format_fixef_num), vcov, sdcor) %>%
