@@ -108,8 +108,6 @@ stress_gc_subset <- stress50 %>%
 # -----------------------------------------------------------------------------
 
 
-
-
 ## Adding WM to full model from BLC <gca_full_mod_int_3>
 gca_wm_mod_int_0 <- update(gca_full_mod_int_3, . ~ . + wm_std)
 gca_wm_mod_int_1 <- update(gca_wm_mod_int_0, . ~ . + ot1:wm_std)
@@ -221,14 +219,14 @@ new_dat_wm_1 <- stress_gc_subset %>%
 fits_all_wm <-
   bind_rows(
     predictSE(gca_wm_condition_sum_grp_mod_int_2, new_dat_wm_minus1) %>%
-    as_tibble %>%
-    bind_cols(new_dat_wm_minus1),
+      as_tibble %>%
+      bind_cols(new_dat_wm_minus1),
     predictSE(gca_wm_condition_sum_grp_mod_int_2, new_dat_wm_0) %>%
-    as_tibble %>%
-    bind_cols(new_dat_wm_0),
+      as_tibble %>%
+      bind_cols(new_dat_wm_0),
     predictSE(gca_wm_condition_sum_grp_mod_int_2, new_dat_wm_1) %>%
-    as_tibble %>%
-    bind_cols(new_dat_wm_1)
+      as_tibble %>%
+      bind_cols(new_dat_wm_1)
   ) %>%
   rename(se = se.fit) %>%
   mutate(ymin = fit - se, ymax = fit + se,
@@ -275,10 +273,10 @@ if(F) {
 
 
 
-   # Save anova model comparisons
+  # Save anova model comparisons
   nested_model_comparisons_wm <-
     mget(c("full_wm_anova", "full_wm_group_anova", "full_wm_stress_anova", "full_wm_coda_anova",
-      "full_wm_coda_grp_anova", "full_wm_stress_grp_anova"))
+           "full_wm_coda_grp_anova", "full_wm_stress_grp_anova"))
 
 
 
@@ -297,8 +295,3 @@ if(F) {
   save(model_preds_wm,
        file = here("models", "stress", "s3_adv_int_nat", "eye_track", "gca",
                    "model_preds_wm.Rdata"))
-
-}
-
-# -----------------------------------------------------------------------------
-
