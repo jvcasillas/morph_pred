@@ -71,12 +71,39 @@ gca_wm_coda_mod_int_3 <- full_mods_lang_learn$gca_wm_coda_mod_int_3
 # Language learning article (stress and working memory with natives, late advanced learners and interpreters)
 
 
+Intercept (γ00) 1.174  | 0.214 | 5.483  | < .001 |
+Time1     (γ10) 5.413  | 0.746 | 7.253  | < .001 |
+Time2     (γ20) −1.374 | 0.396 | −3.470 | < .001 |
+Time3     (γ30) −1.666 | 0.297 | −5.614 | < .001 |
+Linear quadratic and cubic time term polynomials captured the functional sigmoid shape of the data
 
 
 
+Time1 × Syllable structure (γ11)                  | 0.831  | 0.374 | 2.223  | .026   | 
+Time2 × Lexical stress (γ22)                      | 0.605  | 0.241 | 2.516  | .012   |
+Time3 × Lexical stress (γ32)                      | −0.577 | 0.161 | −3.587 | < .001 |
+Time3 × Syllable structure × Lexical stress (γ35) | −0.492 | 0.226 | −2.179 | .029   |
+Time1 × Lexical stress × Working memory (γ16)     | 0.263  | 0.112 | 2.347  | .019   |
+Time2 × Lexical stress × Working memory (γ26)     | −0.264 | 0.112 | −2.364 | .018   |
+Time1 × Syllable structure × Working memory (γ17) | 0.231  | 0.113 | 2.041  | .041   |
 
 
+# Monolingual group
 
+- There was a main effect of syllabic structure on the linear term, indicating that a change from CV to CVC increased the steepness of the slope.
+- A main effect of lexical stress was found on the quadratic and cubic time terms. A changed from paroxytone to oxytone increased.... However, 
+
+
+#############################################################################
+
+Time2 × Group NIN (γ23) 1.828 0.470 3.888 < .001
+Time1 × Syllable structure × Lexical stress × Group NIN (γ18) 0.893 0.277 3.222 .001
+
+#############################################################################
+
+Time2 × Group IN (γ24)  1.624 0.480 3.384 < .001
+Time1 × Syllable structure × Lexical stress × Group IN (γ19)  −0.681  0.281 −2.419  .016
+Time3 × Syllable structure × Lexical stress × Group IN (γ39)  0.843 0.277 3.039 .002
 
 
 
