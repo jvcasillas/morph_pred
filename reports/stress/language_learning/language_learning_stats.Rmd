@@ -126,11 +126,45 @@ knitr::include_graphics(
 
 
 
+## Qualitative description - GCA + WM
+
+
+- Graphs on the left reflect looks towards paroxytone (more common, FIRma) targets 
+- Graphs on the right reflect looks towards oxytone (less common, firMÓ) targets
+- Red curves are for CV (more common)
+- Blue curves are for CVC (less common)
+- Solid line indicates participants with lower WM
+- Dotted line indicates participants with avareage WM
+- Dashed line indicates participants with higher WM
 
 
 
+Overall tendencies:
+- We see that blue curves are above red curves for all groups in both stress conditions, indicating an overall higher proportion of fixation in CVC than in CV targets.
 
 
+1. Monolinguals
+
+- For paroxytones (FIRma), we see that monolinguals with higher WM were able to anticipate at a higher rate in both CV and CVC (even higher with CVC) than monolinguals with average and lower WM. It seems like monolinguals with low WM (red solid line) are not anticipating above chance at the offset of the target syllable. WM seems to be an important factor here, there is more space between the lines (solid, dotted, dashed). There seems to be an interaction (CV and CVC curves intersect), but later in the time course??
+
+- For oxytones (firMÓ), we see the opposite pattern. Participants with lower WM (solid line), are anticipating at a higher rate than those with average (dotted line) or higher (dashed line) WM. CVC targets are predicted at a higher rate. Both CV and CVC curves seem to follow the same trajectory. 
+
+2. Non-interpreters
+
+- For paroxytones (FIRma), we see that non-interpreters with higher WM were able to anticipate at a higher rate in both CV and CVC (even higher with CVC) than non-intepreters with average and lower WM. For CV targers, it seems like they are not anticipating, although those with higher WM could be doing it above chance (dashed curve is above chance). There seems to be an interaction (CV and CVC curves intersect).
+
+- For oxytones (firMÓ), we see again the opposite pattern. Non-interpreters with lower WM (solid line), are anticipating at a higher rate than those with average (dotted line) or higher (dashed line) WM. Differences due to WM are smaller (dotted, dashed and solid lines are closer together). Both CV and CVC curves seem to follow the same trajectory.
+
+
+3. Interpreters
+
+- For paroxytones (FIRma), we see that interpreters with lower WM are anticipating at a higher rate in both CVC and CV conditions. For the CV condition (red line), it seems like they are not anticipating above chance at the offset of the targer syllable. Both CV and CVC curves seem to follow the same trajectory.
+
+
+
+- For oxytones (firMÓ), we see the opposite pattern, interpreters with higher WM (dashed line) are anticipating at a higher rate than those with average (dotted line) and lower (solid line) WM, for both CV and CVC. There seems to be an interaction (CV and CVC curves intersect). 
+
+- WM seems to play a smaller role among interpreters, lines are closer together for all conditions. 
 
 
 
