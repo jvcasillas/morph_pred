@@ -59,7 +59,8 @@ load(paste0(gca_mods_path, "/ind_mods_wm.Rdata"))
 load(paste0(gca_mods_path, "/nested_model_comparisons_wm.Rdata"))
 load(paste0(gca_mods_path, "/model_preds_wm.Rdata"))
 
-gca_wm_coda_mod_int_3 <- full_mods_lang_learn$gca_wm_coda_mod_int_3
+gca_wm_condition_sum_grp_mod_int_2 <- 
+  full_mods_lang_learn$gca_wm_condition_sum_grp_mod_int_2
 
 ```
 
@@ -251,11 +252,12 @@ model_preds_wm$target_offset_wm_preds %>%
 ## Fixed effects
 
 ```{r, warning=F, eval=T}
-fixef_order <- c(1, 2, 3, 4, 5, 9, 13, 17, 6, 7, 8, 10, 11, 12, 21, 14, 18, 
-                 15, 19, 16, 20, 25, 29, 22, 23, 24, 33, 37, 26, 27, 28, 30, 
-                 31, 32, 34, 38, 35, 39, 36, 40)
+fixef_order <- c(
+1, 2, 3, 4, 5, 9, 13, 17, 6, 7, 8, 10, 11, 12, 21, 14, 18, 15, 19, 16, 20, 25, 
+28, 22, 23, 24, 30, 34, 26, 27, 29, 38, 41, 31, 35, 32, 36, 33, 37, 39, 33, 42, 
+43)
 
-pretty_fixed_effects <- gca_wm_coda_mod_int_3 %>% 
+pretty_fixed_effects <- gca_wm_condition_sum_grp_mod_int_2 %>% 
   tidy_lme4 %>% 
   mutate(index = fixef_order) %>% 
   arrange(index) %>% 
@@ -291,7 +293,7 @@ Appendix 1: Growth curve model fixed effects
 ## Random effects
 
 ```{r, 'ranef-table', results = "asis", eval=T}
-ranef_table <- gca_wm_coda_mod_int_3 %>% 
+ranef_table <- gca_wm_condition_sum_grp_mod_int_2 %>% 
   tidy_ranef_summary %>% 
   # Format the numbers
   mutate_each(funs(format_fixef_num), vcov, sdcor) %>%
@@ -324,7 +326,7 @@ Appendix 2: Growth curve model random effects
 
 # Statistical Analysis
 
-```{r, 'write-up-prep', warning=F}
+```{r, 'write-up-prep', warning=F, eval=T}
 # Prepare table to support easy in-line printing of equations
 params <- pretty_fixed_effects %>% 
   rename(B = Estimate, t = `_t_`, p = `_p_`)
@@ -338,7 +340,8 @@ params$subscript <-
     paste0(0:3, 2), paste0(0:3, 3), 
     paste0(0:3, 4), paste0(0:3, 5), 
     paste0(0:3, 6), paste0(0:3, 7), 
-    paste0(0:3, 8), paste0(0:3, 9))
+    paste0(0:3, 8), paste0(0:3, 9), 
+    paste0(0:2, 10))
 
 params <- tibble::column_to_rownames(params, 'subscript')
 
@@ -347,7 +350,8 @@ params$subscript <-
     paste0(0:3, 2), paste0(0:3, 3), 
     paste0(0:3, 4), paste0(0:3, 5), 
     paste0(0:3, 6), paste0(0:3, 7), 
-    paste0(0:3, 8), paste0(0:3, 9))
+    paste0(0:3, 8), paste0(0:3, 9), 
+    paste0(0:2, 10))
 
 # Shortcut for inline reporting from the above table
 report_row <- function(row_name) report_fixef_row(params, row_name)
