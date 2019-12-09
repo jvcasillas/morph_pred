@@ -88,6 +88,17 @@ mod_tw_start_full <- brm(
 
 
 
+# BRM at tw_v1_start ----------------------------------------------------------
+
+mod_ts_v1_start_full <- update(
+  object = mod_tw_start_full,
+  newdata = filter(stress_df, landmark_2 == "tw_v1_start"),
+  file = here("models", "stress", "all_groups", "mod_ts_v1_start_full")
+)
+
+# -----------------------------------------------------------------------------
+
+
 
 
 # BRM at 1st syllable offset --------------------------------------------------
