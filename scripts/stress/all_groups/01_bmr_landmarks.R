@@ -101,15 +101,66 @@ mod_ts_v1_start_full <- update(
 
 
 
-# BRM at 1st syllable offset --------------------------------------------------
 
-mod_ts_end_full <- update(
+# BRM at tw_v1_20 -------------------------------------------------------------
+
+mod_ts_v1_20_full <- update(
   object = mod_tw_start_full,
-  newdata = filter(stress_df, landmark_2 == "tw_syl1_end"),
-  file = here("models", "stress", "all_groups", "mod_ts_end_full")
+  newdata = filter(stress_df, landmark_2 == "tw_v1_20"),
+  file = here("models", "stress", "all_groups", "mod_ts_v1_20_full")
 )
 
 # -----------------------------------------------------------------------------
+
+
+
+
+
+# BRM at tw_syl1_end ----------------------------------------------------------
+
+mod_ts_syl1_end_full <- update(
+  object = mod_tw_start_full,
+  newdata = filter(stress_df, landmark_2 == "tw_syl1_end"),
+  file = here("models", "stress", "all_groups", "mod_ts_syl1_end_full")
+)
+
+# -----------------------------------------------------------------------------
+
+
+
+# think about coda_start
+
+
+
+
+
+# BRM at 1st syllable suffix start --------------------------------------------
+
+mod_ts_suffix_start_full <- update(
+  object = mod_tw_start_full,
+  newdata = filter(stress_df, landmark_2 == "tw_suffix_start"),
+  file = here("models", "stress", "all_groups", "mod_ts_suffix_start_full")
+)
+
+# -----------------------------------------------------------------------------
+
+
+
+
+
+# BRM at next_word ------------------------------------------------------------
+
+mod_ts_next_word_full <- update(
+  object = mod_tw_start_full,
+  newdata = filter(stress_df, landmark_2 == "next_word"),
+  file = here("models", "stress", "all_groups", "mod_ts_next_word_full")
+)
+
+# -----------------------------------------------------------------------------
+
+
+
+
 
 
 
