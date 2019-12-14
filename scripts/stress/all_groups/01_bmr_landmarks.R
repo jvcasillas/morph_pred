@@ -27,6 +27,7 @@ source(here::here("scripts", "02_load_data.R"))
 
 # Set reference levels and standardize continuous variables
 stress_df <- stress_lm %>%
+  filter(!is.na(freq)) %>%
   mutate(n_rep = 10,
          group = fct_relevel(group, "ss"),
          stress = if_else(condition == "stressed", "paroxytone", "oxytone"),
@@ -35,12 +36,12 @@ stress_df <- stress_lm %>%
          syllable = fct_relevel(syllable, "CV"),
          stress_sum = if_else(stress == "paroxytone", 1, -1),
          syllable_sum = if_else(syllable == "CV", 1, -1),
+         freq_std = (freq - mean(freq)) / sd(freq),
          phon_prob_std = (phon_prob - mean(phon_prob)) / sd(phon_prob),
          biphon_prob_std = (biphon_prob - mean(biphon_prob)) / sd(biphon_prob),
          freq_std = (freq - mean(freq)) / sd(freq))
 
 # -----------------------------------------------------------------------------
-
 
 
 
@@ -56,12 +57,20 @@ priors <- c(
 # Model formula
 full_model <- bf(
   targetCount | trials(n_rep) ~ group + stress_sum + syllable_sum +
-  phon_prob_std + biphon_prob_std +
+  phon_prob_std + biphon_prob_std + freq_std +
   group:stress_sum + group:syllable_sum + stress_sum:syllable_sum +
   group:stress_sum:syllable_sum +
-  (1 + stress_sum * syllable_sum + phon_prob_std + biphon_prob_std | participant) +
+  (1 + stress_sum * syllable_sum | participant) +
   (1 | target)
   )
+
+no_coda_model <- bf(
+  targetCount | trials(n_rep) ~ group + stress_sum +
+    phon_prob_std + biphon_prob_std + freq_std +
+    group:stress_sum +
+    (1 + stress_sum | participant) +
+    (1 | target)
+)
 
 # -----------------------------------------------------------------------------
 
@@ -71,8 +80,9 @@ full_model <- bf(
 
 
 
-# BRM at target word onset ----------------------------------------------------
+# Fit models ------------------------------------------------------------------
 
+# BRM at target word onset
 mod_tw_start_full <- brm(
   formula = full_model,
   prior = priors,
@@ -84,79 +94,61 @@ mod_tw_start_full <- brm(
   file = here("models", "stress", "all_groups", "mod_tw_start_full")
 )
 
-# -----------------------------------------------------------------------------
-
-
-
-# BRM at tw_v1_start ----------------------------------------------------------
-
+# BRM at tw_v1_start
 mod_ts_v1_start_full <- update(
   object = mod_tw_start_full,
   newdata = filter(stress_df, landmark_2 == "tw_v1_start"),
   file = here("models", "stress", "all_groups", "mod_ts_v1_start_full")
 )
 
-# -----------------------------------------------------------------------------
-
-
-
-
-
-# BRM at tw_v1_20 -------------------------------------------------------------
-
+# BRM at tw_v1_20
 mod_ts_v1_20_full <- update(
   object = mod_tw_start_full,
   newdata = filter(stress_df, landmark_2 == "tw_v1_20"),
   file = here("models", "stress", "all_groups", "mod_ts_v1_20_full")
 )
 
-# -----------------------------------------------------------------------------
-
-
-
-
-
-# BRM at tw_syl1_end ----------------------------------------------------------
-
+# BRM at tw_syl1_end
 mod_ts_syl1_end_full <- update(
   object = mod_tw_start_full,
   newdata = filter(stress_df, landmark_2 == "tw_syl1_end"),
   file = here("models", "stress", "all_groups", "mod_ts_syl1_end_full")
 )
 
-# -----------------------------------------------------------------------------
-
-
-
-# think about coda_start
-
-
-
-
-
-# BRM at 1st syllable suffix start --------------------------------------------
-
+# BRM at 1st syllable suffix start
 mod_ts_suffix_start_full <- update(
   object = mod_tw_start_full,
   newdata = filter(stress_df, landmark_2 == "tw_suffix_start"),
   file = here("models", "stress", "all_groups", "mod_ts_suffix_start_full")
 )
 
-# -----------------------------------------------------------------------------
-
-
-
-
-
-# BRM at next_word ------------------------------------------------------------
-
+# BRM at next_word
 mod_ts_next_word_full <- update(
   object = mod_tw_start_full,
   newdata = filter(stress_df, landmark_2 == "next_word"),
   file = here("models", "stress", "all_groups", "mod_ts_next_word_full")
 )
 
+
+###########################
+# This subset has NO CODA #
+###########################
+
+# BRM at tw_coda_start
+mod_ts_coda_start_full <- brm(
+  formula = no_coda_model,
+  prior = priors,
+  warmup = 1000, iter = 2000, chains = 4,
+  family = binomial(link = "logit"),
+  cores = parallel::detectCores(),
+  control = list(max_treedepth = 15),
+  data = filter(stress_df, landmark_2 == "tw_coda_start"),
+  file = here("models", "stress", "all_groups", "mod_ts_coda_start_full")
+)
+
 # -----------------------------------------------------------------------------
+
+
 
 
 

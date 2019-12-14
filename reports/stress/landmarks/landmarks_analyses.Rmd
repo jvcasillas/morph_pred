@@ -26,18 +26,26 @@ library(kableExtra)
 library(lme4)
 library(merTools)
 library(patchwork)
+library(here)
 ```
 
 ## Load data
 
 ```{r, 'load-data', message=FALSE, warning=FALSE}
-learners <- read_csv("./data/landmarks_stress_la_lb_ss.csv") # learner data
-heritage <- read_csv("./data/landmarks_stress_la_hs_ss.csv") # heritage data
-wm_df_learners <- read_csv("./data/wm.csv")                  # wm learners
-wm_df_heritage <- read_csv("./data/wm_all.csv")              # wm heritage
-pstm_df <- read_csv("./data/dur_stress_background_info.csv") # phon memory
-verb_freq_df <- read_csv("./data/verb_freq.csv")             # verb freq
-phon_freq <- read_csv("./data/phonotactic_frequency.csv")    # phonotactic freq
+learners <- read_csv(here("reports", "stress", "landmarks", "data", 
+                          "landmarks_stress_la_lb_ss.csv")) # learner data
+heritage <- read_csv(here("reports", "stress", "landmarks", "data", 
+                          "landmarks_stress_la_hs_ss.csv")) # heritage data
+wm_df_learners <- read_csv(here("reports", "stress", "landmarks", "data", 
+                                "wm.csv"))                  # wm learners
+wm_df_heritage <- read_csv(here("reports", "stress", "landmarks", "data", 
+                                "wm_all.csv"))              # wm heritage
+pstm_df <- read_csv(here("reports", "stress", "landmarks", "data", 
+                         "dur_stress_background_info.csv")) # phon memory
+verb_freq_df <- read_csv(here("reports", "stress", "landmarks", "data", 
+                              "verb_freq.csv"))             # verb freq
+phon_freq <- read_csv(here("reports", "stress", "landmarks", "data", 
+                           "phonotactic_frequency.csv"))    # phonotactic freq
 ```
 
 ```{r, 'combine-heritage', echo=F}
