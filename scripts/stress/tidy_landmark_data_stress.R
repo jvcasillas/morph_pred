@@ -3,7 +3,7 @@
 # This script will load and tidy the raw eye tracking data
 # with 10 ms bins for each landmark and save the output to data/clean
 #
-# Last update: 06/10/2019
+# Last update: 12/14/2019
 #
 # -----------------------------------------------------------------------------
 
@@ -13,7 +13,7 @@
 # Source libs -----------------------------------------------------------------
 
 source(here::here("scripts", "00_load_libs.R"))
-word3v1 <- readRDS(here("data", "raw", "stress_word3v1_lookup.rds"))
+word3v1 <- readRDS(here("data", "raw", "stress_word3v1_lookup.rds")) # see 110
 
 # -----------------------------------------------------------------------------
 
@@ -30,7 +30,7 @@ lm10 <- read_tsv(here("data", "raw", "stress_10ms.txt")) %>%
   filter(., exp == "stress") %>%
 
   # Remove unnecessary columns
-  select(., -TRIAL_LABEL,                   -TRIAL_INDEX,
+  dplyr::select(., -TRIAL_LABEL,                   -TRIAL_INDEX,
             -identifier,                    -sentencewav,
             -word1,                         -word2_20msafterv1,
             -word2_c2,                      -word2_c3,
@@ -148,8 +148,10 @@ lm10 <- read_tsv(here("data", "raw", "stress_10ms.txt")) %>%
             read_csv(here("data", "raw", "phonotactic_frequency.csv")) %>%
               select(target, phon_prob, biphon_prob, freq),
             by = "target") %>%
+  left_join(., read_delim(here("data", "raw", "wm_pstm_all.tsv"), delim = "\t"),
+            by = "participant") %>%
   select(group:targetProp, target, verb, condition, coda, eLog:lm_bin,
-         landmark_2, phon_prob:freq) %>%
+         landmark_2, phon_prob:freq, pstm, wm) %>%
   write_csv(here("data", "clean", "stress_landmark_clean.csv"))
 
 # -----------------------------------------------------------------------------

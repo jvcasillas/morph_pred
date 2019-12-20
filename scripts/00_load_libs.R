@@ -19,6 +19,7 @@ library(polypoly)
 # Ploting
 library(ggplot2)
 library(patchwork)
+library(tidybayes)
 
 # Modeling
 library(lme4)
