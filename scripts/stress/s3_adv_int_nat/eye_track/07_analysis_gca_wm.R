@@ -1,16 +1,11 @@
 # Growth curve analyisis ------------------------------------------------------
 #
-# - Question 1: Are the groups different from each other in when they begin
-#   to fixate on the target?
-#     - test 3 groups at each level of 'condition'
-#     - hypothesis: SS has steeper slope for both conditions
-# - Question 2: W/in groups, is the there a difference between
-#   oxytone/paroxytone items?
-#     - test oxytone vs. paroxytone for each group
-#     - hypothesis: steeper slope/earlier break in oxytone condition
+# Chapter 3 of my dissertation: planning to submit to LL
+# Main purpose:
+#      - study the effects of WM on the prediction of morphology
 #
 #
-# Consider updating here to reflect the specific questions of this paper
+# Created by: Cristina, based on BLC (chapter 2 dissertation, from Joseph Casillas)
 #
 # -----------------------------------------------------------------------------
 
