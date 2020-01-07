@@ -40,11 +40,6 @@ library("officer")
 library("flextable")
 ```
 
-```{r analysis-preferences}
-# Seed for random number generation
-set.seed(42)
-knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
-```
 
 ```{r, 'source-scripts-models'}
 source(here::here("scripts", "02_load_data.R"))
@@ -72,21 +67,20 @@ gca_wm_condition_sum_grp_mod_int_2 <-
 # Language learning article (stress and working memory with natives, late advanced learners and interpreters)
 
 
-Intercept (γ00) 1.174  | 0.214 | 5.483  | < .001 |
-Time1     (γ10) 5.413  | 0.746 | 7.253  | < .001 |
-Time2     (γ20) −1.374 | 0.396 | −3.470 | < .001 |
-Time3     (γ30) −1.666 | 0.297 | −5.614 | < .001 |
+Intercept (γ00)	1.176	0.214	5.497	< .001
+Time1 (γ10)	5.421	0.746	7.262	< .001
+Time2 (γ20)	−1.372	0.396	−3.464	< .001
+Time3 (γ30)	−1.677	0.297	−5.644	< .001
 Linear quadratic and cubic time term polynomials captured the functional sigmoid shape of the data
 
 
 
-Time1 × Syllable structure (γ11)                  | 0.831  | 0.374 | 2.223  | .026   | 
-Time2 × Lexical stress (γ22)                      | 0.605  | 0.241 | 2.516  | .012   |
-Time3 × Lexical stress (γ32)                      | −0.577 | 0.161 | −3.587 | < .001 |
-Time3 × Syllable structure × Lexical stress (γ35) | −0.492 | 0.226 | −2.179 | .029   |
-Time1 × Lexical stress × Working memory (γ16)     | 0.263  | 0.112 | 2.347  | .019   |
-Time2 × Lexical stress × Working memory (γ26)     | −0.264 | 0.112 | −2.364 | .018   |
-Time1 × Syllable structure × Working memory (γ17) | 0.231  | 0.113 | 2.041  | .041   |
+Time1 × Syllable structure (γ11)	0.819	0.375	2.183	.029
+Time2 × Lexical stress (γ22)	0.575	0.241	2.386	.017
+Time3 × Lexical stress (γ32)	−0.579	0.161	−3.587	< .001
+Time3 × Syllable structure × Lexical stress (γ35)	−0.491	0.226	−2.172	.030
+Time2 × Lexical stress × Working memory (γ26)	−0.862	0.250	−3.450	< .001
+Time1 × Syllable structure × Working memory (γ18)	0.239	0.113	2.107	.035
 
 
 # Monolingual group
@@ -97,14 +91,18 @@ Time1 × Syllable structure × Working memory (γ17) | 0.231  | 0.113 | 2.041  |
 
 #############################################################################
 
-Time2 × Group NIN (γ23) 1.828 0.470 3.888 < .001
-Time1 × Syllable structure × Lexical stress × Group NIN (γ18) 0.893 0.277 3.222 .001
+Time2 × Group NIN (γ23)	1.823	0.471	3.871	< .001
+Time1 × Syllable structure × Lexical stress × Group NIN (γ07)	0.895	0.277	3.229	.001
+Time2 × Lexical stress × Group NIN:Working memory (γ010)	0.701	0.325	2.155	.031
 
 #############################################################################
 
-Time2 × Group IN (γ24)  1.624 0.480 3.384 < .001
-Time1 × Syllable structure × Lexical stress × Group IN (γ19)  −0.681  0.281 −2.419  .016
-Time3 × Syllable structure × Lexical stress × Group IN (γ39)  0.843 0.277 3.039 .002
+Time2 × Group IN (γ24)	1.615	0.480	3.360	< .001
+Lexical stress × Group IN × Working memory (γ19)	−0.567	0.261	−2.171	.030
+Time3 × Syllable structure × Lexical stress × Group IN (γ39)	0.846	0.277	3.052	.002
+Time1 × Lexical stress × Group IN:Working memory (γ37)	0.684	0.301	2.273	.023
+Time2 × Lexical stress × Group IN:Working memory (γ210)	0.772	0.299	2.580	.010
+
 
 
 
@@ -168,45 +166,6 @@ Overall tendencies:
 - WM seems to play a smaller role among interpreters, lines are closer together for all conditions. 
 
 
-## Qualitative description - GCA + Phonotatic frequency
-
-
-- Graphs on the left reflect looks towards paroxytone (more common, FIRma) targets 
-- Graphs on the right reflect looks towards oxytone (less common, firMÓ) targets
-- Red curves are for CV (more common)
-- Blue curves are for CVC (less common)
-- Solid line indicates participants with lower WM
-- Dotted line indicates participants with avareage WM
-- Dashed line indicates participants with higher WM
-
-
-
-Overall tendencies:
-
-
-
-1. Monolinguals
-
-- For paroxytones (FIRma), 
-
-- For oxytones (firMÓ), 
-
-2. Non-interpreters
-
-- For paroxytones (FIRma), 
-
-- For oxytones (firMÓ), 
-
-
-3. Interpreters
-
-- For paroxytones (FIRma), 
-
-
-
-- For oxytones (firMÓ), 
-
-
 
 
 
@@ -251,7 +210,7 @@ model_preds_wm$target_offset_wm_preds %>%
 
 ## Fixed effects
 
-```{r, warning=F, eval=T}
+```{r eval=T, warning=FALSE}
 fixef_order <- c(
 1, 2, 3, 4, 5, 9, 13, 17, 6, 7, 8, 10, 11, 12, 21, 14, 18, 15, 19, 16, 20, 25, 28, 22, 23, 24, 30, 34, 26, 27, 34, 36, 38, 28, 35, 37, 39, 32, 40, 42, 33, 41, 43)
 
@@ -277,7 +236,7 @@ pretty_fixed_effects$Parameter %<>% paste(., var_labels)
 pretty_fixed_effects$Parameter %<>% str_replace("wm_std", "Working memory")
 
 pretty_fixed_effects %>% 
-  select(-effect) %>% 
+  # select(-effect) %>% # CRIS: THIS WAS GIVING ERROR: "effect" NOT FOUND
   knitr::kable(format = "pandoc", align = str_tokenize("lrrrr")) 
 
 ```
@@ -313,6 +272,8 @@ ranef_table %>%
 
 Appendix 2: Growth curve model random effects
 
+
+## Pairwise comparison
 
 
 
@@ -360,6 +321,63 @@ b0 <- params$B[params$subscript == "00"] %>% as.numeric
 b0_prop <- b0 %>% inv_logit %>% round(2) %>% remove_leading_zero
 
 ```
+
+#######################
+# Pairwise comparisons
+# Copied from another
+# report, needs to be
+# adapted
+#######################
+
+## Pairwise comparisons
+
+```{r, 'learner-comparison'}
+# make table for printing
+pairwise_comp <- full_mods_lang_learn$gca_full_mod_wm_relevel %>%
+  tidy_lme4 %>%
+  rename(B = Estimate) %>%
+  filter(str_detect(Parameter, "la") == TRUE)
+
+# Add subscript column, convert to rownames, and then add it again
+pairwise_comp$subscript <- c(paste0(0:3, 8), paste0(0:1, 9))
+pairwise_comp <- tibble::column_to_rownames(pairwise_comp, 'subscript')
+pairwise_comp$subscript <- c(paste0(0:3, 8), paste0(0:1, 9))
+
+
+# Shortcut for inline reporting from the above table
+report_pairwise <- function(row_name) report_fixef_row(pairwise_comp, row_name)
+
+```
+
+
+```{r, pairwise-comp-table, results='asis', eval=T}
+
+# Make table for appendix
+pretty_pairwise_table <- full_mods$gca_full_mod_int_relevel %>%
+  tidy_lme4 %>%
+  mutate(p = format_pval(p),
+         Parameter = fix_param_names(Parameter)) %>%
+  mutate_each(funs(format_fixef_num), Estimate:t) %>%
+  rename(`_t_` = t, `_p_` = p) %>%
+  filter(str_detect(Parameter, "NIN") == TRUE) %>%
+  select(-effect)
+
+pretty_pairwise_table$Parameter %<>% str_replace("Group NIN", "IN - NIN")
+
+# Include gammas after each parameter name
+pw_subs <- c(paste0(0:3, 8), paste0(0:1, 9))
+pw_var_labels <- parenthesize(paste0(emphasize("&gamma;"), "~", pw_subs, "~"))
+pretty_pairwise_table$Parameter %<>% paste(., pw_var_labels)
+
+pretty_pairwise_table %>%
+  knitr::kable(format = "pandoc", align = str_tokenize("lrrrr"))
+
+```
+
+Appendix 3: Pairwise comparisons between learner groups.
+
+
+
 
 Example write up (must be rewritten)  
 
