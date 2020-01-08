@@ -28,6 +28,48 @@ full_posterior_averages %>%
        caption = "Posterior means ±95% and 66% CI") +
   landmark_posterior_theme(base_size = 12)
 
+
+
+
+
+
+complete_posteriors %>%
+  mutate(
+    Landmark = fct_relevel(landmark_labs,
+      "Target word\nonset", "V1\nonset", "20 ms\nafter V1",
+      "Syllable 1\noffset", "V2\n(suffix)", "Following\nword"),
+    group = fct_relevel(group, "lb", "la", "int", "hs", "ss"),
+    group = fct_relabel(group, toupper),
+    stress = fct_recode(stress, Oxytone = "oxitone", Paroxytone = "paroxitone"),
+    stress = fct_relevel(stress, "Paroxytone"),
+    syllable = toupper(syllable)) %>%
+  ggplot(., aes(x = Landmark, y = estimate)) +
+  facet_grid(syllable ~ stress) +
+  geom_rect(data = tibble(ymin = -0.1, ymax = 0.1), inherit.aes = FALSE,
+            aes(ymin = ymin, ymax = ymax, xmin = -Inf, xmax = Inf),
+            fill = "lightblue", color = "white", alpha = 0.2) +
+  geom_hline(yintercept = 0, lty = 3) +
+  #stat_gradientinterval(aes(shape = group, fill = group, color = group),
+  #                      position = position_dodge(0.7), show.legend = F) +
+  stat_pointinterval(aes(shape = group, fill = group), color = "grey10",
+                     position = position_dodge(0.7)) +
+  coord_cartesian(ylim = c(-5.00, 12.00)) +
+  scale_shape_manual(values = c(21:25), name = NULL) +
+  scale_color_brewer(palette = "Dark2", name = NULL) +
+  scale_fill_brewer(palette = "Dark2", name = NULL) +
+  labs(y = "Estimate", x = "Landmark", title = "Target fixation",
+       subtitle = "Log odds of target fixations at diff. segmental landmarks",
+       caption = "Posterior means ±95% and 66% CI") +
+  landmark_posterior_theme(base_size = 12) +
+  guides(fill = guide_legend(override.aes = list(size = 6))) +
+  NULL
+
+
+
+
+
+
+
 stress_df %>%
   filter(landmark_2 != "tw_coda_start") %>%
   mutate(landmark_2 = fct_relevel(landmark_2,
