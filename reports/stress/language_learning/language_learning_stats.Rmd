@@ -339,9 +339,9 @@ pairwise_comp <- full_mods_lang_learn$gca_full_mod_wm_relevel %>%
   filter(str_detect(Parameter, "la") == TRUE)
 
 # Add subscript column, convert to rownames, and then add it again
-pairwise_comp$subscript <- c(paste0(0:3, 8), paste0(0:1, 9))
+pairwise_comp$subscript <- c(paste0(0:4, 8), paste0(0:5, 9))
 pairwise_comp <- tibble::column_to_rownames(pairwise_comp, 'subscript')
-pairwise_comp$subscript <- c(paste0(0:3, 8), paste0(0:1, 9))
+pairwise_comp$subscript <- c(paste0(0:4, 8), paste0(0:5, 9))
 
 
 # Shortcut for inline reporting from the above table
