@@ -91,19 +91,37 @@ Time1 × Syllable structure × Working memory (γ18)	0.239	0.113	2.107	.035
 
 #############################################################################
 
+# NIN group
+
 Time2 × Group NIN (γ23)	1.823	0.471	3.871	< .001
+
 Time1 × Syllable structure × Lexical stress × Group NIN (γ07)	0.895	0.277	3.229	.001
+
 Time2 × Lexical stress × Group NIN:Working memory (γ010)	0.701	0.325	2.155	.031
 
 #############################################################################
 
+# IN group
+
 Time2 × Group IN (γ24)	1.615	0.480	3.360	< .001
+
 Lexical stress × Group IN × Working memory (γ19)	−0.567	0.261	−2.171	.030
+
 Time3 × Syllable structure × Lexical stress × Group IN (γ39)	0.846	0.277	3.052	.002
+
 Time1 × Lexical stress × Group IN:Working memory (γ37)	0.684	0.301	2.273	.023
+
 Time2 × Lexical stress × Group IN:Working memory (γ210)	0.772	0.299	2.580	.010
 
+############################################################################
 
+# Pairwise comparisons
+
+Lexical stress × IN - NIN × wm_std (γ19)	0.492	0.236	2.086	.037
+
+Time1 × Syllable structure × Lexical stress × IN - NIN (γ08)	1.566	0.279	5.610	< .001
+
+Time3 × Syllable structure × Lexical stress × IN - NIN (γ28)	−0.847	0.276	−3.073	.002
 
 
 
@@ -236,16 +254,11 @@ pretty_fixed_effects$Parameter %<>% paste(., var_labels)
 pretty_fixed_effects$Parameter %<>% str_replace("wm_std", "Working memory")
 
 pretty_fixed_effects %>% 
-  # select(-effect) %>% # CRIS: THIS WAS GIVING ERROR: "effect" NOT FOUND
   knitr::kable(format = "pandoc", align = str_tokenize("lrrrr")) 
 
 ```
 
 Appendix 1: Growth curve model fixed effects
-
-
-
-
 
 
 ## Random effects
@@ -271,15 +284,6 @@ ranef_table %>%
 ```
 
 Appendix 2: Growth curve model random effects
-
-
-## Pairwise comparison
-
-
-
-
-
-
 
 
 
@@ -322,12 +326,7 @@ b0_prop <- b0 %>% inv_logit %>% round(2) %>% remove_leading_zero
 
 ```
 
-#######################
-# Pairwise comparisons
-# Copied from another
-# report, needs to be
-# adapted
-#######################
+
 
 ## Pairwise comparisons
 
@@ -353,14 +352,13 @@ report_pairwise <- function(row_name) report_fixef_row(pairwise_comp, row_name)
 ```{r, pairwise-comp-table, results='asis', eval=T}
 
 # Make table for appendix
-pretty_pairwise_table <- full_mods$gca_full_mod_int_relevel %>%
+pretty_pairwise_table <- full_mods_lang_learn$gca_full_mod_wm_relevel %>%
   tidy_lme4 %>%
   mutate(p = format_pval(p),
          Parameter = fix_param_names(Parameter)) %>%
   mutate_each(funs(format_fixef_num), Estimate:t) %>%
   rename(`_t_` = t, `_p_` = p) %>%
-  filter(str_detect(Parameter, "NIN") == TRUE) %>%
-  select(-effect)
+  filter(str_detect(Parameter, "NIN") == TRUE)
 
 pretty_pairwise_table$Parameter %<>% str_replace("Group NIN", "IN - NIN")
 

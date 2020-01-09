@@ -35,9 +35,8 @@ demo_data <- demo_data %>%
   filter(., id != "LA09" & id != "LA15" & id != "IN17")
 
 demo_data %>%
-  #filter(age < 60) %>%
   group_by(group) %>%
-  summarize(
+  summarize(n = n_distinct(id),
             mean_age = mean(age), sd_age = sd(age),
             min_age = min(age), max_age = max(age))
 
