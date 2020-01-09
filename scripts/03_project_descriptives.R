@@ -37,8 +37,11 @@ demo_data <- demo_data %>%
 demo_data %>%
   #filter(age < 60) %>%
   group_by(group) %>%
-  summarize(mean_age = mean(age), sd_age = sd(age), median_age = median(age),
+  summarize(
+            mean_age = mean(age), sd_age = sd(age),
             min_age = min(age), max_age = max(age))
+
+
 
 demo_data %>%
   #filter(age < 60) %>%
