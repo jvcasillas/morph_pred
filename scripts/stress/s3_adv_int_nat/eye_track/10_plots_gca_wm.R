@@ -60,6 +60,26 @@ stress_p1 <- model_preds_wm$fits_all_wm %>%
   theme_grey(base_size = 10, base_family = "Times") + legend_adj_3
 
 
+# Within group differences for CV CVC perspective
+stress_p3 <- model_preds_wm$fits_all_wm %>%
+  mutate(`Working memory` = as.factor(wm_std),
+         coda = if_else(coda_sum == 1, "CV", "CVC"),
+         condition = if_else(condition_sum == 1, "Paroxytone", "Oxytone"),
+         condition = fct_relevel(condition, "Paroxytone")) %>%
+  ggplot(., aes(x = time_zero, y = fit, ymax = ymax, ymin = ymin,
+                fill = condition, color = condition, lty = `Working memory`)) +
+  facet_grid(group ~ coda) +
+  geom_hline(yintercept = 0, size = 3, color = "white") +
+  geom_vline(xintercept = 4, size = 3, color = "white") +
+  geom_ribbon(alpha = 0.2, color = NA, show.legend = F) +
+  geom_line(size = 0.35) +
+  scale_x_continuous(breaks = c(-4, 0, 4, 8, 12),
+                     labels = c("-200", "0", "200", "400", "600")) +
+  scale_color_brewer(palette = "Set1", name = "Stress") +
+  labs(x = "Time (ms) relative to target syllable offset",
+       y = "Empirical logit of looks to target") +
+  theme_grey(base_size = 10, base_family = "Times") + legend_adj_3
+
 # Comparisons with natives
 stress_p2 <- model_preds_wm$fits_all_wm %>%
   mutate(coda = if_else(coda_sum == 1, "CV", "CVC"),
@@ -91,5 +111,7 @@ ggsave(paste0(figs_path, "/stress_p2.png"), stress_p2, width = 150,
        height = 120, units = "mm", dpi = 600)
 ggsave(paste0(figs_path, "/stress_p2.eps"), stress_p2, width = 150,
        height = 120, units = "mm", dpi = 600, device = cairo_ps)
+ggsave(paste0(figs_path, "/stress_p3.png"), stress_p3, width = 150,
+       height = 120, units = "mm", dpi = 600)
 
 # -----------------------------------------------------------------------------

@@ -1,0 +1,56 @@
+test_mod <-
+  lmer(eLog ~ 1 + (ot1 + ot2 + ot3) * condition_sum * wm_std +
+         (1 + condition_sum + (ot1 + ot2 + ot3) | participant) +
+         (1 + ot1 + ot2 + ot3 | target),
+       control = lmerControl(optimizer = 'bobyqa'), REML = F,
+       data = filter(stress_gc_subset, group %in% c("int")))
+
+
+
+# Create design dataframe for predictions
+new_dat_wm_minus1 <- stress_gc_subset %>%
+  dplyr::select(group, time_zero, ot1:ot3, condition_sum, wm_std) %>%
+  distinct(.) %>%
+  mutate(wm_std = -1) %>% filter(group %in% c("int"))
+new_dat_wm_0 <- stress_gc_subset %>%
+  dplyr::select(group, time_zero, ot1:ot3, condition_sum, wm_std) %>%
+  distinct(.) %>%
+  mutate(wm_std = 0) %>% filter(group %in% c("int"))
+new_dat_wm_1 <- stress_gc_subset %>%
+  dplyr::select(group, time_zero, ot1:ot3, condition_sum, wm_std) %>%
+  distinct(.) %>%
+  mutate(wm_std = 1) %>% filter(group %in% c("int"))
+
+# Get model predictions and SE
+test_fits <-
+  bind_rows(
+    predictSE(test_mod, new_dat_wm_minus1) %>%
+      as_tibble %>%
+      bind_cols(new_dat_wm_minus1),
+    predictSE(test_mod, new_dat_wm_0) %>%
+      as_tibble %>%
+      bind_cols(new_dat_wm_0),
+    predictSE(test_mod, new_dat_wm_1) %>%
+      as_tibble %>%
+      bind_cols(new_dat_wm_1)
+  ) %>%
+  rename(se = se.fit) %>%
+  mutate(ymin = fit - se, ymax = fit + se)
+
+
+
+
+test_fits %>%
+  ggplot(., aes(x = time_zero, y = fit, ymax = ymax, ymin = ymin,
+                fill = factor(condition_sum), color = factor(condition_sum), lty = factor(wm_std))) +
+  facet_grid(. ~ group) +
+  geom_hline(yintercept = 0, size = 3, color = "white") +
+  geom_vline(xintercept = 4, size = 3, color = "white") +
+  geom_line(size = 0.35) +
+  scale_x_continuous(breaks = c(-4, 0, 4, 8, 12),
+                     labels = c("-200", "0", "200", "400", "600")) +
+  scale_color_brewer(palette = "Set1", name = "Coda") +
+  coord_cartesian(ylim = c(-2, 4)) +
+  labs(x = "Time (ms) relative to target syllable offset",
+       y = "Empirical logit of looks to target") +
+  theme_grey(base_size = 10, base_family = "Times") + legend_adj_3
