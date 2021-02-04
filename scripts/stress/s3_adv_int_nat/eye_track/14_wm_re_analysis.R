@@ -9,8 +9,46 @@ source_part(here::here(
   "scripts", "stress", "s3_adv_int_nat", "eye_track", "07_analysis_gca_wm.R"),
   start = 18, end = 111)
 
-gca_full_mod_int_3 %>% summary
-gca_wm_mod_int_0 %>% summary
+
+# Load model
+full_mod_lang_learn_wm <- readRDS(here::here(
+  "models", "stress", "s3_adv_int_nat", "eye_track", "gca",
+  "full_mod_lang_learn_wm.Rds"))
+
+# Save random effects by participant and by target
+random_eff <- ranef(full_mod_lang_learn_wm)
+
+
+# Separate dataframe for participants
+random_part <- random_eff$participant
+
+ran_part  <- setNames(cbind(rownames(random_part), random_part, row.names = NULL),
+         c("participant", "intercept", "coda_sum",
+           "condition_sum", "wm_std", "ot1", "ot2", "ot3"))
+
+# add wm data
+mem_data <- read_csv(here("data", "raw", "dur_stress_demographics.csv"))
+mem_data$id <- toupper(mem_data$id)
+mem_data <- mem_data %>%
+  rename(participant = "id") %>%
+  filter(!participant %in% c("LA04",
+                             "LA06", "LA09", "LA14", "LA15", "LA19",
+                             "IN17", "LA07")) %>%
+  select(., participant, wm, group)
+
+random_df <- ran_part %>%
+left_join(mem_data, by = "participant")
+
+random_df$wm <- as.numeric(random_df$wm)
+
+
+
+
+
+
+
+########
+
 
 gca_update <- lmer(
   eLog ~ ot1 + ot2 + ot3 + coda_sum + condition_sum +
@@ -112,6 +150,12 @@ p_corr_scatter <- mod_re %>%
   theme_bw(base_size = 12, base_family = "Times") +
   NULL
 
+View(random_df)
+
+random_df %>%
+  ggplot(aes(wm_std, wm)) +
+  geom_point(aes(color = group))
+
 
 p_corr_matrix
 p_corr_bars
@@ -128,7 +172,7 @@ ggsave("stress_re_p2.png", plot = p_corr_bars,
 
 ggsave("stress_re_p3.png", plot = p_corr_scatter,
        path = here("figs", "stress", "s3_adv_int_nat", "eye_track", "lang_learn"),
-       height = 3.5, width = 10)
+       heigh = 3.5, width = 10)
 
 
 
