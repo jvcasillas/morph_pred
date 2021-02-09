@@ -58,15 +58,21 @@ test_fits %>%
   facet_grid(. ~ group, labeller = labeller(group = group.labs)) +
   geom_hline(yintercept = 0, size = 3, color = "white") +
   geom_vline(xintercept = 4, size = 3, color = "white") +
-  geom_line(size = 0.35) +
+  geom_line(size = 1) +
   scale_x_continuous(breaks = c(-4, 0, 4, 8, 12),
                      labels = c("-200", "0", "200", "400", "600")) +
   scale_color_brewer(palette = "Set1", name = "Stress", labels = c("oxytone", "paroxytone")) +
   coord_cartesian(ylim = c(-2, 4)) +
   labs(x = "Time (ms) relative to target syllable offset",
        y = "Empirical logit of looks to target",
-       linetype = "Working Memory") +
-  theme_grey(base_size = 10, base_family = "Times") + legend_adj_3
+       linetype = "Working Memory",
+       axis.title = element_text(size = 20)) +
+  theme_grey(base_size = 10, base_family = "Times") + legend_adj_3 +
+  theme(text = element_text(size = 20),
+        legend.title = element_text(size = 15),
+        legend.text = element_text(size = 15))
+
+
 
 
 
