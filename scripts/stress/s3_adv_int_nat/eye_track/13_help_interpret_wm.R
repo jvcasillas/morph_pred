@@ -11,7 +11,7 @@ test_mod <-
          (1 + condition_sum + (ot1 + ot2 + ot3) | participant) +
          (1 + ot1 + ot2 + ot3 | target),
        control = lmerControl(optimizer = 'bobyqa'), REML = F,
-       data = filter(stress_gc_subset, group %in% c("la")))
+       data = filter(stress_gc_subset, group %in% c("ss")))
 
 group.labs <- c("non-interpreters", "interpreters", "monolinguals")
 names(group.labs) <- c("la", "int", "ss")
@@ -22,15 +22,15 @@ names(group.labs) <- c("la", "int", "ss")
 new_dat_wm_minus1 <- stress_gc_subset %>%
   dplyr::select(group, time_zero, ot1:ot3, condition_sum, wm_std) %>%
   distinct(.) %>%
-  mutate(wm_std = -1) %>% filter(group %in% c("la"))
+  mutate(wm_std = -1) %>% filter(group %in% c("ss"))
 new_dat_wm_0 <- stress_gc_subset %>%
   dplyr::select(group, time_zero, ot1:ot3, condition_sum, wm_std) %>%
   distinct(.) %>%
-  mutate(wm_std = 0) %>% filter(group %in% c("la"))
+  mutate(wm_std = 0) %>% filter(group %in% c("ss"))
 new_dat_wm_1 <- stress_gc_subset %>%
   dplyr::select(group, time_zero, ot1:ot3, condition_sum, wm_std) %>%
   distinct(.) %>%
-  mutate(wm_std = 1) %>% filter(group %in% c("la"))
+  mutate(wm_std = 1) %>% filter(group %in% c("ss"))
 
 # Get model predictions and SE
 test_fits <-
@@ -66,11 +66,11 @@ test_fits %>%
   labs(x = "Time (ms) relative to target syllable offset",
        y = "Empirical logit of looks to target",
        linetype = "Working Memory",
-       axis.title = element_text(size = 20)) +
+       axis.title = element_text(size = 17)) +
   theme_grey(base_size = 10, base_family = "Times") + legend_adj_3 +
-  theme(text = element_text(size = 20),
-        legend.title = element_text(size = 15),
-        legend.text = element_text(size = 15))
+  theme(text = element_text(size = 17),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 12))
 
 
 
@@ -85,7 +85,7 @@ test_mod_coda <-
          (1 + coda_sum + (ot1 + ot2 + ot3) | participant) +
          (1 + ot1 + ot2 + ot3 | target),
        control = lmerControl(optimizer = 'bobyqa'), REML = F,
-       data = filter(stress_gc_subset, group %in% c("int")))
+       data = filter(stress_gc_subset, group %in% c("ss")))
 
 
 
@@ -93,15 +93,15 @@ test_mod_coda <-
 new_dat_wm_minus1 <- stress_gc_subset %>%
   dplyr::select(group, time_zero, ot1:ot3, coda_sum, wm_std) %>%
   distinct(.) %>%
-  mutate(wm_std = -1) %>% filter(group %in% c("int"))
+  mutate(wm_std = -1) %>% filter(group %in% c("ss"))
 new_dat_wm_0 <- stress_gc_subset %>%
   dplyr::select(group, time_zero, ot1:ot3, coda_sum, wm_std) %>%
   distinct(.) %>%
-  mutate(wm_std = 0) %>% filter(group %in% c("int"))
+  mutate(wm_std = 0) %>% filter(group %in% c("ss"))
 new_dat_wm_1 <- stress_gc_subset %>%
   dplyr::select(group, time_zero, ot1:ot3, coda_sum, wm_std) %>%
   distinct(.) %>%
-  mutate(wm_std = 1) %>% filter(group %in% c("int"))
+  mutate(wm_std = 1) %>% filter(group %in% c("ss"))
 
 # Get model predictions and SE
 test_fits_coda <-
@@ -129,7 +129,7 @@ test_fits_coda %>%
              labeller = labeller(group = group.labs))  +
   geom_hline(yintercept = 0, size = 3, color = "white") +
   geom_vline(xintercept = 4, size = 3, color = "white") +
-  geom_line(size = 0.35) +
+  geom_line(size = 1) +
   scale_x_continuous(breaks = c(-4, 0, 4, 8, 12),
                      labels = c("-200", "0", "200", "400", "600")) +
   scale_color_brewer(palette = "Set1", name = "Coda", labels = c("CVC", "CV")) +
@@ -137,6 +137,9 @@ test_fits_coda %>%
   labs(x = "Time (ms) relative to target syllable offset",
        y = "Empirical logit of looks to target",
        linetype = "Working Memory") +
-  theme_grey(base_size = 10, base_family = "Times") + legend_adj_3
+  theme_grey(base_size = 10, base_family = "Times") + legend_adj_3 +
+  theme(text = element_text(size = 17),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 12))
 
 
