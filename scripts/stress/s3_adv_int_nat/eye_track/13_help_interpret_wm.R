@@ -11,7 +11,7 @@ test_mod <-
          (1 + condition_sum + (ot1 + ot2 + ot3) | participant) +
          (1 + ot1 + ot2 + ot3 | target),
        control = lmerControl(optimizer = 'bobyqa'), REML = F,
-       data = filter(stress_gc_subset, group %in% c("ss")))
+       data = filter(stress_gc_subset, group %in% c("int")))
 
 group.labs <- c("non-interpreters", "interpreters", "monolinguals")
 names(group.labs) <- c("la", "int", "ss")
@@ -22,15 +22,15 @@ names(group.labs) <- c("la", "int", "ss")
 new_dat_wm_minus1 <- stress_gc_subset %>%
   dplyr::select(group, time_zero, ot1:ot3, condition_sum, wm_std) %>%
   distinct(.) %>%
-  mutate(wm_std = -1) %>% filter(group %in% c("ss"))
+  mutate(wm_std = -1) %>% filter(group %in% c("int"))
 new_dat_wm_0 <- stress_gc_subset %>%
   dplyr::select(group, time_zero, ot1:ot3, condition_sum, wm_std) %>%
   distinct(.) %>%
-  mutate(wm_std = 0) %>% filter(group %in% c("ss"))
+  mutate(wm_std = 0) %>% filter(group %in% c("int"))
 new_dat_wm_1 <- stress_gc_subset %>%
   dplyr::select(group, time_zero, ot1:ot3, condition_sum, wm_std) %>%
   distinct(.) %>%
-  mutate(wm_std = 1) %>% filter(group %in% c("ss"))
+  mutate(wm_std = 1) %>% filter(group %in% c("int"))
 
 # Get model predictions and SE
 test_fits <-
