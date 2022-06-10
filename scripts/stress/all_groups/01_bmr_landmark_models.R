@@ -52,10 +52,11 @@ stress_df <- stress_lm %>%
     syllable = if_else(coda == 0, "CV", "CVC"),
     syllable = fct_relevel(syllable, "CV"),
     syllable_sum = if_else(syllable == "CV", 1, -1),
-    freq_std = (freq - mean(freq)) / sd(freq),
+    freq_log = log(freq),
+    freq_std = (freq_log - mean(freq_log)) / sd(freq_log),
     phon_prob_std = (phon_prob - mean(phon_prob)) / sd(phon_prob),
-    biphon_prob_std = (biphon_prob - mean(biphon_prob)) / sd(biphon_prob),
-    freq_std = (freq - mean(freq)) / sd(freq),
+    biphon_prob_log = log(biphon_prob),
+    biphon_prob_std = (biphon_prob_log - mean(biphon_prob_log)) / sd(biphon_prob_log),
     wm_std = (wm - mean(wm)) / sd(wm),
     pstm_std = (pstm - mean(pstm)) / sd(pstm)
   )
@@ -94,6 +95,17 @@ coda_onset_model <- bf(
     (1 + stress_sum + wm_std | participant) +
     (1 + phon_prob_std + freq_std | target)
 )
+
+# Model formula with log biphon
+full_model2 <- bf(
+  targetCount | trials(n_rep) ~ group + stress_sum + syllable_sum +
+  biphon_prob_std + freq_std + wm_std +
+  group:stress_sum + group:syllable_sum + stress_sum:syllable_sum +
+  group:biphon_prob_std +
+  group:stress_sum:syllable_sum +
+  (1 + stress_sum + syllable_sum + wm_std | participant) +
+  (1 + phon_prob_std + freq_std | target)
+  )
 
 # -----------------------------------------------------------------------------
 
@@ -154,6 +166,19 @@ mod_ts_syl1_end_full <- brm(
   file = here("models", "stress", "all_groups", "mod_ts_syl1_end_full")
 )
 
+# BRM at tw_syl1_end (biphon)
+mod_ts_syl1_end_full2 <- brm(
+  formula = full_model2,
+  prior = priors,
+  warmup = 4000, iter = 8000, chains = 4,
+  family = binomial(link = "logit"),
+  cores = parallel::detectCores(),
+  control = list(max_treedepth = 15, adapt_delta = 0.999),
+  sample_prior = T,
+  data = filter(stress_df, landmark_2 == "tw_syl1_end"),
+  file = here("models", "stress", "all_groups", "mod_ts_syl1_end_full2")
+)
+
 # BRM at 1st syllable suffix start
 mod_ts_suffix_start_full <- brm(
   formula = full_model,
@@ -165,6 +190,19 @@ mod_ts_suffix_start_full <- brm(
   sample_prior = T,
   data = filter(stress_df, landmark_2 == "tw_suffix_start"),
   file = here("models", "stress", "all_groups", "mod_ts_suffix_start_full")
+)
+
+# BRM at 1st syllable suffix start (w/ biphon)
+mod_ts_suffix_start_full2 <- brm(
+  formula = full_model2,
+  prior = priors,
+  warmup = 4000, iter = 8000, chains = 4,
+  family = binomial(link = "logit"),
+  cores = parallel::detectCores(),
+  control = list(max_treedepth = 15, adapt_delta = 0.999),
+  sample_prior = T,
+  data = filter(stress_df, landmark_2 == "tw_suffix_start"),
+  file = here("models", "stress", "all_groups", "mod_ts_suffix_start_full2")
 )
 
 # BRM at next_word

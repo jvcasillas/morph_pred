@@ -49,8 +49,8 @@ complete_posteriors %>%
             aes(ymin = ymin, ymax = ymax, xmin = -Inf, xmax = Inf),
             fill = "lightblue", color = "white", alpha = 0.2) +
   geom_hline(yintercept = 0, lty = 3) +
-  #stat_gradientinterval(aes(shape = group, fill = group, color = group),
-  #                      position = position_dodge(0.7), show.legend = F) +
+  stat_gradientinterval(aes(shape = group, fill = group, color = group),
+                        position = position_dodge(0.7), show.legend = F) +
   stat_pointinterval(aes(shape = group, fill = group), color = "grey10",
                      position = position_dodge(0.7)) +
   coord_cartesian(ylim = c(-5.00, 12.00)) +

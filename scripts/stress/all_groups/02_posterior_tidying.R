@@ -240,17 +240,3 @@ complete_posteriors <- bind_rows(
   ts_suffix_start_posterior,
   ts_next_word_posterior
 )
-
-
-
-
-
-
-
-complete_posteriors %>%
-  ggplot(., aes(x = landmark, y = estimate, color = group)) +
-    facet_grid(syllable ~ stress) +
-    geom_hline(yintercept = 0, lty = 3) +
-    stat_pointinterval(position = position_dodge(0.5)) +
-    landmark_posterior_theme(base_size = 12)
-
