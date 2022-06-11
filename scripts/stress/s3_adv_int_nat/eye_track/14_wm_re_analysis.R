@@ -192,3 +192,66 @@ corr_pairs %>%
 # Subjs with higher b wm also have higher b ot2
 # Higher wm = more curved line
 # more curved line equals faster rate of target fixation
+
+
+#
+# RE of items
+#
+
+clean_theme <- function(...) {
+  list(
+    theme_bw(),
+    theme(
+      axis.title.y = element_text(size = rel(.9), hjust = 0.95),
+      axis.title.x = element_text(size = rel(.9), hjust = 0.95),
+      panel.grid.major = element_line(colour = 'grey90', size = 0.15),
+      panel.grid.minor = element_line(colour = 'grey90', size = 0.15))
+  )
+}
+
+some_items <- c(
+  "bebe", "bebió",
+  "manda", "mandó",
+  "sube", "subió",
+  "saca", "sacó",
+  "lanza", "lanzó"
+  )
+
+item_ranef <- random_eff$target %>%
+  as_tibble() %>%
+  mutate(item = random_eff$target %>% row.names) %>%
+  rename(Intercept = `(Intercept)`,
+    Linear = ot1, Quadratic = ot2, Cubic = ot3) %>%
+  pivot_longer(cols = Intercept:Cubic, names_to = "Term",
+    values_to = "Estimate")
+
+ranef_plot <- item_ranef %>%
+  #filter(Term == "Intercept") %>%
+  mutate(
+    highlight_item = if_else(item %in% some_items, "yes", "no"),
+    #item = fct_reorder(item, Estimate),
+    Term = fct_relevel(Term, "Intercept", "Linear", "Quadratic")
+    ) %>%
+  ggplot() +
+    aes(x = Estimate, y = item, color = highlight_item, shape = Term) +
+    #facet_grid(. ~ Term) +
+    geom_vline(xintercept = 0, lty = 3) +
+    geom_point(show.legend = T) +
+    scale_color_viridis_d(option = "D", begin = 0.3, end = 0.8, guide = "none") +
+    xlim(-3, 3) +
+    labs(y = "Item", x = "Estimate") +
+    clean_theme(base_size = 12, base_family = "Times") +
+    NULL
+
+stress_re_p4 <- ggMarginal(
+  ranef_plot, type = "histogram",
+  margins = "x",
+  groupColour = TRUE,
+  groupFill = TRUE,
+  size = 4
+)
+
+ggsave("stress_re_p4.png", plot = stress_re_p4,
+       path = here("figs", "stress", "s3_adv_int_nat", "eye_track", "lang_learn"),
+       height = 4.5, width = 6)
+
